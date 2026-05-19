@@ -386,6 +386,14 @@
                 <div id="caminho-excel-txt" class="file-status empty">
                     Nenhum arquivo selecionado
                 </div>
+                
+                <div class="input-group" style="margin-top: 15px;">
+                    <label for="dados-colados">Ou cole os dados do Excel aqui (Remessa e UC)</label>
+                    <textarea id="dados-colados" rows="3" placeholder="Cole aqui os dados copiados do Excel..." 
+                              oninput="verificarEstadoBotoes()"
+                              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.2); background-color: rgba(26, 31, 46, 0.8); color: #e8eaed; font-size: 13px; resize: vertical;"></textarea>
+                </div>
+
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
                     <button class="btn btn-primary" id="btn-opcao1" onclick="executarOpcao(1)" disabled>
                         1️⃣ Seleção via UC
@@ -479,9 +487,7 @@
                         statusElement.classList.remove('empty');
 
                         // Ativar botões
-                        document.getElementById('btn-opcao1').disabled = false;
-                        document.getElementById('btn-opcao2').disabled = false;
-                        document.getElementById('btn-opcao3').disabled = false;
+                        verificarEstadoBotoes();
 
                         adicionarLog(`📂 Planilha carregada: ${data.caminho}`);
                     } else {
@@ -509,17 +515,26 @@
         }
 
         // ============== CONTROLE DE BOTÕES ==============
+        function verificarEstadoBotoes() {
+            const temArquivo = caminhoExcelSelecionado !== "";
+            const temDadosColados = document.getElementById('dados-colados').value.trim() !== "";
+            const ativo = temArquivo || temDadosColados;
+            
+            document.getElementById('btn-opcao1').disabled = !ativo;
+            document.getElementById('btn-opcao2').disabled = !ativo;
+            document.getElementById('btn-opcao3').disabled = !ativo;
+        }
+
         function travarBotoes(status) {
             document.getElementById('btn-opcao1').disabled = status;
             document.getElementById('btn-opcao2').disabled = status;
             document.getElementById('btn-opcao3').disabled = status;
             document.querySelectorAll('.btn-secondary').forEach(b => b.disabled = status);
+            document.getElementById('dados-colados').disabled = status;
 
-            // Desativar também se não há arquivo
-            if (!status && caminhoExcelSelecionado === "") {
-                document.getElementById('btn-opcao1').disabled = true;
-                document.getElementById('btn-opcao2').disabled = true;
-                document.getElementById('btn-opcao3').disabled = true;
+            // Restaurar estado correto se for destravar
+            if (!status) {
+                verificarEstadoBotoes();
             }
         }
 
@@ -553,6 +568,8 @@
 
         // ============== EXECUÇÃO ==============
         function executarOpcao(opcao) {
+            const dadosColados = document.getElementById('dados-colados').value;
+            
             travarBotoes(true);
             const statusEl = document.getElementById('status-rpa');
             statusEl.innerText = "⏳ Executando...";
@@ -562,7 +579,7 @@
             fetch('/api/executar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ opcao: opcao, caminho: caminhoExcelSelecionado })
+                body: JSON.stringify({ opcao: opcao, caminho: caminhoExcelSelecionado, dados_colados: dadosColados })
             })
                 .then(() => iniciarMonitoramentoLogs())
                 .catch(err => {

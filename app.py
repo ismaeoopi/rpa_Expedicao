@@ -16,74 +16,17 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 import base64
 from io import BytesIO
+import io
 from reportlab.lib.utils import ImageReader
 import tkinter as tk
 from tkinter import filedialog
 
-# --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (GIT PULL SILENCIOSO) ---
-def verificar_e_atualizar_via_git(silent=False):
-    """
-    Executa um git pull antes de abrir a interface do app.
-    
-    Args:
-        silent (bool): Se True, suprime outputs (usado quando chamado pelo launcher)
-    """
-    try:
-        # Verifica se a pasta atual possui um repositório Git configurado
-        if not os.path.exists(".git"):
-            if not silent:
-                print("⚠️ Repositório .git não localizado. Ignorando auto-update.")
-            return False
-        
-        if not silent:
-            print("🔄 Verificando atualizações no GitHub...")
-        
-        # Usa subprocess.CREATE_NO_WINDOW no Windows para não mostrar terminal
-        if sys.platform == "win32":
-            creation_flags = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0x08000000
-        else:
-            creation_flags = 0
-        
-        # Executa git pull com timeout de 20 segundos
-        resultado = subprocess.run(
-            ["git", "pull"],
-            capture_output=True,
-            text=True,
-            timeout=20,
-            creationflags=creation_flags,
-            cwd=os.getcwd()
-        )
-        
-        # Verifica o resultado
-        if resultado.returncode == 0:
-            if "Already up to date" in resultado.stdout or "Already up to date" in resultado.stderr:
-                if not silent:
-                    print("✅ O aplicativo já está na versão mais recente do repositório.")
-            else:
-                if not silent:
-                    print("🚀 Código atualizado com sucesso do GitHub! Iniciando nova versão...")
-            return True
-        else:
-            if not silent:
-                print(f"⚠️ Falha ao atualizar via Git: {resultado.stderr}")
-            return False
-            
-    except subprocess.TimeoutExpired:
-        if not silent:
-            print("⚠️ Timeout ao verificar atualizações (conexão muito lenta).")
-        return False
-    except FileNotFoundError:
-        if not silent:
-            print("⚠️ Git não foi encontrado. Certifique-se de que está instalado.")
-        return False
-    except Exception as e:
-        if not silent:
-            print(f"⚠️ Falha ao checar atualizações: {e}")
-        return False
-
-# Executa o update imediatamente antes de erguer qualquer processo
-# Aqui usamos silent=False para mostrar logs quando o app está rodando diretamente
-verificar_e_atualizar_via_git(silent=False)
+# --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
+try:
+    import updater
+    updater.check_for_updates()
+except Exception as e:
+    print(f"Erro ao verificar atualizações: {e}")
 
 # --- CONFIGURAÇÃO FLASK PARA PATH AMBIENTE EM EXECUTÁVEL ---
 if getattr(sys, 'frozen', False):
@@ -182,6 +125,24 @@ def lerExcel(caminho):
         log_sys.write(f"❌ ERRO ao ler a planilha: {e}")
         return None
 
+def lerDados(caminhoExcel, dados_colados=None):
+    if dados_colados and str(dados_colados).strip():
+        try:
+            log_sys.write("📄 Lendo dados colados diretamente da interface...")
+            df = pd.read_csv(io.StringIO(dados_colados), sep='\t', dtype=str)
+            df.columns = [str(c).strip().upper() for c in df.columns]
+            if colunaRemessa not in df.columns:
+                 log_sys.write(f"❌ ERRO: Coluna '{colunaRemessa}' não encontrada nos dados colados.")
+                 return None
+            df.dropna(subset=[colunaRemessa], inplace=True)
+            log_sys.write(f"✅ Dados colados lidos com sucesso: {len(df)} linhas para processar.")
+            return df
+        except Exception as e:
+            log_sys.write(f"❌ ERRO ao processar dados colados: {e}")
+            return None
+    else:
+        return lerExcel(caminhoExcel)
+
 def filtrarUcs(session, grupo):
     try:
         session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP:/SCWM/SAPLUI_TODLV:4000/tabsGV_TAB_ODP/tabpOK_TAB_ODP_AVSTKDLV/ssubSUB_ODP_AVSTKDLV:/SCWM/SAPLUI_TODLV:4400/subSUB_ODP_AVSTKDLV_DATA:/SCWM/SAPLUI_TODLV:4410/cntlCC_ALV_OD_AVSTKDLV/shellcont/shell").selectColumn("HUIDENT")
@@ -208,10 +169,10 @@ def filtrarUcs(session, grupo):
         log_sys.write(f"❌ Erro ao filtrar as UC's: {e}")
         return False
 
-def processarPicking(caminhoExcel):
+def processarPicking(caminhoExcel, dados_colados=None):
     session = conectar_sap()
     if not session: return
-    df = lerExcel(caminhoExcel)
+    df = lerDados(caminhoExcel, dados_colados)
     if df is None: return
     
     remessasUnicas = df[colunaRemessa].unique()
@@ -252,10 +213,10 @@ def processarPicking(caminhoExcel):
         except Exception as e:
             log_sys.write(f"❌ ERRO ao processar a remessa {remessa}: {e}")
 
-def processarRemessaComUc(caminhoExcel):
+def processarRemessaComUc(caminhoExcel, dados_colados=None):
     session = conectar_sap()
     if not session: return
-    df = lerExcel(caminhoExcel)
+    df = lerDados(caminhoExcel, dados_colados)
     if df is None: return
     
     global logsErro, logsSucesso
@@ -357,10 +318,10 @@ def processarRemessaComUc(caminhoExcel):
         except Exception as e:
             log_sys.write(f"❌ ERRO GERAL na remessa {remessa}: {e}")
 
-def smRemessa(caminhoExcel):
+def smRemessa(caminhoExcel, dados_colados=None):
     session = conectar_sap()
     if not session: return
-    df = lerExcel(caminhoExcel)
+    df = lerDados(caminhoExcel, dados_colados)
     if df is None: return
     
     for remessa, _ in df.groupby(colunaRemessa):
@@ -639,6 +600,7 @@ def executar():
     dados = request.json
     opcao = int(dados.get('opcao'))
     caminho = dados.get('caminho', '')
+    dados_colados = dados.get('dados_colados', '')
     remessas = dados.get('remessas', '')
     caminho_pasta = dados.get('caminho_pasta', '')
 
@@ -649,11 +611,11 @@ def executar():
         log_sys.is_running = True
         try:
             if opcao == 1:
-                processarRemessaComUc(caminho)
+                processarRemessaComUc(caminho, dados_colados)
             elif opcao == 2:
-                processarPicking(caminho)
+                processarPicking(caminho, dados_colados)
             elif opcao == 3:
-                smRemessa(caminho)
+                smRemessa(caminho, dados_colados)
             elif opcao == 4:
                 salvarFIP(remessas, caminho_pasta if caminho_pasta else None)
         except Exception as e:
