@@ -1,0 +1,278 @@
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║               📦 ÍNDICE COMPLETO - RPA AUTO-UPDATE v1.0                     ║
+║                                                                              ║
+║                     Todos os arquivos e como usá-los                        ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+🎯 COMECE AQUI - OS 3 PASSOS PRINCIPAIS
+══════════════════════════════════════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PASSO 1: LEIA                                                                │
+│ ────────────────────────────────────────────────────────────────────────────│
+│ Abra: README.txt                                                             │
+│ Tempo: 5 minutos                                                             │
+│ O que é: Instruções rápidas para começar                                     │
+│                                                                              │
+│ PASSO 2: TESTE                                                               │
+│ ────────────────────────────────────────────────────────────────────────────│
+│ Execute: python test_auto_update.py                                          │
+│ Tempo: 2 minutos                                                             │
+│ O que é: Valida se tudo está configurado corretamente                        │
+│                                                                              │
+│ PASSO 3: COMPILE                                                             │
+│ ────────────────────────────────────────────────────────────────────────────│
+│ Execute: compile_launcher.bat                                                │
+│ Tempo: 2-5 minutos (depende do PC)                                           │
+│ O que é: Cria o executável RPA_Expedicao.exe                                 │
+│                                                                              │
+│ 🎉 PRONTO! Clique em: dist\RPA_Expedicao.exe                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+📄 DOCUMENTAÇÃO - LEIA CONFORME NECESSÁRIO
+══════════════════════════════════════════════════════════════════════════════
+
+┌─ README.txt ─────────────────────────────────────────────────────────────────┐
+│ TIPO:     Documentação de Início Rápido                                     │
+│ TAMANHO:  ~300 linhas                                                        │
+│ TEMPO:    5 minutos de leitura                                               │
+│ CONTEÚDO:                                                                    │
+│  • O que foi implementado                                                    │
+│  • Como começar rapidamente                                                  │
+│  • Pré-requisitos                                                            │
+│  • Verificação rápida                                                        │
+│  • Troubleshooting básico                                                    │
+│ QUANDO LER: PRIMEIRO! Comece por aqui!                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ GUIA_AUTO_UPDATE.md ─────────────────────────────────────────────────────────┐
+│ TIPO:     Documentação Completa em Markdown                                  │
+│ TAMANHO:  ~400 linhas                                                        │
+│ TEMPO:    20 minutos de leitura                                              │
+│ CONTEÚDO:                                                                    │
+│  • Sumário da solução                                                        │
+│  • Como compilar passo-a-passo                                               │
+│  • Onde usar o executável                                                    │
+│  • Como funciona o auto-update                                               │
+│  • Troubleshooting detalhado                                                 │
+│  • Configuração avançada                                                     │
+│  • FAQ (Perguntas Frequentes)                                                │
+│ QUANDO LER: Depois do README.txt, ou se tiver dúvidas                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ ESTRUTURA_IMPLEMENTACAO.txt ─────────────────────────────────────────────────┐
+│ TIPO:     Sumário Técnico Detalhado                                          │
+│ TAMANHO:  ~350 linhas                                                        │
+│ TEMPO:    15 minutos de leitura                                              │
+│ CONTEÚDO:                                                                    │
+│  • Resumo técnico da implementação                                           │
+│  • Arquivos criados/modificados                                              │
+│  • Arquitetura da solução                                                    │
+│  • Mudanças de código                                                        │
+│  • Fluxo de compilação                                                       │
+│  • Testes realizados                                                         │
+│ QUANDO LER: Se quer entender como funciona tecnicamente                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+🔧 SCRIPTS EXECUTÁVEIS - USE CONFORME NECESSÁRIO
+══════════════════════════════════════════════════════════════════════════════
+
+┌─ test_auto_update.py ───────────────────────────────────────────────────────┐
+│ TIPO:     Python Script - Validação                                         │
+│ COMO:     python test_auto_update.py                                         │
+│ TEMPO:    2 minutos                                                          │
+│ FUNÇÃO:   Testa se tudo está pronto antes de compilar                        │
+│ VERIFICA:                                                                    │
+│  ✓ Se Git está instalado                                                    │
+│  ✓ Se é um repositório Git                                                  │
+│  ✓ Se git pull funciona                                                     │
+│  ✓ Se launcher.py existe                                                    │
+│  ✓ Se app.py existe                                                         │
+│  ✓ Se pasta templates/ existe                                               │
+│  ✓ Se PyInstaller está instalado                                            │
+│ IMPORTANTE: Execute ANTES de compilar!                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ compile_launcher.bat ──────────────────────────────────────────────────────┐
+│ TIPO:     Batch Script - Compilação                                         │
+│ COMO:     compile_launcher.bat (duplo-clique ou CMD)                        │
+│ TEMPO:    2-5 minutos                                                        │
+│ FUNÇÃO:   Compila launcher.py em executável                                 │
+│ RESULTADO:                                                                   │
+│  📦 dist\RPA_Expedicao.exe  ← Seu executável pronto!                        │
+│ VERIFICAÇÕES:                                                                │
+│  • Verifica se PyInstaller está instalado                                   │
+│  • Limpa builds anteriores                                                   │
+│  • Remove arquivos temporários                                               │
+│ IMPORTANTE: Execute DEPOIS de test_auto_update.py passar!                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ check_config.py ────────────────────────────────────────────────────────────┐
+│ TIPO:     Python Script - Diagnóstico                                       │
+│ COMO:     python check_config.py                                             │
+│ TEMPO:    1 minuto                                                           │
+│ FUNÇÃO:   Gera relatório detalhado de diagnóstico                            │
+│ COLETA:                                                                      │
+│  • Sistema (OS, Python, Arquitetura)                                        │
+│  • Git (versão, repositório, branch)                                        │
+│  • Arquivos necessários                                                      │
+│  • Pacotes Python instalados                                                │
+│  • Conectividade com repositório remoto                                      │
+│ RESULTADO: Arquivo .txt com diagnóstico                                      │
+│ IMPORTANTE: Use quando houver problemas ou para suporte                      │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ create_shortcut.bat ────────────────────────────────────────────────────────┐
+│ TIPO:     Batch Script - Atalho Desktop                                      │
+│ COMO:     create_shortcut.bat (duplo-clique ou CMD)                          │
+│ TEMPO:    30 segundos                                                        │
+│ FUNÇÃO:   Cria atalho do RPA no Desktop                                      │
+│ RESULTADO:                                                                   │
+│  🔗 RPA Expedicao.lnk  ← Atalho no Desktop                                  │
+│ IMPORTANTE: Execute APÓS compile_launcher.bat                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+💻 CÓDIGO FONTE - MODIFICAÇÕES
+══════════════════════════════════════════════════════════════════════════════
+
+┌─ launcher.py (NOVO) ────────────────────────────────────────────────────────┐
+│ TIPO:     Python - Ponto de Entrada                                         │
+│ TAMANHO:  ~75 linhas                                                         │
+│ FUNÇÃO:   Executa auto-update e depois app.py                               │
+│ QUANDO COMPILAR: Este arquivo vira o RPA_Expedicao.exe                      │
+│ CARACTERÍSTICAS:                                                             │
+│  • Executa git pull SILENCIOSAMENTE                                         │
+│  • Trata erros internamente                                                 │
+│  • Executa app.py                                                           │
+│  • Sem dependências externas além do que app.py precisa                     │
+│ TEMPO DE EXECUÇÃO: ~2-3 segundos (git pull) + app.py                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ app.py (MODIFICADO) ───────────────────────────────────────────────────────┐
+│ TIPO:     Python - Aplicação Principal                                      │
+│ MUDANÇAS: Função verificar_e_atualizar_via_git() aprimorada                │
+│ CARACTERÍSTICAS NOVAS:                                                       │
+│  • Suporte a modo silencioso                                                │
+│  • Flags de Windows para ocultar terminal                                   │
+│  • Timeout de 20 segundos                                                   │
+│  • Melhor tratamento de erros                                               │
+│ COMPATIBILIDADE: 100% com versão anterior                                   │
+│ IMPACTO: Mínimo - apenas funções internas alteradas                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+📊 MAPA DE FLUXO
+══════════════════════════════════════════════════════════════════════════════
+
+DESENVOLVIMENTO:
+  app.py (original)
+      ↓
+      └─→ Modifico função auto-update
+      
+COMPILAÇÃO:
+  launcher.py  ←─┐
+  app.py       ←─┼─→ compile_launcher.bat
+  templates/   ←─┘       ↓
+                    PyInstaller
+                         ↓
+                    dist/RPA_Expedicao.exe
+                         ↓
+                    create_shortcut.bat
+                         ↓
+                    Desktop/RPA Expedicao.lnk
+
+EXECUÇÃO (Utilizador):
+  Clica: RPA Expedicao.lnk (ou .exe)
+      ↓
+  launcher.py inicia (invisível)
+      ↓
+  git pull (silencioso, 2-3 seg)
+      ↓
+  app.py inicia
+      ↓
+  Interface RPA abre
+
+
+📋 CHECKLIST - O QUE FAZER AGORA
+══════════════════════════════════════════════════════════════════════════════
+
+CONFIGURAÇÃO INICIAL:
+  [ ] Ler README.txt
+  [ ] Instalar PyInstaller: pip install pyinstaller
+  [ ] Executar: python test_auto_update.py (tudo OK?)
+
+COMPILAÇÃO:
+  [ ] Executar: compile_launcher.bat
+  [ ] Verificar: dist\RPA_Expedicao.exe existe?
+  [ ] Executar: python check_config.py (gerar diagnóstico)
+
+TESTE:
+  [ ] Clicar em dist\RPA_Expedicao.exe
+  [ ] Verificar: Terminal não aparece?
+  [ ] Verificar: App abre normalmente?
+  [ ] Testar com internet desligada
+  [ ] Testar sem Git instalado (opcional)
+
+DISTRIBUIÇÃO:
+  [ ] Copiar dist\RPA_Expedicao.exe para rede/email
+  [ ] Executar: create_shortcut.bat (criar atalho)
+  [ ] Distribuir atalho ou .exe para equipa
+  [ ] Enviar GUIA_AUTO_UPDATE.md para documentação
+
+LIMPEZA (OPCIONAL):
+  [ ] Manter dist\RPA_Expedicao.exe
+  [ ] Manter .git (importante!)
+  [ ] Pode deletar: build/, launcher.spec, __pycache__
+
+
+🆘 PRECISA DE AJUDA?
+══════════════════════════════════════════════════════════════════════════════
+
+PROBLEMA                        SOLUÇÃO
+─────────────────────────────────────────────────────────────────────────────
+Git não encontrado              Instale: https://git-scm.com/download/win
+PyInstaller não instalado       Execute: pip install pyinstaller
+test_auto_update.py falha       Verifique pré-requisitos acima
+compile_launcher.bat falha      Execute check_config.py para diagnóstico
+dist\RPA_Expedicao.exe não cria Verifique: .git, app.py, templates/
+.exe trava ao abrir             Aumente timeout em app.py (linha 42)
+Terminal fica visível           Verifique flags no launcher.py
+
+Para mais detalhes, leia GUIA_AUTO_UPDATE.md
+
+
+🎓 DOCUMENTAÇÃO TÉCNICA COMPLETA
+══════════════════════════════════════════════════════════════════════════════
+
+PARA SABER MAIS:
+  
+  Como Funciona → GUIA_AUTO_UPDATE.md (seção "Como funciona o auto-update")
+  
+  Arquitetura → ESTRUTURA_IMPLEMENTACAO.txt (seção "ARQUITETURA")
+  
+  Troubleshooting → GUIA_AUTO_UPDATE.md (seção "TROUBLESHOOTING")
+  
+  FAQ → GUIA_AUTO_UPDATE.md (seção "DÚVIDAS COMUNS")
+  
+  Configuração Avançada → GUIA_AUTO_UPDATE.md (seção "CONFIGURAÇÃO AVANÇADA")
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    ✅ Pronto para começar!
+                    
+             Siga os 3 passos: LEIA → TESTE → COMPILE
+             
+             Sucesso: dist\RPA_Expedicao.exe
+             
+═══════════════════════════════════════════════════════════════════════════════
+
+Versão: 1.0 | Data: Maio 2026 | Autor: GitHub Copilot RPA
+

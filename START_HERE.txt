@@ -1,0 +1,181 @@
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                         🚀 COMECE AQUI 🚀                                ║
+║                                                                            ║
+║              ⏱️  60 SEGUNDOS PARA TER SEU APP FUNCIONANDO                  ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+⭐ LEIA ISTO PRIMEIRO (1 minuto)
+════════════════════════════════════════════════════════════════════════════════
+
+Você têm:
+  ✅ App RPA com AUTO-UPDATE via GitHub
+  ✅ Terminal OCULTO (não fica preto visível)
+  ✅ Funciona mesmo SEM internet
+  ✅ Pronto para COMPILAR em .exe
+
+
+Próximos 3 passos (5 minutos total):
+  
+  1️⃣  Abra PowerShell/CMD
+      └─ Windows+R → digitar "powershell" → Enter
+  
+  2️⃣  Instale PyInstaller (primeira vez apenas)
+      └─ pip install pyinstaller
+  
+  3️⃣  Compile o app
+      └─ compile_launcher.bat
+
+
+🎯 3 PASSOS SIMPLES
+════════════════════════════════════════════════════════════════════════════════
+
+         PASSO 1              PASSO 2              PASSO 3
+         (2 min)              (1 min)              (3 min)
+    
+    Prepare o PC        Teste o Setup        Compile o .exe
+         │                    │                    │
+         ▼                    ▼                    ▼
+         
+pip install         python test_        compile_launcher
+pyinstaller        auto_update.py            .bat
+         │                    │                    │
+         │          ✅ 7 testes OK?       dist\RPA_Expedicao
+         └────────────────────┴────────────────────┘
+                              │
+                              ▼
+                   🎉 PRONTO! Seu .exe
+
+
+🚀 EXECUTE AGORA (Copie e Cole):
+════════════════════════════════════════════════════════════════════════════════
+
+🔹 Se é primeira vez (instalar PyInstaller):
+
+    pip install pyinstaller
+    python test_auto_update.py
+    compile_launcher.bat
+
+🔹 Se PyInstaller já está instalado:
+
+    python test_auto_update.py
+    compile_launcher.bat
+
+
+✅ RESULTADO ESPERADO:
+════════════════════════════════════════════════════════════════════════════════
+
+Após executar os comandos acima:
+
+  ✓ Pasta 'dist' aparece
+  ✓ Arquivo 'dist\RPA_Expedicao.exe' é criado
+  ✓ Nenhum erro crítico (⚠️ warnings são OK)
+
+PRONTO! Seu executável está criado!
+
+
+🎮 CLIQUE NO .EXE:
+════════════════════════════════════════════════════════════════════════════════
+
+    dist\RPA_Expedicao.exe
+
+Esperado:
+  • Nenhuma janela preta aparece
+  • 2-3 segundos de espera (git pull automático)
+  • Interface RPA abre normalmente
+
+✅ SUCESSO! Você tem auto-update funcionando!
+
+
+📁 PRÓXIMAS ETAPAS (Opcional):
+════════════════════════════════════════════════════════════════════════════════
+
+1. Criar atalho no Desktop:
+   
+   create_shortcut.bat
+
+2. Distribuir para colegas:
+   
+   Copie: dist\RPA_Expedicao.exe
+   Copie: pasta .git (importante!)
+
+3. Ler documentação completa:
+   
+   README.txt (5 min)
+   GUIA_AUTO_UPDATE.md (20 min)
+
+
+⚠️  PROBLEMAS? EXECUTE ISTO:
+════════════════════════════════════════════════════════════════════════════════
+
+1. Se compile_launcher.bat falha:
+
+   python check_config.py
+
+   Isto gera um relatório. Veja os erros.
+
+2. Leia:
+
+   GUIA_AUTO_UPDATE.md (busque a seção TROUBLESHOOTING)
+
+3. Verifique:
+
+   ✓ Git está instalado? (git --version)
+   ✓ Python está instalado? (python --version)
+   ✓ PyInstaller instalado? (pyinstaller --version)
+
+
+🎓 PARA ENTENDER MELHOR:
+════════════════════════════════════════════════════════════════════════════════
+
+Abra em ordem:
+  
+  1. README.txt (instruções rápidas)
+  2. INDICE_COMPLETO.txt (mapa de todos os arquivos)
+  3. GUIA_AUTO_UPDATE.md (documentação completa)
+
+
+📊 O QUE FOI CRIADO:
+════════════════════════════════════════════════════════════════════════════════
+
+Novos Arquivos:
+  ✓ launcher.py - Ponto de entrada com auto-update
+  ✓ compile_launcher.bat - Compila em .exe
+  ✓ test_auto_update.py - Valida tudo antes de compilar
+  ✓ check_config.py - Diagnóstico do sistema
+  ✓ create_shortcut.bat - Cria atalho no Desktop
+  ✓ GUIA_AUTO_UPDATE.md - Documentação técnica
+  ✓ README.txt - Instruções rápidas
+  ✓ Mais 3 arquivos de documentação/referência
+
+Modificado:
+  ✓ app.py - Melhorado para auto-update silencioso
+
+
+🎯 RESUMO DO QUE FUNCIONA:
+════════════════════════════════════════════════════════════════════════════════
+
+✅ Clica no RPA_Expedicao.exe
+✅ Git pull executado SILENCIOSAMENTE (2-3 seg)
+✅ Terminal NUNCA fica visível
+✅ Código atualizado automaticamente
+✅ Se não tiver internet → App abre assim mesmo
+✅ Se não tiver Git → App abre assim mesmo
+✅ Nenhum erro trava o aplicativo
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    👉 COMECE: Abra PowerShell e execute:
+                    
+                           compile_launcher.bat
+                           
+                    ✅ Pronto em 5 minutos!
+                    
+═══════════════════════════════════════════════════════════════════════════════
+
+Versão: 1.0 | Data: Maio 2026
+
