@@ -68,6 +68,7 @@ python -m PyInstaller ^
     --collect-all=reportlab ^
     --collect-all=flask ^
     --collect-all=pandas ^
+    --collect-all=tkinter ^
     launcher.py
 
 if errorlevel 1 (
