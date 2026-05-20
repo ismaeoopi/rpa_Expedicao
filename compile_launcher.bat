@@ -56,6 +56,7 @@ python -m PyInstaller ^
     --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
     --add-data "app.py:." ^
+    --add-data "updater.py:." ^
     --add-data "version.txt:." ^
     --hidden-import=pandas ^
     --hidden-import=openpyxl ^
@@ -65,6 +66,7 @@ python -m PyInstaller ^
     --hidden-import=flask ^
     --hidden-import=reportlab ^
     --hidden-import=tkinter ^
+    --hidden-import=urllib ^
     --collect-all=reportlab ^
     --collect-all=flask ^
     --collect-all=pandas ^
