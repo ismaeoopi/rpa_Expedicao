@@ -39,6 +39,9 @@ if exist build rmdir /s /q build >nul 2>&1
 if exist dist rmdir /s /q dist >nul 2>&1
 if exist launcher.spec del /q launcher.spec >nul 2>&1
 
+REM Criar o diretório temporário (sem espaços) para evitar erro de DLL
+if not exist C:\Temp mkdir C:\Temp
+
 echo [ETAPA 1/3] Compilando launcher.py com PyInstaller...
 echo.
 
@@ -50,6 +53,7 @@ pyinstaller ^
     --distpath ".\dist" ^
     --buildpath ".\build" ^
     --specpath "." ^
+    --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
     launcher.py
 

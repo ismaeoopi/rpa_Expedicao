@@ -57,6 +57,8 @@ REM Compila o aplicativo usando o arquivo .spec
 echo.
 echo 🚀 Compilando aplicativo...
 echo ----------------------------------------
+REM Criar o diretório temporário (sem espaços) para evitar erro de DLL
+if not exist C:\Temp mkdir C:\Temp
 python -m PyInstaller app.spec
 
 if %ERRORLEVEL% neq 0 (

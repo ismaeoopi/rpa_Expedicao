@@ -22,7 +22,9 @@ echo [3] Iniciando compilacao (isso pode demorar 1-2 minutos)...
 :: --windowed: Oculta o terminal preto
 :: --name: Nome do arquivo final
 :: --add-data: Inclui arquivos e pastas no executavel (formato Origem;Destino)
-python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." app.py
+:: --runtime-tmpdir: Usa um diretorio temporario sem espacos para evitar erro de DLL
+if not exist C:\Temp mkdir C:\Temp
+python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." --runtime-tmpdir=C:\Temp app.py
 
 if errorlevel 1 (
     echo.
