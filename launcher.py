@@ -7,9 +7,6 @@ Launcher RPA - Auto-Update via Git + Execução da Aplicação
 Este script é o ponto de entrada do aplicativo RPA.
 Ele executa o git pull SILENCIOSAMENTE antes de iniciar o app.py
 
-Como compilar para .exe com PyInstaller:
-    pyinstaller --onefile --windowed --icon=icon.ico --add-data "templates:templates" launcher.py
-
 Autor: Tim TI
 Data: 2026
 """
@@ -17,9 +14,9 @@ Data: 2026
 import os
 import sys
 import subprocess
-import shutil
+import tempfile
+import traceback
 from pathlib import Path
-
 
 def atualizar_repositorio():
     """
@@ -28,16 +25,13 @@ def atualizar_repositorio():
     """
     try:
         if not os.path.exists(".git"):
-            # Não é um repositório Git, continua normalmente
             return True
         
-        # Define flags para executar sem mostrar janela no Windows
         if sys.platform == "win32":
             creation_flags = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0x08000000
         else:
             creation_flags = 0
         
-        # Executa git pull com timeout de 20 segundos
         resultado = subprocess.run(
             ["git", "pull"],
             capture_output=True,
@@ -47,58 +41,82 @@ def atualizar_repositorio():
             cwd=os.getcwd()
         )
         
-        # Retorna sucesso se o returncode for 0
         return resultado.returncode == 0
         
-    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
-        # Git não instalado, timeout, ou outro erro - continua normalmente
-        return True
+    except Exception as e:
+        return True  # Continua mesmo se git falhar
 
 
 def executar_app():
     """
-    Executa o app.py usando o interpretador Python atual.
+    Executa o app.py de forma compatível com PyInstaller.
     """
     try:
-        # Determina o caminho do app.py
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        app_path = os.path.join(script_dir, "app.py")
+        # Se estiver dentro do PyInstaller
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
         
+        app_path = os.path.join(base_path, "app.py")
+        
+        # Verifica se app.py existe
         if not os.path.exists(app_path):
-            print(f"Erro: app.py não encontrado em {app_path}")
-            sys.exit(1)
+            raise FileNotFoundError(f"app.py não encontrado em {app_path}")
         
-        # Executa o app.py
-        exec(open(app_path).read())
+        # Executa app.py com runpy (mais compatível)
+        import runpy
+        runpy.run_path(app_path, run_name="__main__")
         
     except Exception as e:
-        print(f"Erro ao executar app.py: {e}")
+        # Se tudo falhar, tenta mostrar erro em uma janela
+        try:
+            import tkinter as tk
+            from tkinter import showerror
+            root = tk.Tk()
+            root.withdraw()
+            showerror("Erro no RPA", f"Erro ao iniciar aplicação:\n\n{str(e)}\n\n{traceback.format_exc()}")
+            root.destroy()
+        except:
+            pass
+        
+        # Log de erro em arquivo
+        try:
+            log_file = os.path.join(tempfile.gettempdir(), "rpa_error.log")
+            with open(log_file, "w") as f:
+                f.write(f"Erro ao executar app.py:\n{traceback.format_exc()}")
+        except:
+            pass
+        
         sys.exit(1)
 
 
 def main():
     """
     Ponto de entrada principal.
-    1. Tenta atualizar via Git (silenciosamente)
-    2. Executa o app.py
     """
     try:
         # Muda para o diretório do script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
         
-        # Tenta atualizar (silenciosamente)
+        # Tenta atualizar via Git (silenciosamente)
         atualizar_repositorio()
         
         # Executa o app
         executar_app()
         
     except Exception as e:
-        # Em caso de erro crítico, tenta abrir o app mesmo assim
         try:
-            executar_app()
+            import tkinter as tk
+            from tkinter import showerror
+            root = tk.Tk()
+            root.withdraw()
+            showerror("Erro Crítico", f"Erro ao iniciar:\n\n{str(e)}")
+            root.destroy()
         except:
-            sys.exit(1)
+            print(f"Erro crítico: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
