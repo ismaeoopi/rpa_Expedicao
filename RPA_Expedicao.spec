@@ -1,12 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('templates', 'templates'), ('app.py', '.'), ('version.txt', '.')]
+binaries = []
+hiddenimports = ['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter']
+tmp_ret = collect_all('reportlab')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('flask')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('pandas')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['launcher.py'],
     pathex=[],
-    binaries=[],
-    datas=[('templates', 'templates'), ('app.py', '.'), ('version.txt', '.')],
-    hiddenimports=['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter'],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
