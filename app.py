@@ -20,6 +20,10 @@ import io
 from reportlab.lib.utils import ImageReader
 import tkinter as tk
 from tkinter import filedialog
+import pythoncom
+import queue
+import pywintypes
+
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
 try:
@@ -625,37 +629,78 @@ def salvarFIP(shipments_input, pasta_destino=None):
 # --- FUNÇÕES PARA SELEÇÃO DE FICHEIROS NATIVOS DO WINDOWS ---
 def abrir_seletor_ficheiro_excel():
     """
-    Abre a caixa de diálogo nativa do Windows para selecionar um Excel.
-    Usa pywin32 (funciona em qualquer thread, ao contrário do tkinter).
+    Abre GetOpenFileNameW numa thread STA dedicada, para funcionar
+    corretamente quando chamada a partir de uma thread do Flask.
     """
-    try:
-        import pythoncom
-        pythoncom.CoInitialize()  # Necessário para usar COM em thread secundária
+    result_q = queue.Queue()
+
+    def _dialog_thread():
+        # 1) STA é OBRIGATÓRIO para diálogos comuns do Windows
+        pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
         try:
-            # Cria um diálogo COM nativo via Shell
-            from win32com.shell import shell, shellcon
-            
-            # Usa o GetOpenFileNameW da API do Windows (mais simples e robusto)
-            import win32gui
-            filtro = "Arquivos Excel (*.xlsx;*.xls)\0*.xlsx;*.xls\0Todos (*.*)\0*.*\0"
-            customfilter = "Outros\0*.*\0"
+            # 2) Filtro: pares "descrição\0padrão\0", terminado por \0 extra.
+            #    Tem de ser \0 REAL (não a sequência "\\0").
+            file_filter = (
+                "Arquivos Excel (*.xlsx;*.xls)\0*.xlsx;*.xls\0"
+                "Todos os ficheiros (*.*)\0*.*\0"
+            )
+
+            # Pasta inicial: Downloads do utilizador
+            initial_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+            if not os.path.isdir(initial_dir):
+                initial_dir = os.path.expanduser("~")
+
+            # 3) Flags: explorer moderno + ficheiro tem de existir
+            flags = (
+                win32con.OFN_EXPLORER
+                | win32con.OFN_FILEMUSTEXIST
+                | win32con.OFN_PATHMUSTEXIST
+                | win32con.OFN_HIDEREADONLY
+                | win32con.OFN_NOCHANGEDIR
+            )
+
             try:
-                fname, customfilter_out, flags = win32gui.GetOpenFileNameW(
-                    InitialDir=os.path.expanduser("~\\Downloads"),
-                    Flags=0x00080000 | 0x00001000,  # OFN_EXPLORER | OFN_FILEMUSTEXIST
+                fname, customfilter, flags_out = win32gui.GetOpenFileNameW(
+                    InitialDir=initial_dir,
+                    Flags=flags,
                     Title="Selecione o arquivo Excel",
-                    Filter=filtro,
-                    CustomFilter=customfilter,
-                    FilterIndex=1,
+                    Filter=file_filter,
+                    DefExt="xlsx",
+                    File="",                 # nome inicial vazio
+                    MaxFile=2048,            # buffer suficientemente grande
                 )
-                return fname if fname else ""
-            except Exception:
-                return ""
+                result_q.put(fname or "")
+            except pywintypes.error as e:
+                # Código 0 = utilizador cancelou; qualquer outro = erro real
+                if getattr(e, "winerror", 0) == 0:
+                    result_q.put("")
+                else:
+                    result_q.put(("__ERROR__", str(e)))
+        except Exception as e:
+            result_q.put(("__ERROR__", str(e)))
         finally:
             pythoncom.CoUninitialize()
-    except Exception as e:
-        log_sys.write(f"❌ Erro ao abrir seletor de ficheiro: {e}")
+
+    # 4) daemon=True para não prender o processo se algo correr mal
+    t = threading.Thread(target=_dialog_thread, daemon=True)
+    t.start()
+    t.join(timeout=600)  # até 10 min para o utilizador escolher
+
+    if t.is_alive():
+        log_sys.write("⚠️ Diálogo de seleção ainda aberto após timeout.")
         return ""
+
+    try:
+        res = result_q.get_nowait()
+    except queue.Empty:
+        return ""
+
+    # Propaga erro real para o log
+    if isinstance(res, tuple) and res and res[0] == "__ERROR__":
+        log_sys.write(f"❌ Erro no GetOpenFileNameW: {res[1]}")
+        return ""
+
+    return res if (res and os.path.isfile(res)) else ""
 
 def abrir_seletor_pasta():
     """
