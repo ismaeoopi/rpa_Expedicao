@@ -19,19 +19,19 @@ echo    COMPILADOR RPA - Auto-Update Launcher para Executável
 echo ============================================================================
 echo.
 
-REM Verifica se PyInstaller está instalado
+REM Verifica e instala PyInstaller se necessário
 python -m pip show pyinstaller >nul 2>&1
 if errorlevel 1 (
-    echo [ERRO] PyInstaller não está instalado!
-    echo.
-    echo Para instalar, execute:
-    echo   pip install pyinstaller
-    echo.
-    pause
-    exit /b 1
+    echo [INFO] PyInstaller não encontrado. Instalando...
+    python -m pip install pyinstaller
+    if errorlevel 1 (
+        echo [ERRO] Falha ao instalar PyInstaller!
+        pause
+        exit /b 1
+    )
 )
 
-echo [INFO] PyInstaller encontrado. Iniciando compilação...
+echo [INFO] PyInstaller pronto. Iniciando compilação...
 echo.
 
 REM Remove diretórios de build anteriores
@@ -46,17 +46,17 @@ echo [ETAPA 1/3] Compilando launcher.py com PyInstaller...
 echo.
 
 REM Comando principal de compilação
-pyinstaller ^
+python -m PyInstaller ^
     --onefile ^
     --windowed ^
     --name "RPA_Expedicao" ^
     --distpath ".\dist" ^
-    --buildpath ".\build" ^
+    --workpath ".\build" ^
     --specpath "." ^
     --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
     launcher.py
-
+    
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha na compilação!
