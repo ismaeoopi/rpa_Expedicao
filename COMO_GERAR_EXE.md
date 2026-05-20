@@ -76,3 +76,10 @@ Ou simplesmente dê duplo clique no arquivo `BUILD.bat` ou `compilar_rpa.bat` de
 ### Erro durante compilação
 - Execute: `pip install -r requirements.txt`
 - Verifique se todas as dependências foram instaladas corretamente
+
+### Erro: "PermissionError: Access is denied" (RPA_Expedicao.exe)
+O arquivo .exe está em uso. Solução:
+1. Feche o RPA_Expedicao.exe se estiver aberto
+2. Feche o Gerenciador de Tarefas e verifique se há processos Python rodando
+3. Reinicie o computador se necessário
+4. Tente compilar novamente
