@@ -626,31 +626,55 @@ def salvarFIP(shipments_input, pasta_destino=None):
 def abrir_seletor_ficheiro_excel():
     """
     Abre a caixa de diálogo nativa do Windows para selecionar um Excel.
-    Usa pywin32 (funciona em qualquer thread, ao contrário do tkinter).
+    Usa Shell.Application.GetOpenFilename() que funciona em qualquer thread.
     """
     try:
         import pythoncom
         pythoncom.CoInitialize()  # Necessário para usar COM em thread secundária
         try:
-            # Cria um diálogo COM nativo via Shell
-            from win32com.shell import shell, shellcon
+            shell_obj = win32com.client.Dispatch("Shell.BrowseForFolder")
+            # Se não conseguir via BrowseForFolder, usa PowerShell
+        except:
+            pass
+        
+        # Usa PowerShell para abrir um diálogo de seleção de arquivo
+        # (mais confiável que as APIs COM diretas)
+        try:
+            import subprocess
+            import tempfile
+            import json
             
-            # Usa o GetOpenFileNameW da API do Windows (mais simples e robusto)
-            import win32gui
-            filtro = "Arquivos Excel (*.xlsx;*.xls)\0*.xlsx;*.xls\0Todos (*.*)\0*.*\0"
-            customfilter = "Outros\0*.*\0"
-            try:
-                fname, customfilter_out, flags = win32gui.GetOpenFileNameW(
-                    InitialDir=os.path.expanduser("~\\Downloads"),
-                    Flags=0x00080000 | 0x00001000,  # OFN_EXPLORER | OFN_FILEMUSTEXIST
-                    Title="Selecione o arquivo Excel",
-                    Filter=filtro,
-                    CustomFilter=customfilter,
-                    FilterIndex=1,
-                )
-                return fname if fname else ""
-            except Exception:
-                return ""
+            # Script PowerShell para abrir diálogo de arquivo
+            ps_script = r"""
+            [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
+            $dialog = New-Object System.Windows.Forms.OpenFileDialog
+            $dialog.InitialDirectory = [Environment]::GetFolderPath("MyDocuments")
+            $dialog.Filter = "Arquivos Excel (*.xlsx;*.xls)|*.xlsx;*.xls|Todos os arquivos (*.*)|*.*"
+            $dialog.Title = "Selecione o arquivo Excel"
+            $dialog.CheckFileExists = $true
+            $dialog.CheckPathExists = $true
+            
+            if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+                Write-Output $dialog.FileName
+            } else {
+                Write-Output ""
+            }
+            """
+            
+            # Executa o script PowerShell
+            result = subprocess.run(
+                ["powershell", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
+            )
+            
+            caminho = result.stdout.strip()
+            return caminho if caminho else ""
+            
+        except Exception as e:
+            log_sys.write(f"❌ Erro ao abrir PowerShell: {e}")
+            return ""
         finally:
             pythoncom.CoUninitialize()
     except Exception as e:
