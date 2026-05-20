@@ -55,8 +55,9 @@ python -m PyInstaller ^
     --specpath "." ^
     --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
+    --add-data "app.py:." ^
     launcher.py
-    
+
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha na compilação!
