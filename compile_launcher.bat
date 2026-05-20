@@ -56,6 +56,15 @@ python -m PyInstaller ^
     --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
     --add-data "app.py:." ^
+    --add-data "version.txt:." ^
+    --hidden-import=pandas ^
+    --hidden-import=openpyxl ^
+    --hidden-import=win32com ^
+    --hidden-import=win32con ^
+    --hidden-import=win32gui ^
+    --hidden-import=flask ^
+    --hidden-import=reportlab ^
+    --hidden-import=tkinter ^
     launcher.py
 
 if errorlevel 1 (
