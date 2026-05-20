@@ -53,7 +53,7 @@ python -m PyInstaller ^
     --distpath ".\dist" ^
     --workpath ".\build" ^
     --specpath "." ^
-    --runtime-tmpdir=C:\Users\%USERNAME%\AppData\Local\Temp\RPA ^
+    --runtime-tmpdir=%TEMP%\RPA_Temp ^
     --add-data "templates;templates" ^
     --add-data "app.py:." ^
     --add-data "updater.py:." ^
