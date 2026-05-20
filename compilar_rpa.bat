@@ -5,7 +5,7 @@ echo =======================================================
 echo.
 
 echo [1] Verificando dependencias...
-pip install pyinstaller > NUL
+python -m pip install pyinstaller > NUL
 if errorlevel 1 (
     echo Erro ao instalar pyinstaller. Verifique sua instalacao do Python.
     pause
@@ -22,7 +22,7 @@ echo [3] Iniciando compilacao (isso pode demorar 1-2 minutos)...
 :: --windowed: Oculta o terminal preto
 :: --name: Nome do arquivo final
 :: --add-data: Inclui arquivos e pastas no executavel (formato Origem;Destino)
-pyinstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." app.py
+python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." app.py
 
 if errorlevel 1 (
     echo.

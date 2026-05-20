@@ -57,7 +57,7 @@ REM Compila o aplicativo usando o arquivo .spec
 echo.
 echo 🚀 Compilando aplicativo...
 echo ----------------------------------------
-pyinstaller app.spec
+python -m PyInstaller app.spec
 
 if %ERRORLEVEL% neq 0 (
     echo.
