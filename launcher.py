@@ -5,7 +5,7 @@ Launcher RPA - Auto-Update via Git + Execução da Aplicação
 ===========================================================
 
 Este script é o ponto de entrada do aplicativo RPA.
-Ele executa o git pull SILENCIOSAMENTE antes de iniciar o app.py
+Ele executa atualizações ANTES de iniciar o app.py
 
 Autor: Tim TI
 Data: 2026
@@ -45,6 +45,18 @@ def atualizar_repositorio():
         
     except Exception as e:
         return True  # Continua mesmo se git falhar
+
+
+def verificar_atualizacoes_github():
+    """
+    Verifica se há nova versão no GitHub e atualiza o .exe se necessário
+    (Funciona mesmo SEM repositório .git)
+    """
+    try:
+        import updater
+        updater.check_for_updates()
+    except Exception as e:
+        pass  # Continua mesmo se falhar
 
 
 def executar_app():
@@ -94,6 +106,9 @@ def executar_app():
 def main():
     """
     Ponto de entrada principal.
+    1. Atualiza via Git (se disponível)
+    2. Verifica atualizações no GitHub (funciona SEM Git)
+    3. Executa o app.py
     """
     try:
         # Muda para o diretório do script
@@ -102,6 +117,11 @@ def main():
         
         # Tenta atualizar via Git (silenciosamente)
         atualizar_repositorio()
+        
+        # Verifica e aplica atualizações do GitHub
+        # IMPORTANTE: Isso tem que ser ANTES de executar o app.py
+        # Assim um .exe antigo baixa a versão nova e reinicia
+        verificar_atualizacoes_github()
         
         # Executa o app
         executar_app()
