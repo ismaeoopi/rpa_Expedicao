@@ -626,57 +626,67 @@ def salvarFIP(shipments_input, pasta_destino=None):
 def abrir_seletor_ficheiro_excel():
     """
     Abre a caixa de diálogo nativa do Windows para selecionar um Excel.
-    Usa Shell.Application.GetOpenFilename() que funciona em qualquer thread.
+    Usa ctypes para chamar a Windows API diretamente (muito mais rápido).
     """
     try:
-        import pythoncom
-        pythoncom.CoInitialize()  # Necessário para usar COM em thread secundária
-        try:
-            shell_obj = win32com.client.Dispatch("Shell.BrowseForFolder")
-            # Se não conseguir via BrowseForFolder, usa PowerShell
-        except:
+        import ctypes
+        from ctypes import wintypes
+        
+        # Define a estrutura OPENFILENAME do Windows
+        class OPENFILENAME(ctypes.Structure):
             pass
         
-        # Usa PowerShell para abrir um diálogo de seleção de arquivo
-        # (mais confiável que as APIs COM diretas)
-        try:
-            import subprocess
-            import tempfile
-            import json
-            
-            # Script PowerShell para abrir diálogo de arquivo
-            ps_script = r"""
-            [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
-            $dialog = New-Object System.Windows.Forms.OpenFileDialog
-            $dialog.InitialDirectory = [Environment]::GetFolderPath("MyDocuments")
-            $dialog.Filter = "Arquivos Excel (*.xlsx;*.xls)|*.xlsx;*.xls|Todos os arquivos (*.*)|*.*"
-            $dialog.Title = "Selecione o arquivo Excel"
-            $dialog.CheckFileExists = $true
-            $dialog.CheckPathExists = $true
-            
-            if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-                Write-Output $dialog.FileName
-            } else {
-                Write-Output ""
-            }
-            """
-            
-            # Executa o script PowerShell
-            result = subprocess.run(
-                ["powershell", "-Command", ps_script],
-                capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
-            )
-            
-            caminho = result.stdout.strip()
-            return caminho if caminho else ""
-            
-        except Exception as e:
-            log_sys.write(f"❌ Erro ao abrir PowerShell: {e}")
-            return ""
-        finally:
-            pythoncom.CoUninitialize()
+        OPENFILENAME._fields_ = [
+            ("lStructSize", wintypes.DWORD),
+            ("hwndOwner", wintypes.HWND),
+            ("hInstance", wintypes.HANDLE),
+            ("lpstrFilter", wintypes.LPCSTR),
+            ("lpstrCustomFilter", wintypes.LPCSTR),
+            ("nMaxCustFilter", wintypes.DWORD),
+            ("nFilterIndex", wintypes.DWORD),
+            ("lpstrFile", wintypes.LPSTR),
+            ("nMaxFile", wintypes.DWORD),
+            ("lpstrFileTitle", wintypes.LPSTR),
+            ("nMaxFileTitle", wintypes.DWORD),
+            ("lpstrInitialDir", wintypes.LPCSTR),
+            ("lpstrTitle", wintypes.LPCSTR),
+            ("Flags", wintypes.DWORD),
+            ("nFileOffset", wintypes.WORD),
+            ("nFileExtension", wintypes.WORD),
+            ("lpstrDefExt", wintypes.LPCSTR),
+            ("lCustData", ctypes.c_long),
+            ("lpfnHook", ctypes.c_void_p),
+            ("lpTemplateName", wintypes.LPCSTR),
+        ]
+        
+        # Carrega a DLL do Windows
+        GetOpenFileNameA = ctypes.windll.comdlg32.GetOpenFileNameA
+        GetOpenFileNameA.argtypes = [ctypes.POINTER(OPENFILENAME)]
+        GetOpenFileNameA.restype = wintypes.BOOL
+        
+        # Prepara os strings
+        szFile = ctypes.create_string_buffer(260)
+        szTitle = b"Selecione o arquivo Excel"
+        szFilter = b"Arquivos Excel (*.xlsx;*.xls)\0*.xlsx;*.xls\0Todos (*.*)\0*.*\0"
+        szInitialDir = os.path.expanduser("~\\Downloads").encode('utf-8')
+        
+        # Cria a estrutura
+        ofn = OPENFILENAME()
+        ofn.lStructSize = ctypes.sizeof(OPENFILENAME)
+        ofn.hwndOwner = 0
+        ofn.lpstrFilter = szFilter
+        ofn.nFilterIndex = 1
+        ofn.lpstrFile = szFile
+        ofn.nMaxFile = 260
+        ofn.lpstrTitle = szTitle
+        ofn.lpstrInitialDir = szInitialDir
+        ofn.Flags = 0x00080000 | 0x00001000  # OFN_EXPLORER | OFN_FILEMUSTEXIST
+        
+        # Abre o diálogo
+        if GetOpenFileNameA(ctypes.byref(ofn)):
+            return szFile.value.decode('utf-8', errors='ignore')
+        return ""
+        
     except Exception as e:
         log_sys.write(f"❌ Erro ao abrir seletor de ficheiro: {e}")
         return ""
