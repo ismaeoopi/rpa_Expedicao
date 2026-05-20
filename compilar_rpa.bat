@@ -1,8 +1,14 @@
 @echo off
+REM Limpar diretórios antigos de temp
 echo =======================================================
 echo     Compilador do RPA Expedicao (Auto-Update Version)
 echo =======================================================
 echo.
+
+echo [INFO] Limpando diretórios temporários antigos...
+for /d %%A in (C:\Temp\_MEI*) do (
+    rmdir /s /q "%%A" 2>nul
+)
 
 echo [1] Verificando dependencias...
 python -m pip install pyinstaller > NUL
@@ -16,14 +22,16 @@ echo [2] Removendo builds antigos (limpando cache)...
 if exist build rmdir /s /q build
 if exist dist\RPA_Expedicao.exe del /q dist\RPA_Expedicao.exe
 
-echo [3] Iniciando compilacao (isso pode demorar 1-2 minutos)...
+echo [3] Criando diretório temporário...
+if not exist C:\Temp mkdir C:\Temp
+
+echo [4] Iniciando compilacao (isso pode demorar 1-2 minutos)...
 :: Comando PyInstaller
 :: --onefile: Cria um unico .exe
 :: --windowed: Oculta o terminal preto
 :: --name: Nome do arquivo final
 :: --add-data: Inclui arquivos e pastas no executavel (formato Origem;Destino)
 :: --runtime-tmpdir: Usa um diretorio temporario sem espacos para evitar erro de DLL
-if not exist C:\Temp mkdir C:\Temp
 python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." --runtime-tmpdir=C:\Temp app.py
 
 if errorlevel 1 (
