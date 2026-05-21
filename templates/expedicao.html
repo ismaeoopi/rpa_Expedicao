@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logistica - V.1.0.2</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER COM SAUDAÇÃO DINÂMICA */
+        .header {
+            background: linear-gradient(135deg, #1a3a52 0%, #0d2540 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #00d4ff;
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #0066cc;
+            text-shadow: none;
+        }
+
+        .header h1 .nome {
+            color: #ff6600;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #5a6c7d;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* GRID DE CARDS */
+        .grid-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* CARDS */
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 102, 204, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 32px rgba(0, 102, 204, 0.2);
+            border-color: rgba(0, 102, 204, 0.3);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #0066cc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #0066cc, #0052a3);
+            border-radius: 2px;
+        }
+
+        /* BOTÕES */
+        .btn {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.3s ease;
+            z-index: 0;
+        }
+
+        .btn:not(:disabled):hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066ff 0%, #0050cc 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+        }
+
+        .btn-primary:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* BOTÕES DESATIVADOS */
+        .btn:disabled {
+            background: linear-gradient(135deg, #3a3f50 0%, #2a2f40 100%);
+            color: #7a7f90;
+            cursor: not-allowed;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0.6;
+        }
+
+        .btn:disabled::after {
+            content: ' (Selecione um arquivo Excel)';
+            font-size: 12px;
+            display: block;
+        }
+
+        /* ARQUIVO STATUS */
+        .file-status {
+            margin-top: 12px;
+            padding: 12px 14px;
+            font-size: 13px;
+            border-radius: 6px;
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border-left: 3px solid #4caf50;
+            word-break: break-all;
+            font-weight: 500;
+        }
+
+        .file-status.empty {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+            border-left-color: #ff9800;
+        }
+
+        /* INPUT GROUPS */
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #a0c4d4;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 102, 204, 0.3);
+            background-color: #ffffff;
+            color: #2c3e50;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 12px rgba(0, 102, 204, 0.2);
+            background-color: #ffffff;
+        }
+
+        .input-group input::placeholder {
+            color: #95a5a6;
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 102, 204, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 102, 204, 0.15);
+        }
+
+        .console-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-box::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb {
+            background: rgba(0, 102, 204, 0.3);
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 102, 204, 0.5);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+            word-break: break-word;
+        }
+
+        .log-error {
+            color: #ff3333;
+            font-weight: 600;
+        }
+
+        .log-success {
+            color: #33ff33;
+            font-weight: 600;
+        }
+
+        #status-rpa {
+            background: rgba(255, 193, 7, 0.15);
+            padding: 6px 12px;
+            border-radius: 4px;
+            color: #ffc107;
+            font-weight: 700;
+            min-width: 120px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        #status-rpa.finalizado {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+
+        #status-rpa.erro {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            .grid-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .header {
+                padding: 30px 20px;
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER COM SAUDAÇÃO DINÂMICA -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span id="saudacao-texto">Carregando</span>
+                    <span class="nome" id="saudacao-nome">...</span>
+                </h1>
+                <p>🚀 Painel de Controle - Módulo Expedição</p>
+            </div>
+            <a href="/" class="btn-voltar">← Voltar ao Início</a>
+        </div>
+
+        <!-- GRID DE CARDS -->
+        <div class="grid-actions">
+            <!-- CARD 1: PROCESSOS VIA EXCEL -->
+            <div class="card">
+                <h3>Processos via Planilha Excel</h3>
+                <button class="btn btn-secondary" onclick="selecionarArquivo()">
+                    📁 Selecionar Arquivo Excel
+                </button>
+                <div id="caminho-excel-txt" class="file-status empty">
+                    Nenhum arquivo selecionado
+                </div>
+                
+                <div class="input-group" style="margin-top: 15px;">
+                    <label for="dados-colados">Ou cole os dados do Excel aqui (Remessa e UC)</label>
+                    <textarea id="dados-colados" rows="3" placeholder="Cole aqui os dados copiados do Excel..."
+                              oninput="verificarEstadoBotoes()"
+                              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 102, 204, 0.3); background-color: #ffffff; color: #2c3e50; font-size: 13px; resize: vertical;"></textarea>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn-primary" id="btn-opcao1" onclick="executarOpcao(1)" disabled>
+                        1️⃣ Seleção via UC
+                    </button>
+                    <button class="btn btn-primary" id="btn-opcao2" onclick="executarOpcao(2)" disabled>
+                        2️⃣ Confirmar Picking
+                    </button>
+                    <button class="btn btn-primary" id="btn-opcao3" onclick="executarOpcao(3)" disabled>
+                        3️⃣ Saída de Mercadoria
+                    </button>
+                </div>
+            </div>
+
+            <!-- CARD 2: ETIQUETAS JBS -->
+            <div class="card">
+                <h3>Etiquetas & PDFs JBS</h3>
+                
+                <!-- Seleção de Pasta de Destino -->
+                <button class="btn btn-secondary" onclick="selecionarPasta()">
+                    📁 Selecionar Pasta de Destino
+                </button>
+                <div id="caminho-pasta-txt" class="file-status empty">
+                    Nenhuma pasta selecionada
+                </div>
+                
+                <!-- Entrada de Remessas -->
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="remessas-jbs">Números das Remessas</label>
+                    <input
+                        type="text"
+                        id="remessas-jbs"
+                        placeholder="Ex: 80123456, 80123457, 80123458"
+                    />
+                </div>
+                
+                <button class="btn btn-primary" onclick="executarOpcao4()">
+                    4️⃣ Gerar PDFs para JBS
+                </button>
+            </div>
+        </div>
+
+        <!-- CONSOLE DE EXECUÇÃO -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa">Aguardando ação</span>
+            </div>
+            <div class="console-box" id="console-box"></div>
+        </div>
+    </div>
+
+    <script>
+        let caminhoExcelSelecionado = "";
+        let caminhoPastaSelecionada = "";
+
+        // ============== INICIALIZAÇÃO ==============
+        function inicializar() {
+            fetch('/api/inicializar')
+                .then(res => res.json())
+                .then(data => {
+                    // Saudação dinâmica
+                    document.getElementById('saudacao-texto').innerText = data.saudacao;
+                    document.getElementById('saudacao-nome').innerText = data.nome;
+                    adicionarLog("✅ Sistema pronto. Atualizações do Git verificadas no boot.");
+                })
+                .catch(err => {
+                    console.error('Erro ao inicializar:', err);
+                    adicionarLog("❌ Erro ao conectar com o servidor.");
+                });
+        }
+
+        // ============== LOGS ==============
+        function adicionarLog(msg, tipo = '') {
+            const box = document.getElementById('console-box');
+            const p = document.createElement('p');
+            if (tipo) p.className = tipo;
+            p.innerText = msg;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // ============== SELEÇÃO DE ARQUIVO EXCEL ==============
+        function selecionarArquivo() {
+            fetch('/api/selecionar_arquivo')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.caminho) {
+                        caminhoExcelSelecionado = data.caminho;
+                        const statusElement = document.getElementById('caminho-excel-txt');
+                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.classList.remove('empty');
+
+                        // Ativar botões
+                        verificarEstadoBotoes();
+
+                        adicionarLog(`📂 Planilha carregada: ${data.caminho}`);
+                    } else {
+                        adicionarLog("⚠️ Nenhum arquivo foi selecionado.");
+                    }
+                });
+        }
+
+        // ============== SELEÇÃO DE PASTA PARA JBS ==============
+        function selecionarPasta() {
+            fetch('/api/selecionar_pasta')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.caminho) {
+                        caminhoPastaSelecionada = data.caminho;
+                        const statusElement = document.getElementById('caminho-pasta-txt');
+                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.classList.remove('empty');
+
+                        adicionarLog(`📁 Pasta de destino selecionada: ${data.caminho}`);
+                    } else {
+                        adicionarLog("⚠️ Nenhuma pasta foi selecionada.");
+                    }
+                });
+        }
+
+        // ============== CONTROLE DE BOTÕES ==============
+        function verificarEstadoBotoes() {
+            const temArquivo = caminhoExcelSelecionado !== "";
+            const temDadosColados = document.getElementById('dados-colados').value.trim() !== "";
+            const ativo = temArquivo || temDadosColados;
+            
+            document.getElementById('btn-opcao1').disabled = !ativo;
+            document.getElementById('btn-opcao2').disabled = !ativo;
+            document.getElementById('btn-opcao3').disabled = !ativo;
+        }
+
+        function travarBotoes(status) {
+            document.getElementById('btn-opcao1').disabled = status;
+            document.getElementById('btn-opcao2').disabled = status;
+            document.getElementById('btn-opcao3').disabled = status;
+            document.querySelectorAll('.btn-secondary').forEach(b => b.disabled = status);
+            document.getElementById('dados-colados').disabled = status;
+
+            // Restaurar estado correto se for destravar
+            if (!status) {
+                verificarEstadoBotoes();
+            }
+        }
+
+        // ============== MONITORAMENTO DE LOGS ==============
+        let intervoLog;
+        function iniciarMonitoramentoLogs() {
+            intervoLog = setInterval(() => {
+                fetch('/api/logs')
+                    .then(res => res.json())
+                    .then(data => {
+                        data.novos_logs.forEach(log => {
+                            if (log.includes("❌") || log.includes("ERRO"))
+                                adicionarLog(log, 'log-error');
+                            else if (log.includes("✅"))
+                                adicionarLog(log, 'log-success');
+                            else
+                                adicionarLog(log);
+                        });
+
+                        if (!data.rodando) {
+                            clearInterval(intervoLog);
+                            travarBotoes(false);
+                            const statusEl = document.getElementById('status-rpa');
+                            statusEl.innerText = "✅ Finalizado";
+                            statusEl.classList.add('finalizado');
+                            statusEl.classList.remove('executando');
+                        }
+                    });
+            }, 400);
+        }
+
+        // ============== EXECUÇÃO ==============
+        function executarOpcao(opcao) {
+            const dadosColados = document.getElementById('dados-colados').value;
+            
+            travarBotoes(true);
+            const statusEl = document.getElementById('status-rpa');
+            statusEl.innerText = "⏳ Executando...";
+            statusEl.classList.remove('finalizado', 'erro');
+            statusEl.classList.add('executando');
+
+            fetch('/api/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ opcao: opcao, caminho: caminhoExcelSelecionado, dados_colados: dadosColados })
+            })
+                .then(() => iniciarMonitoramentoLogs())
+                .catch(err => {
+                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
+                    travarBotoes(false);
+                });
+        }
+
+        function executarOpcao4() {
+            const inputRemessas = document.getElementById('remessas-jbs').value;
+            if (!inputRemessas.trim()) {
+                alert("⚠️ Por favor, digite ao menos uma remessa.");
+                return;
+            }
+            if (!caminhoPastaSelecionada) {
+                alert("⚠️ Por favor, selecione a pasta de destino para os PDFs.");
+                return;
+            }
+            travarBotoes(true);
+            const statusEl = document.getElementById('status-rpa');
+            statusEl.innerText = "⏳ Processando JBS...";
+            statusEl.classList.remove('finalizado', 'erro');
+            statusEl.classList.add('executando');
+
+            fetch('/api/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ opcao: 4, remessas: inputRemessas, caminho_pasta: caminhoPastaSelecionada })
+            })
+                .then(() => iniciarMonitoramentoLogs())
+                .catch(err => {
+                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
+                    travarBotoes(false);
+                });
+        }
+
+        // Inicializar ao carregar a página
+        window.addEventListener('load', inicializar);
+    </script>
+</body>
+</html>

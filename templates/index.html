@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPA Logistica - V.1.0.2</title>
+    <title>RPA Logistica - Início</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,30 +17,29 @@
             color: #2c3e50;
             padding: 0;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow-x: hidden;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 900px;
+            width: 100%;
             padding: 30px 20px;
         }
 
-        /* HEADER COM SAUDAÇÃO DINÂMICA */
+        /* HEADER */
         .header {
-            background: linear-gradient(135deg, #1a3a52 0%, #0d2540 100%);
-            padding: 40px 30px;
-            border-radius: 12px;
-            margin-bottom: 35px;
-            border-left: 6px solid #00d4ff;
-            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
-            animation: slideInDown 0.6s ease-out;
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
         }
 
-        @keyframes slideInDown {
+        @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-30px);
             }
             to {
                 opacity: 1;
@@ -49,47 +48,65 @@
         }
 
         .header h1 {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #0066cc;
-            text-shadow: none;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a3a52;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
         }
 
         .header h1 .nome {
-            color: #ff6600;
-            font-weight: 700;
+            color: #0066cc;
+            background: -webkit-linear-gradient(45deg, #0066cc, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .header p {
-            font-size: 15px;
+            font-size: 18px;
             color: #5a6c7d;
-            margin: 0;
+            font-weight: 500;
         }
 
-        /* GRID DE CARDS */
-        .grid-actions {
+        /* GRID DE MÓDULOS */
+        .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 20px;
         }
 
-        /* CARDS */
-        .card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            padding: 28px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 102, 204, 0.15);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            animation: fadeInUp 0.6s ease-out;
+        /* CARDS DE MÓDULO */
+        .module-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            animation: fadeInUp 0.8s ease-out both;
+        }
+
+        .module-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .module-card:nth-child(2) {
+            animation-delay: 0.3s;
         }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -97,268 +114,163 @@
             }
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 32px rgba(0, 102, 204, 0.2);
-            border-color: rgba(0, 102, 204, 0.3);
-        }
-
-        .card h3 {
-            margin-bottom: 20px;
-            font-size: 18px;
-            font-weight: 600;
-            color: #0066cc;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card h3::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: linear-gradient(180deg, #0066cc, #0052a3);
-            border-radius: 2px;
-        }
-
-        /* BOTÕES */
-        .btn {
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
+        .module-card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #0066cc, #00d4ff);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .module-card.estoque::before {
+            background: linear-gradient(90deg, #ff9800, #ffc107);
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 102, 204, 0.15);
+        }
+
+        .module-card.estoque:hover {
+            box-shadow: 0 20px 40px rgba(255, 152, 0, 0.15);
+        }
+
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .module-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            background: -webkit-linear-gradient(45deg, #1a3a52, #0066cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.3s ease;
+        }
+
+        .module-card.estoque .module-icon {
+            background: -webkit-linear-gradient(45deg, #e65100, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .module-card:hover .module-icon {
+            transform: scale(1.1);
+        }
+
+        .module-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .module-desc {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+        
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ffe0b2;
+            color: #e65100;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            transition: left 0.3s ease;
-            z-index: 0;
-        }
-
-        .btn:not(:disabled):hover::before {
-            left: 100%;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #0066ff 0%, #0050cc 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
-        }
-
-        .btn-primary:not(:disabled):hover {
-            box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .btn-primary:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary:not(:disabled):hover {
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-            transform: translateY(-2px);
-        }
-
-        /* BOTÕES DESATIVADOS */
-        .btn:disabled {
-            background: linear-gradient(135deg, #3a3f50 0%, #2a2f40 100%);
-            color: #7a7f90;
-            cursor: not-allowed;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            opacity: 0.6;
-        }
-
-        .btn:disabled::after {
-            content: ' (Selecione um arquivo Excel)';
-            font-size: 12px;
-            display: block;
-        }
-
-        /* ARQUIVO STATUS */
-        .file-status {
-            margin-top: 12px;
-            padding: 12px 14px;
-            font-size: 13px;
-            border-radius: 6px;
-            background: rgba(76, 175, 80, 0.1);
-            color: #4caf50;
-            border-left: 3px solid #4caf50;
-            word-break: break-all;
-            font-weight: 500;
-        }
-
-        .file-status.empty {
-            background: rgba(255, 152, 0, 0.1);
-            color: #ff9800;
-            border-left-color: #ff9800;
-        }
-
-        /* INPUT GROUPS */
-        .input-group {
-            margin-bottom: 18px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #a0c4d4;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(0, 102, 204, 0.3);
-            background-color: #ffffff;
-            color: #2c3e50;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 12px rgba(0, 102, 204, 0.2);
-            background-color: #ffffff;
-        }
-
-        .input-group input::placeholder {
-            color: #95a5a6;
-        }
-
-        /* CONSOLE */
-        .console-container {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(0, 102, 204, 0.15);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            animation: fadeInUp 0.8s ease-out 0.2s both;
-        }
-
-        .console-header {
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #5a6c7d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .console-box {
-            height: 250px;
-            overflow-y: auto;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-            font-size: 12px;
-            color: #2c3e50;
-            line-height: 1.6;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid rgba(0, 102, 204, 0.15);
-        }
-
-        .console-box::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .console-box::-webkit-scrollbar-track {
-            background: #e9ecef;
-            border-radius: 3px;
-        }
-
-        .console-box::-webkit-scrollbar-thumb {
-            background: rgba(0, 102, 204, 0.3);
-            border-radius: 3px;
-        }
-
-        .console-box::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 102, 204, 0.5);
-        }
-
-        .console-box p {
-            margin: 4px 0;
-            word-break: break-word;
-        }
-
-        .log-error {
-            color: #ff3333;
-            font-weight: 600;
-        }
-
-        .log-success {
-            color: #33ff33;
-            font-weight: 600;
-        }
-
-        #status-rpa {
-            background: rgba(255, 193, 7, 0.15);
-            padding: 6px 12px;
-            border-radius: 4px;
-            color: #ffc107;
-            font-weight: 700;
-            min-width: 120px;
-            text-align: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
             transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
         }
 
-        #status-rpa.finalizado {
-            background: rgba(76, 175, 80, 0.15);
-            color: #4caf50;
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
-        #status-rpa.erro {
-            background: rgba(244, 67, 54, 0.15);
-            color: #f44336;
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .modal-desc {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
         }
 
         /* RESPONSIVIDADE */
         @media (max-width: 768px) {
-            .grid-actions {
-                grid-template-columns: 1fr;
-            }
-
             .header h1 {
-                font-size: 24px;
+                font-size: 32px;
             }
-
-            .container {
-                padding: 20px 15px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .header {
+            
+            .module-card {
                 padding: 30px 20px;
             }
         }
@@ -366,89 +278,45 @@
 </head>
 <body>
     <div class="container">
-        <!-- HEADER COM SAUDAÇÃO DINÂMICA -->
+        <!-- HEADER -->
         <div class="header">
             <h1>
-                <span id="saudacao-texto">Carregando</span>
-                <span class="nome" id="saudacao-nome">...</span>
+                <span id="saudacao-texto">Carregando...</span>,
+                <span class="nome" id="saudacao-nome"></span> 👋
             </h1>
-            <p>🚀 Painel de Controle de Automações Logísticas</p>
+            <p>Selecione o módulo que deseja acessar</p>
         </div>
 
-        <!-- GRID DE CARDS -->
-        <div class="grid-actions">
-            <!-- CARD 1: PROCESSOS VIA EXCEL -->
-            <div class="card">
-                <h3>Processos via Planilha Excel</h3>
-                <button class="btn btn-secondary" onclick="selecionarArquivo()">
-                    📁 Selecionar Arquivo Excel
-                </button>
-                <div id="caminho-excel-txt" class="file-status empty">
-                    Nenhum arquivo selecionado
-                </div>
-                
-                <div class="input-group" style="margin-top: 15px;">
-                    <label for="dados-colados">Ou cole os dados do Excel aqui (Remessa e UC)</label>
-                    <textarea id="dados-colados" rows="3" placeholder="Cole aqui os dados copiados do Excel..."
-                              oninput="verificarEstadoBotoes()"
-                              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 102, 204, 0.3); background-color: #ffffff; color: #2c3e50; font-size: 13px; resize: vertical;"></textarea>
-                </div>
+        <!-- GRID DE MÓDULOS -->
+        <div class="modules-grid">
+            <!-- EXPEDIÇÃO -->
+            <a href="/expedicao" class="module-card">
+                <div class="module-icon">🚛</div>
+                <h2 class="module-title">Expedição</h2>
+                <p class="module-desc">Automações para Picking, Seleção de UC, Saída de Mercadorias e geração de etiquetas.</p>
+            </a>
 
-                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn btn-primary" id="btn-opcao1" onclick="executarOpcao(1)" disabled>
-                        1️⃣ Seleção via UC
-                    </button>
-                    <button class="btn btn-primary" id="btn-opcao2" onclick="executarOpcao(2)" disabled>
-                        2️⃣ Confirmar Picking
-                    </button>
-                    <button class="btn btn-primary" id="btn-opcao3" onclick="executarOpcao(3)" disabled>
-                        3️⃣ Saída de Mercadoria
-                    </button>
-                </div>
-            </div>
-
-            <!-- CARD 2: ETIQUETAS JBS -->
-            <div class="card">
-                <h3>Etiquetas & PDFs JBS</h3>
-                
-                <!-- Seleção de Pasta de Destino -->
-                <button class="btn btn-secondary" onclick="selecionarPasta()">
-                    📁 Selecionar Pasta de Destino
-                </button>
-                <div id="caminho-pasta-txt" class="file-status empty">
-                    Nenhuma pasta selecionada
-                </div>
-                
-                <!-- Entrada de Remessas -->
-                <div class="input-group" style="margin-top: 20px;">
-                    <label for="remessas-jbs">Números das Remessas</label>
-                    <input
-                        type="text"
-                        id="remessas-jbs"
-                        placeholder="Ex: 80123456, 80123457, 80123458"
-                    />
-                </div>
-                
-                <button class="btn btn-primary" onclick="executarOpcao4()">
-                    4️⃣ Gerar PDFs para JBS
-                </button>
+            <!-- ESTOQUE -->
+            <div class="module-card estoque" onclick="abrirModal()">
+                <div class="badge">Em breve</div>
+                <div class="module-icon">📦</div>
+                <h2 class="module-title">Estoque</h2>
+                <p class="module-desc">Automações para Inventário, Transferências, Entradas e gestão de materiais.</p>
             </div>
         </div>
+    </div>
 
-        <!-- CONSOLE DE EXECUÇÃO -->
-        <div class="console-container">
-            <div class="console-header">
-                <span>📋 Console de Execução (RPA Logs)</span>
-                <span id="status-rpa">Aguardando ação</span>
-            </div>
-            <div class="console-box" id="console-box"></div>
+    <!-- MODAL ESTOQUE -->
+    <div class="modal-overlay" id="modal-estoque">
+        <div class="modal-content">
+            <div class="modal-icon">🚧</div>
+            <h3 class="modal-title">Em Desenvolvimento</h3>
+            <p class="modal-desc">O módulo de Estoque ainda está em desenvolvimento. Novas automações estarão disponíveis em breve!</p>
+            <button class="modal-btn" onclick="fecharModal()">Entendi</button>
         </div>
     </div>
 
     <script>
-        let caminhoExcelSelecionado = "";
-        let caminhoPastaSelecionada = "";
-
         // ============== INICIALIZAÇÃO ==============
         function inicializar() {
             fetch('/api/inicializar')
@@ -457,164 +325,29 @@
                     // Saudação dinâmica
                     document.getElementById('saudacao-texto').innerText = data.saudacao;
                     document.getElementById('saudacao-nome').innerText = data.nome;
-                    adicionarLog("✅ Sistema pronto. Atualizações do Git verificadas no boot.");
                 })
                 .catch(err => {
                     console.error('Erro ao inicializar:', err);
-                    adicionarLog("❌ Erro ao conectar com o servidor.");
+                    document.getElementById('saudacao-texto').innerText = "Bem-vindo";
+                    document.getElementById('saudacao-nome').innerText = "Usuário";
                 });
         }
 
-        // ============== LOGS ==============
-        function adicionarLog(msg, tipo = '') {
-            const box = document.getElementById('console-box');
-            const p = document.createElement('p');
-            if (tipo) p.className = tipo;
-            p.innerText = msg;
-            box.appendChild(p);
-            box.scrollTop = box.scrollHeight;
+        // ============== MODAL ==============
+        function abrirModal() {
+            document.getElementById('modal-estoque').classList.add('active');
         }
 
-        // ============== SELEÇÃO DE ARQUIVO EXCEL ==============
-        function selecionarArquivo() {
-            fetch('/api/selecionar_arquivo')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.caminho) {
-                        caminhoExcelSelecionado = data.caminho;
-                        const statusElement = document.getElementById('caminho-excel-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\').pop()}`;
-                        statusElement.classList.remove('empty');
-
-                        // Ativar botões
-                        verificarEstadoBotoes();
-
-                        adicionarLog(`📂 Planilha carregada: ${data.caminho}`);
-                    } else {
-                        adicionarLog("⚠️ Nenhum arquivo foi selecionado.");
-                    }
-                });
+        function fecharModal() {
+            document.getElementById('modal-estoque').classList.remove('active');
         }
 
-        // ============== SELEÇÃO DE PASTA PARA JBS ==============
-        function selecionarPasta() {
-            fetch('/api/selecionar_pasta')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.caminho) {
-                        caminhoPastaSelecionada = data.caminho;
-                        const statusElement = document.getElementById('caminho-pasta-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\').pop()}`;
-                        statusElement.classList.remove('empty');
-
-                        adicionarLog(`📁 Pasta de destino selecionada: ${data.caminho}`);
-                    } else {
-                        adicionarLog("⚠️ Nenhuma pasta foi selecionada.");
-                    }
-                });
-        }
-
-        // ============== CONTROLE DE BOTÕES ==============
-        function verificarEstadoBotoes() {
-            const temArquivo = caminhoExcelSelecionado !== "";
-            const temDadosColados = document.getElementById('dados-colados').value.trim() !== "";
-            const ativo = temArquivo || temDadosColados;
-            
-            document.getElementById('btn-opcao1').disabled = !ativo;
-            document.getElementById('btn-opcao2').disabled = !ativo;
-            document.getElementById('btn-opcao3').disabled = !ativo;
-        }
-
-        function travarBotoes(status) {
-            document.getElementById('btn-opcao1').disabled = status;
-            document.getElementById('btn-opcao2').disabled = status;
-            document.getElementById('btn-opcao3').disabled = status;
-            document.querySelectorAll('.btn-secondary').forEach(b => b.disabled = status);
-            document.getElementById('dados-colados').disabled = status;
-
-            // Restaurar estado correto se for destravar
-            if (!status) {
-                verificarEstadoBotoes();
+        // Fechar modal ao clicar fora
+        document.getElementById('modal-estoque').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModal();
             }
-        }
-
-        // ============== MONITORAMENTO DE LOGS ==============
-        let intervoLog;
-        function iniciarMonitoramentoLogs() {
-            intervoLog = setInterval(() => {
-                fetch('/api/logs')
-                    .then(res => res.json())
-                    .then(data => {
-                        data.novos_logs.forEach(log => {
-                            if (log.includes("❌") || log.includes("ERRO"))
-                                adicionarLog(log, 'log-error');
-                            else if (log.includes("✅"))
-                                adicionarLog(log, 'log-success');
-                            else
-                                adicionarLog(log);
-                        });
-
-                        if (!data.rodando) {
-                            clearInterval(intervoLog);
-                            travarBotoes(false);
-                            const statusEl = document.getElementById('status-rpa');
-                            statusEl.innerText = "✅ Finalizado";
-                            statusEl.classList.add('finalizado');
-                            statusEl.classList.remove('executando');
-                        }
-                    });
-            }, 400);
-        }
-
-        // ============== EXECUÇÃO ==============
-        function executarOpcao(opcao) {
-            const dadosColados = document.getElementById('dados-colados').value;
-            
-            travarBotoes(true);
-            const statusEl = document.getElementById('status-rpa');
-            statusEl.innerText = "⏳ Executando...";
-            statusEl.classList.remove('finalizado', 'erro');
-            statusEl.classList.add('executando');
-
-            fetch('/api/executar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ opcao: opcao, caminho: caminhoExcelSelecionado, dados_colados: dadosColados })
-            })
-                .then(() => iniciarMonitoramentoLogs())
-                .catch(err => {
-                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
-                    travarBotoes(false);
-                });
-        }
-
-        function executarOpcao4() {
-            const inputRemessas = document.getElementById('remessas-jbs').value;
-            if (!inputRemessas.trim()) {
-                alert("⚠️ Por favor, digite ao menos uma remessa.");
-                return;
-            }
-            if (!caminhoPastaSelecionada) {
-                alert("⚠️ Por favor, selecione a pasta de destino para os PDFs.");
-                return;
-            }
-            travarBotoes(true);
-            const statusEl = document.getElementById('status-rpa');
-            statusEl.innerText = "⏳ Processando JBS...";
-            statusEl.classList.remove('finalizado', 'erro');
-            statusEl.classList.add('executando');
-
-            fetch('/api/executar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ opcao: 4, remessas: inputRemessas, caminho_pasta: caminhoPastaSelecionada })
-            })
-                .then(() => iniciarMonitoramentoLogs())
-                .catch(err => {
-                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
-                    travarBotoes(false);
-                });
-        }
+        });
 
         // Inicializar ao carregar a página
         window.addEventListener('load', inicializar);
