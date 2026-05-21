@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logistica - Estoque</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #2e1a47 0%, #1a0f2e 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #ff9800;
+            box-shadow: 0 8px 32px rgba(255, 152, 0, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ff9800;
+        }
+
+        .header h1 .nome {
+            color: #ffc107;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #aeb8c2;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* CARDS */
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(255, 152, 0, 0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e65100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #ff9800, #e65100);
+            border-radius: 2px;
+        }
+
+        /* BOTÕES */
+        .btn {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e65100 0%, #bf360c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(230, 81, 0, 0.3);
+            margin-top: auto;
+        }
+
+        .btn-primary:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(230, 81, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: linear-gradient(135deg, #cfd8dc 0%, #b0bec5 100%);
+            color: #78909c;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* ARQUIVO STATUS */
+        .file-status {
+            margin-top: 15px;
+            padding: 12px 14px;
+            font-size: 13px;
+            border-radius: 6px;
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border-left: 3px solid #4caf50;
+            word-break: break-all;
+            font-weight: 500;
+        }
+
+        .file-status.empty {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+            border-left-color: #ff9800;
+        }
+
+        /* DASHBOARD PACKLIST */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .dash-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-3px);
+            border-color: #ff9800;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.1);
+        }
+
+        .dash-card .icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .dash-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .dash-card .label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .top-items {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .top-items h4 {
+            font-size: 14px;
+            color: #5a6c7d;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 0;
+            color: #2c3e50;
+        }
+
+        /* LOADER */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff9800;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span id="saudacao-texto">Carregando</span>
+                    <span class="nome" id="saudacao-nome">...</span>
+                </h1>
+                <p>📦 Painel de Controle - Módulo Estoque</p>
+            </div>
+            <a href="/" class="btn-voltar">← Voltar ao Início</a>
+        </div>
+
+        <div class="grid-layout">
+            <!-- AÇÕES -->
+            <div class="card">
+                <h3>Visualizador de Packlist</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">
+                    Faça o upload da planilha para ver o resumo de volumes, pesos e itens da carga.
+                </p>
+                <button class="btn btn-secondary" onclick="selecionarArquivo()">
+                    📁 Selecionar Packlist (Excel)
+                </button>
+                <div id="caminho-excel-txt" class="file-status empty">
+                    Nenhum arquivo selecionado
+                </div>
+
+                <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center;">
+                    <div id="loader" class="loader"></div>
+                    <button id="btn-analisar" class="btn btn-primary" onclick="analisarPacklist()" disabled>
+                        📊 Analisar Carga
+                    </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="card">
+                <h3>Resumo da Carga</h3>
+                
+                <div id="dashboard-content" style="opacity: 0.5; pointer-events: none; transition: opacity 0.3s;">
+                    <div class="dashboard-grid">
+                        <div class="dash-card">
+                            <div class="icon">⚖️</div>
+                            <div class="value" id="val-peso">0.00</div>
+                            <div class="label">Peso Total (KG)</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="icon">🧊</div>
+                            <div class="value" id="val-vol">0.000</div>
+                            <div class="label">Volume Total (m³)</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="icon">🔢</div>
+                            <div class="value" id="val-qtd">0</div>
+                            <div class="label">Quantidade Total</div>
+                        </div>
+                        <div class="dash-card">
+                            <div class="icon">📋</div>
+                            <div class="value" id="val-itens">0</div>
+                            <div class="label">Itens Únicos</div>
+                        </div>
+                    </div>
+
+                    <div class="top-items" id="top-items-container" style="display: none;">
+                        <h4>Top Itens na Carga</h4>
+                        <div id="top-items-list"></div>
+                    </div>
+                    
+                    <p id="colunas-info" style="font-size: 11px; color: #95a5a6; margin-top: 15px; text-align: center;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let caminhoExcel = "";
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            fetch('/api/inicializar')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('saudacao-texto').innerText = data.saudacao;
+                    document.getElementById('saudacao-nome').innerText = data.nome;
+                })
+                .catch(err => console.error(err));
+        });
+
+        function selecionarArquivo() {
+            fetch('/api/selecionar_arquivo')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.caminho) {
+                        caminhoExcel = data.caminho;
+                        const statusElement = document.getElementById('caminho-excel-txt');
+                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.classList.remove('empty');
+                        
+                        document.getElementById('btn-analisar').disabled = false;
+                        
+                        // Auto-analisar
+                        analisarPacklist();
+                    }
+                });
+        }
+
+        function analisarPacklist() {
+            if (!caminhoExcel) return;
+
+            document.getElementById('btn-analisar').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            
+            fetch('/api/analisar_packlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ caminho: caminhoExcel })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('btn-analisar').style.display = 'block';
+
+                if (data.status === 'error') {
+                    alert('Erro ao analisar: ' + data.message);
+                    return;
+                }
+
+                const d = data.data;
+                
+                // Animar números
+                animarNumero('val-peso', d.total_peso);
+                animarNumero('val-vol', d.total_volume);
+                animarNumero('val-qtd', d.total_quantidade);
+                animarNumero('val-itens', d.total_itens_unicos);
+
+                // Top itens
+                if (d.top_itens && d.top_itens.length > 0) {
+                    const cont = document.getElementById('top-items-list');
+                    cont.innerHTML = '';
+                    d.top_itens.forEach(item => {
+                        cont.innerHTML += `<div class="item-row"><span>${item.item}</span><strong>${item.qtd}</strong></div>`;
+                    });
+                    document.getElementById('top-items-container').style.display = 'block';
+                }
+
+                document.getElementById('colunas-info').innerText = 
+                    `Lido ${d.total_linhas} linhas. Colunas base: Peso(${d.colunas_identificadas.peso}), Volume(${d.colunas_identificadas.volume})`;
+                
+                document.getElementById('dashboard-content').style.opacity = '1';
+                document.getElementById('dashboard-content').style.pointerEvents = 'auto';
+            })
+            .catch(err => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('btn-analisar').style.display = 'block';
+                alert('Erro na requisição: ' + err);
+            });
+        }
+
+        function animarNumero(id, final) {
+            const el = document.getElementById(id);
+            let start = 0;
+            const duration = 1000;
+            const stepTime = 20;
+            const steps = duration / stepTime;
+            const inc = final / steps;
+
+            const timer = setInterval(() => {
+                start += inc;
+                if (start >= final) {
+                    clearInterval(timer);
+                    el.innerText = final.toLocaleString('pt-BR');
+                } else {
+                    el.innerText = start.toLocaleString('pt-BR', {maximumFractionDigits: 2});
+                }
+            }, stepTime);
+        }
+    </script>
+</body>
+</html>

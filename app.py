@@ -11,6 +11,7 @@ from src.expedicao.picking import processarPicking
 from src.expedicao.selecao_uc import processarRemessaComUc
 from src.expedicao.sm_remessa import smRemessa
 from src.expedicao.fip_etiquetas import salvarFIP
+from src.estoque.packlist import analisar_planilha_packlist
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
 try:
@@ -36,6 +37,10 @@ def index():
 @app.route('/expedicao')
 def expedicao():
     return render_template('expedicao.html')
+
+@app.route('/estoque')
+def estoque():
+    return render_template('estoque.html')
 
 @app.route('/api/inicializar', methods=['GET'])
 def inicializar():
@@ -74,6 +79,16 @@ def selecionar_pasta():
         log_sys.write("⚠️ Nenhuma pasta foi selecionada.")
     
     return jsonify({"caminho": caminho})
+
+@app.route('/api/analisar_packlist', methods=['POST'])
+def analisar_packlist():
+    dados = request.json
+    caminho = dados.get('caminho', '')
+    if not caminho or not os.path.exists(caminho):
+        return jsonify({"status": "error", "message": "Arquivo inválido ou não selecionado."}), 400
+    
+    resultado = analisar_planilha_packlist(caminho)
+    return jsonify(resultado)
 
 @app.route('/api/executar', methods=['POST'])
 def executar():
