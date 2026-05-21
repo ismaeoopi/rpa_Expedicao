@@ -9,7 +9,7 @@ from src.utils.sap_utils import conectar_sap
 import base64
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
-from logo import LOGO_BASE64
+from .logo import LOGO_BASE64
 
 def process_shipment(session, shipment):
     session.findById("wnd[0]/tbar[0]/okcd").text = "/nvl03n"
