@@ -55,9 +55,10 @@ python -m PyInstaller ^
     --specpath "." ^
     --runtime-tmpdir=C:\Temp ^
     --add-data "templates;templates" ^
-    --add-data "app.py:." ^
-    --add-data "updater.py:." ^
-    --add-data "version.txt:." ^
+    --add-data "src;src" ^
+    --add-data "app.py;." ^
+    --add-data "updater.py;." ^
+    --add-data "version.txt;." ^
     --hidden-import=pandas ^
     --hidden-import=openpyxl ^
     --hidden-import=win32com ^

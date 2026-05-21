@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('templates', 'templates'), ('app.py', '.'), ('updater.py', '.'), ('version.txt', '.')]
+datas = [('templates', 'templates'), ('src', 'src'), ('app.py', '.'), ('updater.py', '.'), ('version.txt', '.')]
 binaries = []
 hiddenimports = ['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter', 'urllib']
 tmp_ret = collect_all('reportlab')
