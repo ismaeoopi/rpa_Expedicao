@@ -116,6 +116,21 @@ def buscar_logs():
     })
 
 if __name__ == '__main__':
+    
+    import socket
+    import webbrowser
+    
+    # 🔒 Checa se já tem outra instância rodando
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind(("127.0.0.1", 5000))
+        s.close()
+    except OSError:
+        print("⚠️  RPA Expedição já está em execução!")
+        print("👉 Abrindo a janela existente...")
+        webbrowser.open("http://127.0.0.1:5000")
+        sys.exit(0)
+
     print("=" * 60)
     print("🚛 RPA Expedição - Painel de Controle v1.0.5")
     print("=" * 60)
