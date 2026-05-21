@@ -4,6 +4,7 @@ import queue
 import win32gui
 import win32con
 import win32com.client as win32
+import win32com.client
 import pythoncom
 import pywintypes
 from src.utils.common import log_sys
