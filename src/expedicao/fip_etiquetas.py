@@ -1,10 +1,15 @@
 import os
 import openpyxl
 import win32com.client as win32
+import win32com.client
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from src.utils.common import log_sys
 from src.utils.sap_utils import conectar_sap
+import base64
+from io import BytesIO
+from reportlab.lib.utils import ImageReader
+from logo import LOGO_BASE64
 
 def process_shipment(session, shipment):
     session.findById("wnd[0]/tbar[0]/okcd").text = "/nvl03n"
@@ -75,6 +80,20 @@ def gerar_pdf_etiqueta(pasta_destino, cidade, estado, nf, uc):
     c.drawCentredString(centro_x, centroY - 60, f"NF {nf}")
     c.setFont("Helvetica", 24)
     c.drawCentredString(centro_x + centro_x - 210, 10, f"UC: {uc}")
+    try:
+        dados_imagem = base64.b64decode(LOGO_BASE64)
+        buffer_imagem = BytesIO(dados_imagem)
+        imagem_para_pdf = ImageReader(buffer_imagem)
+
+        largura_img = 150
+        altura_img = 35
+        pos_x_imagem = (largura - largura_img) / 2
+        pos_y_imagem = centroY + 250
+
+        c.drawImage(imagem_para_pdf, pos_x_imagem, pos_y_imagem,
+                    width=largura_img, height=altura_img, mask='auto')
+    except Exception as e:
+        print(f"Erro ao processar imagem: {e}")
     c.save()
     log_sys.write(f"PDF gerado com sucesso: {nome_arquivo}")
 
