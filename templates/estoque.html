@@ -393,10 +393,22 @@
                 <div class="form-group" style="margin-top: 20px;">
                     <label>Ponto de Partida</label>
                     <select id="ponto_partida" onchange="atualizarCampos()">
-                        <option value="1">Processamento Completo (Desde a CO01)</option>
-                        <option value="2">A partir da MIGO ZP1 (Apontamento)</option>
-                        <option value="3">A partir da MIGO Transferência</option>
-                        <option value="4">A partir da PRDI</option>
+                        <optgroup label="--- Processo Automático (Packlist / SAPUI5) ---">
+                            <option value="1">Processamento Completo (Desde a CO01)</option>
+                            <option value="2">Retomar: A partir da MIGO ZP1</option>
+                            <option value="3">Retomar: A partir da MIGO Transferência</option>
+                            <option value="4">Retomar: A partir da PRDI</option>
+                        </optgroup>
+                        <optgroup label="--- Processos Manuais (Outras Planilhas) ---">
+                            <option value="5">Criar Lote (MSC1N)</option>
+                            <option value="6">Alterar Lote (MSC2N)</option>
+                            <option value="7">Ajustar Fator de Conversão</option>
+                            <option value="8">Transferência MIGO (Manual 311/411)</option>
+                            <option value="9">MIGO ZP1 (Manual)</option>
+                            <option value="10">PRDI (Manual)</option>
+                            <option value="11">BRIDGE</option>
+                            <option value="12">Localizar Mon</option>
+                        </optgroup>
                     </select>
                 </div>
 
@@ -408,6 +420,30 @@
                 <div class="form-group" id="grupo_inbound" style="display: none;">
                     <label>Inbound Delivery (Global)</label>
                     <input type="text" id="inbound_global" placeholder="Ex: 18000456">
+                </div>
+
+                <div class="form-group" id="grupo_info" style="display: none;">
+                    <label>Tipo de Referência (MSC1N)</label>
+                    <select id="ui_info">
+                        <option value="1">Sem referência</option>
+                        <option value="2">Referência múltipla</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="grupo_tpmigo" style="display: none;">
+                    <label>Tipo de Transferência MIGO</label>
+                    <select id="ui_tpMigo">
+                        <option value="311">311</option>
+                        <option value="411">411</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="grupo_opt" style="display: none;">
+                    <label>Operação MIGO ZP1</label>
+                    <select id="ui_opt">
+                        <option value="1">Consumo (261)</option>
+                        <option value="2">Apontamento (ZP1)</option>
+                    </select>
                 </div>
 
                 <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
@@ -497,15 +533,30 @@
             const ponto = document.getElementById('ponto_partida').value;
             const grpOp = document.getElementById('grupo_op');
             const grpInbound = document.getElementById('grupo_inbound');
+            const grpInfo = document.getElementById('grupo_info');
+            const grpTpMigo = document.getElementById('grupo_tpmigo');
+            const grpOpt = document.getElementById('grupo_opt');
             
             grpOp.style.display = 'none';
             grpInbound.style.display = 'none';
+            grpInfo.style.display = 'none';
+            grpTpMigo.style.display = 'none';
+            grpOpt.style.display = 'none';
             
-            if (ponto == '2' || ponto == '3') {
+            if (ponto == '2' || ponto == '3' || ponto == '9') {
                 grpOp.style.display = 'block';
             }
-            if (ponto == '4') {
+            if (ponto == '4' || ponto == '10') {
                 grpInbound.style.display = 'block';
+            }
+            if (ponto == '5') {
+                grpInfo.style.display = 'block';
+            }
+            if (ponto == '8') {
+                grpTpMigo.style.display = 'block';
+            }
+            if (ponto == '9') {
+                grpOpt.style.display = 'block';
             }
         }
 
@@ -528,20 +579,23 @@
             const ponto = document.getElementById('ponto_partida').value;
             const op = document.getElementById('op_global').value;
             const inbound = document.getElementById('inbound_global').value;
+            const uiInfo = document.getElementById('ui_info').value;
+            const uiTpMigo = document.getElementById('ui_tpMigo').value;
+            const uiOpt = document.getElementById('ui_opt').value;
             
-            if ((ponto == '2' || ponto == '3') && !op) {
+            if ((ponto == '2' || ponto == '3' || ponto == '9') && !op) {
                 alert("Para iniciar desta etapa, você deve preencher o Número da OP.");
                 return;
             }
-            if (ponto == '4' && !inbound) {
-                alert("Para iniciar da PRDI, você deve preencher a Inbound Delivery.");
+            if ((ponto == '4' || ponto == '10') && !inbound) {
+                alert("Para iniciar desta etapa, você deve preencher a Inbound Delivery.");
                 return;
             }
 
-            iniciarProcessoServidor(caminhoExcel, parseInt(ponto), op, inbound, null);
+            iniciarProcessoServidor(caminhoExcel, parseInt(ponto), op, inbound, null, uiInfo, uiTpMigo, uiOpt);
         }
 
-        function iniciarProcessoServidor(caminho, ponto, op, inbound, loteId) {
+        function iniciarProcessoServidor(caminho, ponto, op, inbound, loteId, uiInfo=null, uiTpMigo=null, uiOpt=null) {
             document.getElementById('btn-executar').disabled = true;
             document.getElementById('btn-analisar').disabled = true;
             document.getElementById('loader').style.display = 'block';
@@ -551,7 +605,10 @@
                 ponto_partida: ponto,
                 op_global: op,
                 inbound_global: inbound,
-                lote_id: loteId
+                lote_id: loteId,
+                ui_info: uiInfo,
+                ui_tpMigo: uiTpMigo,
+                ui_opt: uiOpt
             };
 
             fetch('/api/estoque/executar', {

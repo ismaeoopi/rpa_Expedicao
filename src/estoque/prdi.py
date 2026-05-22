@@ -27,7 +27,8 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
         session.findById("wnd[0]").sendVKey(0)
 
         if not auto:
-            inbound = input("Digite a inbound: ")
+            if not inbound:
+                inbound = input("Digite a inbound: ")
         
         # Busca Inbound
         criterio = "REFDOCNO_ERP_I" if inbound.startswith("18") else "REFDOCNO_PPO_I"

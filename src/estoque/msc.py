@@ -5,7 +5,7 @@ from src.utils.excel_utils import ler_excel_universal, tratar_datas, valorFloatP
 
 centroP = "P716"
 
-def executar_msc1n(caminho):
+def executar_msc1n(caminho, ui_info=None):
 
     if isinstance(caminho, str):
         df = ler_excel_universal(caminho, "Criar e Alterar Lotes", 0)
@@ -23,10 +23,13 @@ def executar_msc1n(caminho):
             df['centro'] = centroP
             df["Dt produção"] = datetime.now()
         else:
-            log_sys.write("1 - Sem referência | 2 - Referência múltipla")
-            try:
-                info = float(input("Opção: "))
-            except: info = 0
+            if ui_info is not None:
+                info = float(ui_info)
+            else:
+                log_sys.write("1 - Sem referência | 2 - Referência múltipla")
+                try:
+                    info = float(input("Opção: "))
+                except: info = 0
 
         for i, row in df.iterrows():
             if auto == True:

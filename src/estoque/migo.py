@@ -43,7 +43,7 @@ def ajustar_layout_migo(session,tipo):
         except:
             continue
 
-def executar_transferencia_migo(caminho, auto=False, filtro=""):
+def executar_transferencia_migo(caminho, auto=False, filtro="", ui_tpMigo=None):
     if isinstance(caminho, str):
         aba = "Exportação SAPUI5" if auto else "MIGO 311 411 ZP1"
         df = ler_excel_universal(caminho, aba, 0)
@@ -68,7 +68,10 @@ def executar_transferencia_migo(caminho, auto=False, filtro=""):
             tpMigo = "411"
             df_filtrado = df[df['ACABADO'] == filtro].copy()
         else:
-            tpMigo = input("Digite 311 ou 411: ")
+            if ui_tpMigo:
+                tpMigo = str(ui_tpMigo)
+            else:
+                tpMigo = input("Digite 311 ou 411: ")
             df_filtrado = df.copy()
 
         session.findById("wnd[0]/usr/ssubSUB_MAIN_CARRIER:SAPLMIGO:0007/subSUB_FIRSTLINE:SAPLMIGO:0011/ctxtGODEFAULT_TV-BWART").Text = tpMigo
@@ -156,7 +159,7 @@ def executar_transferencia_migo(caminho, auto=False, filtro=""):
         log_sys.write(f"❌ Erro MIGO: {e}")
         return False
 
-def executar_migo_zp1(caminho, auto=False, op="", filtro=""):
+def executar_migo_zp1(caminho, auto=False, op="", filtro="", ui_opt=None):
     if isinstance(caminho, str):
         
         aba = "Exportação SAPUI5" if auto else "MIGO 311 411 ZP1"
@@ -181,8 +184,14 @@ def executar_migo_zp1(caminho, auto=False, op="", filtro=""):
         loop = 2 if auto else 1 # Seu script original faz 2 loops se auto=True, não sei porquê, mas mantive.
 
         if not auto:
-            op = input("Informe a OP: ")
-            opt = input("1-Consumo(261) | 2-Apontamento(ZP1): ")
+            if not op:
+                op = input("Informe a OP: ")
+            
+            if ui_opt:
+                opt = str(ui_opt)
+            else:
+                opt = input("1-Consumo(261) | 2-Apontamento(ZP1): ")
+                
             if opt == "2":
                 movimento = "ZP1"
                 selecionar_acao_migo(session, "A01") # Entrada de mercadoria

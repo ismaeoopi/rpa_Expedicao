@@ -113,13 +113,42 @@ def executar_estoque():
     inbound_global = dados.get('inbound_global', None)
     lote_id = dados.get('lote_id', None)
 
+    ui_info = dados.get('ui_info', None)
+    ui_tpMigo = dados.get('ui_tpMigo', None)
+    ui_opt = dados.get('ui_opt', None)
+
     if log_sys.is_running:
         return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
 
     def worker():
         log_sys.is_running = True
         try:
-            processo_estoque(caminho, ponto_partida, op_global, inbound_global, lote_id)
+            if ponto_partida <= 4:
+                processo_estoque(caminho, ponto_partida, op_global, inbound_global, lote_id)
+            elif ponto_partida == 5:
+                from src.estoque.msc import executar_msc1n
+                executar_msc1n(caminho, ui_info=ui_info)
+            elif ponto_partida == 6:
+                from src.estoque.msc import executar_msc2n
+                executar_msc2n(caminho)
+            elif ponto_partida == 7:
+                from src.estoque.msc import ajustar_fator
+                ajustar_fator(caminho)
+            elif ponto_partida == 8:
+                from src.estoque.migo import executar_transferencia_migo
+                executar_transferencia_migo(caminho, auto=False, ui_tpMigo=ui_tpMigo)
+            elif ponto_partida == 9:
+                from src.estoque.migo import executar_migo_zp1
+                executar_migo_zp1(caminho, auto=False, op=op_global, ui_opt=ui_opt)
+            elif ponto_partida == 10:
+                from src.estoque.prdi import executar_prdi
+                executar_prdi(caminho, auto=False, inbound=inbound_global)
+            elif ponto_partida == 11:
+                from src.estoque.brid import brid
+                brid(caminho)
+            elif ponto_partida == 12:
+                from src.estoque.mon import localizarMon
+                localizarMon(caminho)
         except Exception as e:
             log_sys.write(f"❌ Falha fatal na thread do processo de estoque: {e}")
         finally:
