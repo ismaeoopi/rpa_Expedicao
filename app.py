@@ -12,6 +12,8 @@ from src.expedicao.selecao_uc import processarRemessaComUc
 from src.expedicao.sm_remessa import smRemessa
 from src.expedicao.fip_etiquetas import salvarFIP
 from src.estoque.packlist import analisar_planilha_packlist
+from src.estoque.processo_completo import processo_estoque
+import src.utils.db as db
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
 try:
@@ -89,6 +91,44 @@ def analisar_packlist():
     
     resultado = analisar_planilha_packlist(caminho)
     return jsonify(resultado)
+
+@app.route('/api/estoque/estado_pendente', methods=['GET'])
+def estado_pendente():
+    lote = db.buscar_lote_pendente()
+    if lote:
+        return jsonify({"pendente": True, "lote": lote})
+    return jsonify({"pendente": False})
+
+@app.route('/api/estoque/cancelar_pendente', methods=['POST'])
+def cancelar_pendente():
+    db.cancelar_lote_pendente()
+    return jsonify({"status": "ok"})
+
+@app.route('/api/estoque/executar', methods=['POST'])
+def executar_estoque():
+    dados = request.json
+    caminho = dados.get('caminho', '')
+    ponto_partida = int(dados.get('ponto_partida', 1))
+    op_global = dados.get('op_global', None)
+    inbound_global = dados.get('inbound_global', None)
+    lote_id = dados.get('lote_id', None)
+
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+
+    def worker():
+        log_sys.is_running = True
+        try:
+            processo_estoque(caminho, ponto_partida, op_global, inbound_global, lote_id)
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal na thread do processo de estoque: {e}")
+        finally:
+            log_sys.is_running = False
+
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    return jsonify({"status": "started"})
 
 @app.route('/api/executar', methods=['POST'])
 def executar():

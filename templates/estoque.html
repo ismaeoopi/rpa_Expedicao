@@ -287,6 +287,58 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* BANNER PENDENTE */
+        .banner-pendente {
+            background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+            border-left: 6px solid #ff9800;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);
+        }
+
+        .banner-pendente .info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #e65100;
+            font-weight: 600;
+        }
+
+        .banner-pendente .acoes {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* FORMULARIO EXECUCAO */
+        .form-group {
+            margin-top: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #5a6c7d;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cfd8dc;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+        }
+        .form-group select:focus, .form-group input:focus {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+        }
+
         /* RESPONSIVIDADE */
         @media (max-width: 900px) {
             .grid-layout {
@@ -309,12 +361,27 @@
             <a href="/" class="btn-voltar">← Voltar ao Início</a>
         </div>
 
+        <!-- BANNER DE RETOMADA -->
+        <div id="banner-retomada" class="banner-pendente">
+            <div class="info">
+                <span>⚠️</span>
+                <div>
+                    <div style="font-size: 15px;">Processo Pendente Encontrado!</div>
+                    <div style="font-size: 12px; color: #b26a00;" id="retomada-detalhe">Um lote não foi finalizado.</div>
+                </div>
+            </div>
+            <div class="acoes">
+                <button class="btn btn-secondary" style="width: auto; padding: 8px 16px; font-size: 12px;" onclick="cancelarRetomada()">Cancelar Lote</button>
+                <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;" onclick="retomarProcesso()">Retomar Processamento</button>
+            </div>
+        </div>
+
         <div class="grid-layout">
             <!-- AÇÕES -->
             <div class="card">
-                <h3>Visualizador de Packlist</h3>
+                <h3>Configuração e Execução</h3>
                 <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">
-                    Faça o upload da planilha para ver o resumo de volumes, pesos e itens da carga.
+                    Faça o upload da planilha e escolha o ponto de partida do processamento.
                 </p>
                 <button class="btn btn-secondary" onclick="selecionarArquivo()">
                     📁 Selecionar Packlist (Excel)
@@ -323,10 +390,33 @@
                     Nenhum arquivo selecionado
                 </div>
 
-                <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center;">
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Ponto de Partida</label>
+                    <select id="ponto_partida" onchange="atualizarCampos()">
+                        <option value="1">Processamento Completo (Desde a CO01)</option>
+                        <option value="2">A partir da MIGO ZP1 (Apontamento)</option>
+                        <option value="3">A partir da MIGO Transferência</option>
+                        <option value="4">A partir da PRDI</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="grupo_op" style="display: none;">
+                    <label>Número da OP (Global)</label>
+                    <input type="text" id="op_global" placeholder="Ex: 1000234567">
+                </div>
+
+                <div class="form-group" id="grupo_inbound" style="display: none;">
+                    <label>Inbound Delivery (Global)</label>
+                    <input type="text" id="inbound_global" placeholder="Ex: 18000456">
+                </div>
+
+                <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
                     <div id="loader" class="loader"></div>
-                    <button id="btn-analisar" class="btn btn-primary" onclick="analisarPacklist()" disabled>
-                        📊 Analisar Carga
+                    <button id="btn-analisar" class="btn btn-secondary" onclick="analisarPacklist()" disabled style="background: linear-gradient(135deg, #78909c 0%, #607d8b 100%);">
+                        📊 Apenas Analisar Carga
+                    </button>
+                    <button id="btn-executar" class="btn btn-primary" onclick="executarAutomacao()" disabled>
+                        🚀 Iniciar Processamento
                     </button>
                 </div>
             </div>
@@ -372,6 +462,7 @@
 
     <script>
         let caminhoExcel = "";
+        let lotePendenteId = null;
 
         // Inicialização
         window.addEventListener('load', () => {
@@ -382,7 +473,109 @@
                     document.getElementById('saudacao-nome').innerText = data.nome;
                 })
                 .catch(err => console.error(err));
+                
+            verificarPendente();
         });
+
+        function verificarPendente() {
+            fetch('/api/estoque/estado_pendente')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.pendente && data.lote) {
+                        lotePendenteId = data.lote.lote_id;
+                        document.getElementById('banner-retomada').style.display = 'flex';
+                        document.getElementById('retomada-detalhe').innerText = `Lote ID: ${lotePendenteId} | Planilha: ${data.lote.caminho_excel.split('\\\\').pop()}`;
+                        caminhoExcel = data.lote.caminho_excel;
+                    } else {
+                        document.getElementById('banner-retomada').style.display = 'none';
+                        lotePendenteId = null;
+                    }
+                });
+        }
+
+        function atualizarCampos() {
+            const ponto = document.getElementById('ponto_partida').value;
+            const grpOp = document.getElementById('grupo_op');
+            const grpInbound = document.getElementById('grupo_inbound');
+            
+            grpOp.style.display = 'none';
+            grpInbound.style.display = 'none';
+            
+            if (ponto == '2' || ponto == '3') {
+                grpOp.style.display = 'block';
+            }
+            if (ponto == '4') {
+                grpInbound.style.display = 'block';
+            }
+        }
+
+        function cancelarRetomada() {
+            if(confirm("Tem certeza que deseja cancelar este lote inacabado?")) {
+                fetch('/api/estoque/cancelar_pendente', { method: 'POST' })
+                    .then(() => verificarPendente());
+            }
+        }
+
+        function retomarProcesso() {
+            iniciarProcessoServidor(caminhoExcel, 1, null, null, lotePendenteId);
+        }
+
+        function executarAutomacao() {
+            if (!caminhoExcel) {
+                alert("Por favor, selecione uma planilha primeiro.");
+                return;
+            }
+            const ponto = document.getElementById('ponto_partida').value;
+            const op = document.getElementById('op_global').value;
+            const inbound = document.getElementById('inbound_global').value;
+            
+            if ((ponto == '2' || ponto == '3') && !op) {
+                alert("Para iniciar desta etapa, você deve preencher o Número da OP.");
+                return;
+            }
+            if (ponto == '4' && !inbound) {
+                alert("Para iniciar da PRDI, você deve preencher a Inbound Delivery.");
+                return;
+            }
+
+            iniciarProcessoServidor(caminhoExcel, parseInt(ponto), op, inbound, null);
+        }
+
+        function iniciarProcessoServidor(caminho, ponto, op, inbound, loteId) {
+            document.getElementById('btn-executar').disabled = true;
+            document.getElementById('btn-analisar').disabled = true;
+            document.getElementById('loader').style.display = 'block';
+
+            const payload = {
+                caminho: caminho,
+                ponto_partida: ponto,
+                op_global: op,
+                inbound_global: inbound,
+                lote_id: loteId
+            };
+
+            fetch('/api/estoque/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+                if (data.status === 'error') {
+                    alert('Erro: ' + data.message);
+                    document.getElementById('btn-executar').disabled = false;
+                    document.getElementById('btn-analisar').disabled = false;
+                } else {
+                    // Mudar para tela de logs ou dar um aviso
+                    alert('Processamento iniciado! Verifique os logs no terminal.');
+                }
+            })
+            .catch(err => {
+                document.getElementById('loader').style.display = 'none';
+                alert('Erro na requisição: ' + err);
+            });
+        }
 
         function selecionarArquivo() {
             fetch('/api/selecionar_arquivo')
@@ -395,6 +588,7 @@
                         statusElement.classList.remove('empty');
                         
                         document.getElementById('btn-analisar').disabled = false;
+                        document.getElementById('btn-executar').disabled = false;
                         
                         // Auto-analisar
                         analisarPacklist();
@@ -405,7 +599,8 @@
         function analisarPacklist() {
             if (!caminhoExcel) return;
 
-            document.getElementById('btn-analisar').style.display = 'none';
+            document.getElementById('btn-analisar').disabled = true;
+            document.getElementById('btn-executar').disabled = true;
             document.getElementById('loader').style.display = 'block';
             
             fetch('/api/analisar_packlist', {
@@ -416,7 +611,8 @@
             .then(res => res.json())
             .then(data => {
                 document.getElementById('loader').style.display = 'none';
-                document.getElementById('btn-analisar').style.display = 'block';
+                document.getElementById('btn-analisar').disabled = false;
+                document.getElementById('btn-executar').disabled = false;
 
                 if (data.status === 'error') {
                     alert('Erro ao analisar: ' + data.message);
@@ -449,7 +645,8 @@
             })
             .catch(err => {
                 document.getElementById('loader').style.display = 'none';
-                document.getElementById('btn-analisar').style.display = 'block';
+                document.getElementById('btn-analisar').disabled = false;
+                document.getElementById('btn-executar').disabled = false;
                 alert('Erro na requisição: ' + err);
             });
         }
