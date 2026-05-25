@@ -24,14 +24,17 @@ def valorFloatexcel(valor):
         return 0.0
 
 def valorFloatPy(valor):
-    if valor is None:
+    """Substitui suas funções valorFloatexcel e valorFloatPy por uma única robusta."""
+    if pd.isna(valor) or str(valor).strip() == "":
         return 0.0
-    valorStr = str(valor).strip()
-    if not valorStr:
-        return 0.0
-    valorStr = valorStr.replace(".","").replace(",",".")
+    
+    valor_str = str(valor).strip()
+    # Se tiver vírgula, assume formato brasileiro (1.000,00 -> 1000.00)
+    if "," in valor_str:
+        valor_str = valor_str.replace(".", "").replace(",", ".")
+    
     try:
-        return round(float(valorStr),3)
+        return round(float(valor_str), 3)
     except ValueError:
         log_sys.write(f"Erro ao converter o valor '{valor}' para float.")
         return 0.0

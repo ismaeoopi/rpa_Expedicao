@@ -1,4 +1,5 @@
 from datetime import datetime
+import pandas as pd  # Garine que o pandas está importado para segurança
 from src.utils.common import log_sys
 from src.utils.sap_utils import conectar_sap, fechar_popups
 from src.utils.excel_utils import ler_excel_universal, tratar_datas, valorFloatPy
@@ -6,7 +7,6 @@ from src.utils.excel_utils import ler_excel_universal, tratar_datas, valorFloatP
 centroP = "P716"
 
 def executar_msc1n(caminho, ui_info=None):
-
     if isinstance(caminho, str):
         df = ler_excel_universal(caminho, "Criar e Alterar Lotes", 0)
         auto = False
@@ -15,10 +15,12 @@ def executar_msc1n(caminho, ui_info=None):
         auto = True
 
     session = conectar_sap()
-    if not df is None and session:
+    if df is not None and session:
+        # Tratamento global: Transforma todos os NaNs do DataFrame em strings vazias antes do loop
+        df = df.fillna("")
+
         if auto == True:
             info = 1
-            #df['Lote'] = ""
             df['dep'] = ""
             df['centro'] = centroP
             df["Dt produção"] = datetime.now()
@@ -29,7 +31,8 @@ def executar_msc1n(caminho, ui_info=None):
                 log_sys.write("1 - Sem referência | 2 - Referência múltipla")
                 try:
                     info = float(input("Opção: "))
-                except: info = 0
+                except: 
+                    info = 0
 
         for i, row in df.iterrows():
             if auto == True:
@@ -37,20 +40,20 @@ def executar_msc1n(caminho, ui_info=None):
                 centro = "centro"
                 dep = 'dep'
                 lote = 'Lote'
-                
             else:
                 material = "Material"
                 centro = "Centro"
                 dep = "Depósito"
                 lote = "Lote"
+                
             try:
                 session.findById("wnd[0]/tbar[0]/okcd").Text = "/nmsc1n"
-                session.findById("wnd[0]").sendVKey(0)
+                session.findById("wnd[0]").sendVKey(0)  
                 
                 # Campos básicos
                 session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_HEADER:SAPLCHRG:1401/ctxtDFBATCH-MATNR").Text = str(row[material]).strip()
                 lote_val = str(row[lote]).strip()
-                if lote_val and lote_val.lower() != "nan":
+                if lote_val:
                     session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_HEADER:SAPLCHRG:1401/ctxtDFBATCH-CHARG").Text = lote_val
                 
                 session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_HEADER:SAPLCHRG:1401/ctxtDFBATCH-WERKS").Text = str(row[centro]).strip()
@@ -67,7 +70,8 @@ def executar_msc1n(caminho, ui_info=None):
                 try:
                     if session.Children.Count > 1 and "Atribuição automática" in session.ActiveWindow.Text:
                          session.findById("wnd[1]/usr/btnBUTTON_1").press()
-                except: pass
+                except: 
+                    pass
 
                 # Se não der erro, preenche datas e características
                 if session.findById("wnd[0]/sbar").messagetype != "E":
@@ -83,19 +87,22 @@ def executar_msc1n(caminho, ui_info=None):
                     # Aba Classificação (OP e Fator)
                     session.findById("wnd[0]").sendVKey(0)
                     fechar_popups(session, "Data de vencimento")
+                    
                     op = str(row.get("OP", "")).strip()
                     fator = ""
-                    if auto==False:
+                    if auto == False:
                         fator = str(row.get("Fator Conversão", "")).strip()
                     
-                    if op or fator:
+                    if op != "" or fator:
                         session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS").Select()
+                        grid_path = "wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S"
+                        
                         if op:
-                            session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S/ctxtRCTMS-MWERT[1,4]").Text = op
+                            session.findById(grid_path).verticalScrollbar.Position = 0
+                            session.findById(f"{grid_path}/ctxtRCTMS-MWERT[1,4]").Text = op
                         if fator:
-                            scroll = session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S")
-                            scroll.verticalScrollbar.Position = 10
-                            session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S/ctxtRCTMS-MWERT[1,4]").Text = fator
+                            session.findById(grid_path).verticalScrollbar.Position = 10
+                            session.findById(f"{grid_path}/ctxtRCTMS-MWERT[1,4]").Text = fator
 
                     session.findById("wnd[0]/tbar[0]/btn[11]").press() # Salvar
                     log_sys.write(f"✅ Salvo: {session.findById('wnd[0]/sbar').Text}")
@@ -107,10 +114,13 @@ def executar_msc1n(caminho, ui_info=None):
                 log_sys.write(f"❌ Erro linha {i}: {e}")
 
 def executar_msc2n(caminho):
-    # Usa a mesma aba do MSC1N
     df = ler_excel_universal(caminho, "Criar e Alterar Lotes", 0)
     session = conectar_sap()
-    if df is None or not session: return
+    if df is None or not session: 
+        return
+
+    # Tratamento global de NaNs aplicado FORA do loop
+    df = df.fillna("")
 
     log_sys.write(f"🚀 Iniciando MSC2N para {len(df)} itens...")
 
@@ -119,7 +129,7 @@ def executar_msc2n(caminho):
             session.findById("wnd[0]/tbar[0]/okcd").Text = "/nmsc2n"
             session.findById("wnd[0]").sendVKey(0)
 
-            # --- Preenchimento do Cabeçalho (MSC2N geralmente usa tela 1501) ---
+            # --- Preenchimento do Cabeçalho ---
             header_path = "wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_HEADER:SAPLCHRG:1501"
             
             session.findById(f"{header_path}/ctxtDFBATCH-MATNR").Text = str(row["Material"]).strip()
@@ -136,9 +146,7 @@ def executar_msc2n(caminho):
                 dt_p, dt_v = tratar_datas(row.get("Dt produção"))
                 
                 if dt_p:
-                    # Caminho da aba Dados Básicos 1
                     body_path = "wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpGRHD/ssubSUBSCR_BODY:SAPLCHRG:2100"
-                    
                     session.findById(f"{body_path}/ctxtMCHA-HSDAT").Text = dt_p
                     
                     # Preenche vencimento apenas se estiver vazio
@@ -147,18 +155,16 @@ def executar_msc2n(caminho):
                         vencimento_field.Text = dt_v
 
                 # --- CLASSIFICAÇÃO (Aba Classificação) ---
-                op = str(row.get("OP", "")).strip()
                 fator = str(row.get("Fator Conversão", "")).strip()
-
-                if op or fator:
+                op = str(row.get("OP", "")).strip()
+                
+                if op != "" or fator:
                     session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS").Select()
-                    
                     grid_path = "wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S"
                     
                     # Garante scroll no topo para preencher OP
                     if op:
                         session.findById(grid_path).verticalScrollbar.Position = 0
-                        # Índice [1,4] conforme seu script original
                         session.findById(f"{grid_path}/ctxtRCTMS-MWERT[1,4]").Text = op
                     
                     # Scroll para preencher Fator
@@ -178,7 +184,10 @@ def executar_msc2n(caminho):
 def ajustar_fator(caminho):
     df = ler_excel_universal(caminho, "Ajustar Fator", 0)
     session = conectar_sap()
-    if not df is None and session:
+    if df is not None and session:
+        # Tratamento global de NaNs aplicado aqui também
+        df = df.fillna("")
+        
         for i, row in df.iterrows():
             try:
                 session.findById("wnd[0]/tbar[0]/okcd").Text = "/nmsc2n"
@@ -200,7 +209,6 @@ def ajustar_fator(caminho):
                 session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS").Select()
                 scroll = session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S")
                 scroll.verticalScrollbar.Position = 10
-                # Define fator na posição [1,0] conforme seu script original
                 session.findById("wnd[0]/usr/subSUBSCR_BATCH_MASTER:SAPLCHRG:1111/subSUBSCR_TABSTRIP:SAPLCHRG:2000/tabsTS_BODY/tabpCLAS/ssubSUBSCR_BODY:SAPLCHRG:2300/ssubSUBSCR_CLASS:SAPLCTMS:5000/tabsTABSTRIP_CHAR/tabpTAB1/ssubTABSTRIP_CHAR_GR:SAPLCTMS:5100/tblSAPLCTMSCHARS_S/ctxtRCTMS-MWERT[1,0]").Text = fator_calc
                 
                 session.findById("wnd[0]/tbar[0]/btn[11]").press()

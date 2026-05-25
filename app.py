@@ -99,6 +99,20 @@ def estado_pendente():
         return jsonify({"pendente": True, "lote": lote})
     return jsonify({"pendente": False})
 
+@app.route('/api/estoque/status', methods=['GET'])
+def estoque_status():
+    """
+    Retorna o status detalhado dos itens do lote atual em andamento
+    ou do último lote executado caso não haja um em andamento.
+    """
+    lote = db.buscar_lote_pendente()
+    if not lote:
+        lote = db.buscar_ultimo_lote()
+    
+    if lote:
+        return jsonify({"status": "success", "lote": lote})
+    return jsonify({"status": "empty", "message": "Nenhum lote processado até o momento."})
+
 @app.route('/api/estoque/cancelar_pendente', methods=['POST'])
 def cancelar_pendente():
     db.cancelar_lote_pendente()

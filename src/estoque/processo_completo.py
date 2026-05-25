@@ -25,6 +25,7 @@ def processo_estoque(caminho, ponto_partida=1, op_global=None, inbound_global=No
         log_sys.write("\n--- Resumo por Item ---")
         log_sys.write(df_agrupado.to_string())
         
+        
         lote_id = db.criar_novo_lote(caminho)
         itens = []
         for _, row in df_agrupado.iterrows():
@@ -87,16 +88,16 @@ def processo_estoque(caminho, ponto_partida=1, op_global=None, inbound_global=No
                 log_sys.write(f"✅ OP Criada/Salva: {op}")
 
             # ETAPA 2: MIGO ZP1
-            if ponto_partida <= 2 and status in ['PENDENTE', 'CO01_OK', 'ERRO_MIGO_ZP1']:
+            if ponto_partida <= 2 and status in ['PENDENTE', 'CO01_OK', 'CONSUMO_OK', 'ERRO_MIGO_ZP1']:
                 if not op: raise Exception("OP não informada para a etapa MIGO ZP1")
                 log_sys.write(f"▶️ Executando MIGO ZP1 para {semi} com OP {op}")
-                if not executar_migo_zp1(caminho, auto=True, op=op, filtro=acabado):
+                if not executar_migo_zp1(caminho, auto=True, op=op, filtro=acabado, item_id=item_id):
                     raise Exception("Falha no Apontamento (MIGO ZP1)")
                 db.atualizar_item(item_id, status_etapa='MIGO_ZP1_OK')
                 status = 'MIGO_ZP1_OK'
 
             # ETAPA 3: MIGO Transferência
-            if ponto_partida <= 3 and status in ['PENDENTE', 'CO01_OK', 'MIGO_ZP1_OK', 'ERRO_MIGO_TRANSF']:
+            if ponto_partida <= 3 and status in ['PENDENTE', 'CO01_OK', 'MIGO_ZP1_OK', 'APONTAMENTO_OK', 'ERRO_MIGO_TRANSF']:
                 log_sys.write(f"▶️ Executando MIGO Transferência para {semi}")
                 if not executar_transferencia_migo(caminho, auto=True, filtro=acabado):
                     raise Exception("Falha na Transferência (MIGO 411/311)")

@@ -104,3 +104,28 @@ def cancelar_lote_pendente():
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE lote SET status = 'CANCELADO' WHERE status = 'EM_ANDAMENTO'")
+
+def buscar_itens_por_lote(lote_id):
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, material, peso, op, inbound, status_etapa FROM item WHERE lote_id = ?", (lote_id,))
+        itens = cursor.fetchall()
+        return [
+            {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5]} for r in itens
+        ]
+
+def buscar_ultimo_lote():
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, caminho_excel, status FROM lote ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            lote_id, caminho_excel, status = row
+            cursor.execute("SELECT id, material, peso, op, inbound, status_etapa FROM item WHERE lote_id = ?", (lote_id,))
+            itens = cursor.fetchall()
+            return {"lote_id": lote_id, "caminho_excel": caminho_excel, "status": status, "itens": [
+                {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5]} for r in itens
+            ]}
+    return None

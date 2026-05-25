@@ -20,7 +20,7 @@ def executar_co01_processo(session, acabado, semi, peso):
             log_sys.write(f"⚠️  {msgSbar}")
             session.findById("wnd[0]").sendVKey(0)
         
-        session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOZE/ssubSUBSCR_0115:SAPLCOKO1:0120/txtCAUFVD-GAMNG").text = valorFloatexcel(peso)
+        session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOZE/ssubSUBSCR_0115:SAPLCOKO1:0120/txtCAUFVD-GAMNG").text = peso
         session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOZE/ssubSUBSCR_0115:SAPLCOKO1:0120/cmbCAUFVD-TERKZ").key = "4"
 
         session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOWE").select()

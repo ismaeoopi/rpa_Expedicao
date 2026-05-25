@@ -3,6 +3,7 @@ from datetime import datetime
 from src.utils.common import log_sys
 from src.utils.sap_utils import conectar_sap
 from src.utils.excel_utils import ler_excel_universal, valorFloatPy, valorFloatexcel
+import src.utils.db as db
 
 centroP = "P716"
 depOrigem = "INT"
@@ -159,7 +160,7 @@ def executar_transferencia_migo(caminho, auto=False, filtro="", ui_tpMigo=None):
         log_sys.write(f"❌ Erro MIGO: {e}")
         return False
 
-def executar_migo_zp1(caminho, auto=False, op="", filtro="", ui_opt=None):
+def executar_migo_zp1(caminho, auto=False, op="", filtro="", ui_opt=None, item_id=None):
     if isinstance(caminho, str):
         
         aba = "Exportação SAPUI5" if auto else "MIGO 311 411 ZP1"
@@ -258,8 +259,12 @@ def executar_migo_zp1(caminho, auto=False, op="", filtro="", ui_opt=None):
             
             if movimento == "ZP1":
                 log_sys.write("Apontamento Realizado com Sucesso...\n")
+                if item_id:
+                    db.atualizar_item(item_id, status_etapa='APONTAMENTO_OK')
             else:
                 log_sys.write("Consumo Realizado com Sucesso...\n")
+                if item_id:
+                    db.atualizar_item(item_id, status_etapa='CONSUMO_OK')
             
             if cBrid==True:
                 movimento = "101"
