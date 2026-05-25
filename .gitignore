@@ -1,0 +1,79 @@
+# Arquivos de build e distribuição
+*.exe
+*.dll
+*.so
+*.dylib
+*.spec
+BUILD/
+dist/
+build/
+*.egg-info/
+__pycache__/
+
+# Arquivos compilados Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Ambientes virtuais
+venv/
+env/
+ENV/
+.venv
+
+# Arquivos de sistema
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs e temporários
+*.log
+*.tmp
+*.temp
+*.bak
+
+# Arquivos SAP/Banco de dados
+*.dbf
+*.fdb
+*.mdb
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos Excel temporários
+~$*
+.~lock.*
+
+# Arquivos de cache
+.cache/
+*.cache
+
+# Arquivos de configuração local (credenciais)
+config_local.py
+.env
+.env.local
+credentials.json
+secrets.*
+
+# OneDrive/Cloud sync
+.sync
+.OneDriveSync
+
+# Diretórios de dados
+data/
+logs/
+output/
+temp/
+cache/

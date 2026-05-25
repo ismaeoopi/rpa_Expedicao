@@ -339,6 +339,74 @@
             box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
         }
 
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 152, 0, 0.15);
+        }
+
+        .console-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-box::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 152, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 152, 0, 0.5);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+            word-break: break-word;
+        }
+
+        .log-error {
+            color: #ff3333;
+            font-weight: 600;
+        }
+
+        .log-success {
+            color: #33ff33;
+            font-weight: 600;
+        }
+
         /* RESPONSIVIDADE */
         @media (max-width: 900px) {
             .grid-layout {
@@ -494,11 +562,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- CONSOLE DE EXECUÇÃO -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa">Aguardando ação</span>
+            </div>
+            <div class="console-box" id="console-box"></div>
+        </div>
     </div>
 
     <script>
         let caminhoExcel = "";
         let lotePendenteId = null;
+
+        // ============== LOGS ==============
+        function adicionarLog(msg, tipo = '') {
+            const box = document.getElementById('console-box');
+            const p = document.createElement('p');
+            if (tipo) p.className = tipo;
+            p.innerText = msg;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
 
         // Inicialização
         window.addEventListener('load', () => {
@@ -507,8 +594,12 @@
                 .then(data => {
                     document.getElementById('saudacao-texto').innerText = data.saudacao;
                     document.getElementById('saudacao-nome').innerText = data.nome;
+                    adicionarLog("✅ Sistema pronto. Bem-vindo ao módulo de Estoque!");
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+                    adicionarLog("❌ Erro ao conectar com o servidor.", 'log-error');
+                });
                 
             verificarPendente();
         });
@@ -522,6 +613,7 @@
                         document.getElementById('banner-retomada').style.display = 'flex';
                         document.getElementById('retomada-detalhe').innerText = `Lote ID: ${lotePendenteId} | Planilha: ${data.lote.caminho_excel.split('\\\\').pop()}`;
                         caminhoExcel = data.lote.caminho_excel;
+                        adicionarLog(`⚠️ Lote pendente encontrado: ID ${lotePendenteId}`);
                     } else {
                         document.getElementById('banner-retomada').style.display = 'none';
                         lotePendenteId = null;
@@ -562,8 +654,15 @@
 
         function cancelarRetomada() {
             if(confirm("Tem certeza que deseja cancelar este lote inacabado?")) {
+                adicionarLog("⚠️ Cancelando lote pendente...");
                 fetch('/api/estoque/cancelar_pendente', { method: 'POST' })
-                    .then(() => verificarPendente());
+                    .then(() => {
+                        verificarPendente();
+                        adicionarLog("✅ Lote cancelado com sucesso.", 'log-success');
+                    })
+                    .catch(err => {
+                        adicionarLog("❌ Erro ao cancelar lote: " + err, 'log-error');
+                    });
             }
         }
 
@@ -573,7 +672,7 @@
 
         function executarAutomacao() {
             if (!caminhoExcel) {
-                alert("Por favor, selecione uma planilha primeiro.");
+                adicionarLog("❌ Por favor, selecione uma planilha primeiro.", 'log-error');
                 return;
             }
             const ponto = document.getElementById('ponto_partida').value;
@@ -584,11 +683,11 @@
             const uiOpt = document.getElementById('ui_opt').value;
             
             if ((ponto == '2' || ponto == '3' || ponto == '9') && !op) {
-                alert("Para iniciar desta etapa, você deve preencher o Número da OP.");
+                adicionarLog("❌ Para iniciar desta etapa, você deve preencher o Número da OP.", 'log-error');
                 return;
             }
             if ((ponto == '4' || ponto == '10') && !inbound) {
-                alert("Para iniciar desta etapa, você deve preencher a Inbound Delivery.");
+                adicionarLog("❌ Para iniciar desta etapa, você deve preencher a Inbound Delivery.", 'log-error');
                 return;
             }
 
@@ -599,6 +698,7 @@
             document.getElementById('btn-executar').disabled = true;
             document.getElementById('btn-analisar').disabled = true;
             document.getElementById('loader').style.display = 'block';
+            document.getElementById('status-rpa').innerText = 'Processando...';
 
             const payload = {
                 caminho: caminho,
@@ -611,6 +711,8 @@
                 ui_opt: uiOpt
             };
 
+            adicionarLog('🚀 Iniciando processamento...');
+
             fetch('/api/estoque/executar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -620,17 +722,19 @@
             .then(data => {
                 document.getElementById('loader').style.display = 'none';
                 if (data.status === 'error') {
-                    alert('Erro: ' + data.message);
+                    adicionarLog('❌ Erro: ' + data.message, 'log-error');
+                    document.getElementById('status-rpa').innerText = 'Erro';
                     document.getElementById('btn-executar').disabled = false;
                     document.getElementById('btn-analisar').disabled = false;
                 } else {
-                    // Mudar para tela de logs ou dar um aviso
-                    alert('Processamento iniciado! Verifique os logs no terminal.');
+                    adicionarLog('✅ Processamento iniciado com sucesso!', 'log-success');
+                    document.getElementById('status-rpa').innerText = 'Processando';
                 }
             })
             .catch(err => {
                 document.getElementById('loader').style.display = 'none';
-                alert('Erro na requisição: ' + err);
+                adicionarLog('❌ Erro na requisição: ' + err, 'log-error');
+                document.getElementById('status-rpa').innerText = 'Erro';
             });
         }
 
@@ -647,8 +751,12 @@
                         document.getElementById('btn-analisar').disabled = false;
                         document.getElementById('btn-executar').disabled = false;
                         
+                        adicionarLog(`📂 Planilha carregada: ${data.caminho}`);
+                        
                         // Auto-analisar
                         analisarPacklist();
+                    } else {
+                        adicionarLog("⚠️ Nenhum arquivo foi selecionado.");
                     }
                 });
         }
@@ -659,6 +767,7 @@
             document.getElementById('btn-analisar').disabled = true;
             document.getElementById('btn-executar').disabled = true;
             document.getElementById('loader').style.display = 'block';
+            adicionarLog('📊 Analisando planilha...');
             
             fetch('/api/analisar_packlist', {
                 method: 'POST',
@@ -672,7 +781,7 @@
                 document.getElementById('btn-executar').disabled = false;
 
                 if (data.status === 'error') {
-                    alert('Erro ao analisar: ' + data.message);
+                    adicionarLog('❌ Erro ao analisar: ' + data.message, 'log-error');
                     return;
                 }
 
@@ -697,6 +806,8 @@
                 document.getElementById('colunas-info').innerText = 
                     `Lido ${d.total_linhas} linhas. Colunas base: Peso(${d.colunas_identificadas.peso}), Volume(${d.colunas_identificadas.volume})`;
                 
+                adicionarLog(`✅ Análise concluída: ${d.total_linhas} linhas lidas, ${d.total_itens_unicos} itens únicos.`, 'log-success');
+                
                 document.getElementById('dashboard-content').style.opacity = '1';
                 document.getElementById('dashboard-content').style.pointerEvents = 'auto';
             })
@@ -704,7 +815,7 @@
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('btn-analisar').disabled = false;
                 document.getElementById('btn-executar').disabled = false;
-                alert('Erro na requisição: ' + err);
+                adicionarLog('❌ Erro na requisição: ' + err, 'log-error');
             });
         }
 
