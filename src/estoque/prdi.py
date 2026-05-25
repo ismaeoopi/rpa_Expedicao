@@ -80,8 +80,9 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
             if auto:
                 peso = valorFloatexcel(row['Peso Líquido']).strip()
                 bob = valorFloatexcel(row['Nº Bobinas']).strip()
-                peso_bruto = valorFloatPy(row['Peso Bruto'])
-                peso_liq_float = valorFloatPy(row['Peso Líquido'])
+                peso_bruto = float(row['Peso Bruto'])
+                peso_liq_float = float(row['Peso Líquido'])
+                print(f"Peso Bruto: {peso_bruto}, Peso Líquido: {peso_liq_float}")
                 tara = valorFloatexcel(peso_bruto - peso_liq_float)
             else:
                 peso = valorFloatexcel(row["Peso líquido"]).strip()
