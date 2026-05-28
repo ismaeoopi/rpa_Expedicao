@@ -71,6 +71,7 @@ def processo_estoque(caminho, ponto_partida=1, op_global=None, inbound_global=No
             relatorio.append({'Semi': semi, 'OP': op, 'Inbound': inbound, 'Status': 'Já estava Concluído'})
             continue
             
+        inicio_item = datetime.now()
         try:
             session = conectar_sap()
             if not session: raise Exception("Sem conexão SAP")
@@ -141,6 +142,13 @@ def processo_estoque(caminho, ponto_partida=1, op_global=None, inbound_global=No
             
             db.atualizar_item(item_id, status_etapa=novo_status)
             relatorio.append({'Semi': semi, 'OP': op, 'Inbound': inbound, 'Status': f"FALHA: {msg_erro}"})
+            
+        finally:
+            duracao = datetime.now() - inicio_item
+            minutos = int(duracao.total_seconds() // 60)
+            segundos = int(duracao.total_seconds() % 60)
+            tempo_str = f"{minutos}m {segundos}s"
+            db.atualizar_item(item_id, tempo=tempo_str)
 
     # Verificar se todos os itens foram concluidos
     db_itens = db.buscar_itens_por_lote(lote_id)

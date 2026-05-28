@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logistica - Estoque sem Planilha</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #2e1a47 0%, #1a0f2e 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #ff9800;
+            box-shadow: 0 8px 32px rgba(255, 152, 0, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ff9800;
+        }
+
+        .header h1 .nome {
+            color: #ffc107;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #aeb8c2;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* CARDS */
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(255, 152, 0, 0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e65100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #ff9800, #e65100);
+            border-radius: 2px;
+        }
+
+        /* BOTÕES */
+        .btn {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e65100 0%, #bf360c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(230, 81, 0, 0.3);
+            margin-top: auto;
+        }
+
+        .btn-primary:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(230, 81, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: linear-gradient(135deg, #cfd8dc 0%, #b0bec5 100%);
+            color: #78909c;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* ARQUIVO STATUS */
+        .file-status {
+            margin-top: 15px;
+            padding: 12px 14px;
+            font-size: 13px;
+            border-radius: 6px;
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border-left: 3px solid #4caf50;
+            word-break: break-all;
+            font-weight: 500;
+        }
+
+        .file-status.empty {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+            border-left-color: #ff9800;
+        }
+
+        /* DASHBOARD PACKLIST */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .dash-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-3px);
+            border-color: #ff9800;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.1);
+        }
+
+        .dash-card .icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .dash-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .dash-card .label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .top-items {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .top-items h4 {
+            font-size: 14px;
+            color: #5a6c7d;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 0;
+            color: #2c3e50;
+        }
+
+        /* LOADER */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff9800;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* BANNER PENDENTE */
+        .banner-pendente {
+            background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+            border-left: 6px solid #ff9800;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);
+        }
+
+        .banner-pendente .info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #e65100;
+            font-weight: 600;
+        }
+
+        .banner-pendente .acoes {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* FORMULARIO EXECUCAO */
+        .form-group {
+            margin-top: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #5a6c7d;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cfd8dc;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+        }
+        .form-group select:focus, .form-group input:focus {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 152, 0, 0.15);
+        }
+
+        .console-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-box::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 152, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .console-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 152, 0, 0.5);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+            word-break: break-word;
+        }
+
+        .log-error {
+            color: #ff3333;
+            font-weight: 600;
+        }
+
+        .log-success {
+            color: #1b5e20;
+            font-weight: 600;
+        }
+
+        /* ============================================== */
+        /* TRACKING ROWS - LISTA VERTICAL COMPACTA */
+        /* ============================================== */
+        #tracking-rows-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .tracking-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tracking-row:hover {
+            box-shadow: 0 6px 16px rgba(255, 152, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: #ff9800;
+        }
+
+        .row-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-material {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .row-weight {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .stage-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            min-height: 48px;
+            text-align: center;
+        }
+
+        .stage-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .stage-value {
+            font-size: 12px;
+            color: #334155;
+            word-break: break-all;
+        }
+
+        /* Estados do Stage */
+        .stage-cell.status-pending {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #94a3b8;
+        }
+        .stage-cell.status-pending .stage-value {
+            color: #94a3b8;
+        }
+
+        .stage-cell.status-running {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #d97706;
+            animation: pulseGlow 1.5s infinite;
+        }
+        .stage-cell.status-running .stage-value {
+            color: #b45309;
+        }
+
+        .stage-cell.status-success {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .stage-cell.status-success .stage-value {
+            color: #15803d;
+            font-size: 12px;
+        }
+
+        .stage-cell.status-error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        .stage-cell.status-error .stage-value {
+            color: #b91c1c;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        /* Responsividade para as Linhas de Rastreamento */
+        @media (max-width: 1024px) {
+            .tracking-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 12px;
+            }
+            .row-info {
+                align-items: center;
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 8px;
+                margin-bottom: 4px;
+            }
+            .row-material {
+                max-width: 100%;
+                font-size: 14px;
+            }
+            .stage-cell {
+                min-height: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 8px 12px;
+            }
+            .stage-label {
+                margin-bottom: 0;
+            }
+
+            .pipeline-card-data {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <style>
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cfd8dc;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+        }
+        .input-row input:focus {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+        }
+        .btn-add, .btn-remove {
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 40px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .btn-add { background: #28a745; }
+        .btn-add:hover { background: #218838; }
+        .btn-remove { background: #dc3545; }
+        .btn-remove:hover { background: #c82333; }
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span>Estoque</span>
+                    <span class="nome">sem Planilha</span>
+                </h1>
+                <p>📦 Execução Manual e Automações Específicas</p>
+            </div>
+            <a href="/" class="btn-voltar">← Voltar ao Início</a>
+        </div>
+
+        <div class="grid-layout">
+            <!-- AÇÕES -->
+            <div class="card">
+                <h3>Configuração e Execução</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">
+                    Preencha os dados manualmente e escolha o ponto de partida do processamento.
+                </p>
+
+                <div class="form-group">
+                    <label>Ponto de Partida</label>
+                    <select id="ponto_partida" onchange="atualizarCampos()">
+                        <option value="1">Processo completo</option>
+                        <option value="2">A partir da MIGO ZP1/261</option>
+                        <option value="3">A partir da 411</option>
+                        <option value="4">A partir do PRDI</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="vl32_container">
+                    <label>Número(s) da VL32</label>
+                    <div id="vl32_inputs">
+                        <div class="input-row">
+                            <input type="text" class="vl32-input" placeholder="Ex: 181194568" required>
+                            <button type="button" class="btn-add" id="btn_add_vl32" onclick="adicionarVL32()">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="op_container" style="display: none;">
+                    <label>Número da OP</label>
+                    <input type="text" id="op_input" placeholder="Ex: 33...">
+                </div>
+
+                <div class="form-group" id="migo_container" style="display: none;">
+                    <label>Número da MIGO</label>
+                    <input type="text" id="migo_input" placeholder="Ex: 181194568">
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn btn-primary" onclick="iniciarAutomacao()">
+                        🚀 Iniciar Processamento
+                    </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD - LINHAS DE RASTREAMENTO -->
+            <div class="card">
+                <h3>Resumo da Execução | Fluxo de Produção</h3>
+                
+                <div id="tracking-rows-container">
+                    <div style="text-align: center; color: #94a3b8; padding: 40px 0;">
+                        <span style="font-size: 40px; display: block; margin-bottom: 10px;">📊</span>
+                        Aguardando preenchimento dos dados...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLE DE EXECUÇÃO -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa">Aguardando ação</span>
+            </div>
+            <div class="console-box" id="console-box"></div>
+        </div>
+    </div>
+
+    <!-- BANNER DE RETOMADA -->
+    <div id="banner-retomada" class="banner-pendente" style="max-width: 1200px; margin: 0 auto 20px auto; display: none;">
+        <div class="info">
+            <span>⚠️</span>
+            <div>
+                <div style="font-size: 15px;">Processo Pendente Encontrado!</div>
+                <div style="font-size: 12px; color: #b26a00;" id="retomada-detalhe">Um lote não foi finalizado.</div>
+            </div>
+        </div>
+        <div class="acoes">
+            <button class="btn btn-secondary" style="width: auto; padding: 8px 16px; font-size: 12px;" onclick="cancelarRetomada()">Cancelar Lote</button>
+            <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;" onclick="retomarProcesso()">Retomar Processamento</button>
+        </div>
+    </div>
+
+    <script>
+        let lotePendenteId = null;
+        let isRpaRunning = false;
+        let pollingInterval = null;
+
+        window.addEventListener('load', () => {
+            atualizarCampos();
+            adicionarLog('✅ Sistema pronto. Aguardando preenchimento dos dados.');
+            verificarPendente();
+            iniciarPollingStatus();
+        });
+
+        function adicionarLog(msg, tipo = '') {
+            const box = document.getElementById('console-box');
+            
+            // Exibe o print no console do navegador (F12)
+            console.log(msg);
+
+            // Verifica se a mensagem começa com \r para sumir em cima da outra (sobrescrever)
+            const isOverwrite = msg.startsWith('\r');
+            const cleanMsg = msg.replace(/^\r/, '');
+
+            if (isOverwrite && box.lastElementChild) {
+                box.lastElementChild.innerText = cleanMsg;
+                if (tipo) box.lastElementChild.className = tipo;
+            } else {
+                const p = document.createElement('p');
+                if (tipo) p.className = tipo;
+                p.innerText = cleanMsg;
+                box.appendChild(p);
+            }
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function verificarPendente() {
+            fetch('/api/estoque/estado_pendente')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.pendente && data.lote && data.lote.caminho_excel === "SEM_PLANILHA") {
+                        lotePendenteId = data.lote.lote_id;
+                        document.getElementById('banner-retomada').style.display = 'flex';
+                        document.getElementById('retomada-detalhe').innerText = `Lote ID: ${lotePendenteId} (Sem Planilha)`;
+                        adicionarLog(`⚠️ Lote pendente encontrado: ID ${lotePendenteId}`);
+                    } else {
+                        document.getElementById('banner-retomada').style.display = 'none';
+                        lotePendenteId = null;
+                    }
+                });
+        }
+
+        function cancelarRetomada() {
+            if(confirm("Tem certeza que deseja cancelar este lote inacabado?")) {
+                adicionarLog("⚠️ Cancelando lote pendente...");
+                fetch('/api/estoque/cancelar_pendente', { method: 'POST' })
+                    .then(() => {
+                        verificarPendente();
+                        adicionarLog("✅ Lote cancelado com sucesso.", 'log-success');
+                    })
+                    .catch(err => {
+                        adicionarLog("❌ Erro ao cancelar lote: " + err, 'log-error');
+                    });
+            }
+        }
+
+        function retomarProcesso() {
+            const select = document.getElementById('ponto_partida');
+            const ponto = select.value;
+            const op = document.getElementById('op_input').value;
+            const migo = document.getElementById('migo_input').value;
+
+            iniciarProcessoServidor([], parseInt(ponto), op, migo, lotePendenteId);
+        }
+
+        function atualizarCampos() {
+            const select = document.getElementById('ponto_partida').value;
+            const opContainer = document.getElementById('op_container');
+            const migoContainer = document.getElementById('migo_container');
+            const btnAdd = document.getElementById('btn_add_vl32');
+            const vl32Inputs = document.getElementById('vl32_inputs');
+
+            opContainer.style.display = 'none';
+            migoContainer.style.display = 'none';
+            btnAdd.style.display = 'none';
+            
+            if (select !== '1') {
+                const rows = vl32Inputs.getElementsByClassName('input-row');
+                while (rows.length > 1) {
+                    vl32Inputs.removeChild(rows[1]);
+                }
+            }
+
+            if (select === '1') { 
+                btnAdd.style.display = 'flex';
+            } else if (select === '2') { 
+                opContainer.style.display = 'block';
+            } else if (select === '3') { 
+                // A partir da 411: só precisa da VL32, OP não é obrigatória.
+            } else if (select === '4') { 
+                // PRDI
+                migoContainer.style.display = 'block';
+            }
+        }
+
+        function adicionarVL32() {
+            const container = document.getElementById('vl32_inputs');
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            row.innerHTML = `
+                <input type="text" class="vl32-input" placeholder="Ex: 181194568" required>
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">-</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function iniciarAutomacao() {
+            const select = document.getElementById('ponto_partida');
+            const opcao = select.options[select.selectedIndex].text;
+            
+            let vl32Values = [];
+            document.querySelectorAll('.vl32-input').forEach((input, index) => {
+                if(input.value) vl32Values.push(input.value);
+            });
+
+            if (vl32Values.length === 0) {
+                alert("Por favor, preencha pelo menos um número de VL32.");
+                return;
+            }
+
+            let opVal = null;
+            let migoVal = null;
+
+            if (select.value === '2') {
+                opVal = document.getElementById('op_input').value;
+                if (!opVal) {
+                    alert("O número da OP é obrigatório para iniciar a partir da MIGO ZP1/261.");
+                    return;
+                }
+            } else if (select.value === '4') {
+                migoVal = document.getElementById('migo_input').value;
+                // migoVal (inbound global) pode ser nulo se quiser usar a VL32 que foi preenchida
+            }
+
+            iniciarProcessoServidor(vl32Values, parseInt(select.value), opVal, migoVal, null);
+        }
+
+        function iniciarProcessoServidor(vl32_list, ponto_partida, op_global, migo_global, lote_id) {
+            document.getElementById('status-rpa').innerText = 'Processando...';
+
+            const payload = {
+                vl32_list: vl32_list,
+                ponto_partida: ponto_partida,
+                op_global: op_global,
+                migo_global: migo_global,
+                lote_id: lote_id
+            };
+
+            adicionarLog('🚀 Iniciando processamento...');
+
+            fetch('/api/estoque_sem_planilha/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    adicionarLog('❌ Erro: ' + data.message, 'log-error');
+                    document.getElementById('status-rpa').innerText = 'Erro';
+                } else {
+                    adicionarLog('✅ Processamento iniciado com sucesso!', 'log-success');
+                    document.getElementById('status-rpa').innerText = 'Processando';
+                }
+            })
+            .catch(err => {
+                adicionarLog('❌ Erro na requisição: ' + err, 'log-error');
+                document.getElementById('status-rpa').innerText = 'Erro';
+            });
+        }
+
+        // --- POLLING ---
+        function iniciarPollingStatus() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            atualizarStatusReal();
+            pollingInterval = setInterval(atualizarStatusReal, 2000);
+        }
+
+        function mapearStatusEtapas(item, rpaRodando) {
+            const stages = {
+                ordem: { status: 'pending', value: item.op || '--' },
+                apontamento: { status: 'pending', value: '--' },
+                consumo: { status: 'pending', value: '--' },
+                migo: { status: 'pending', value: item.inbound_gerada || '--' },
+                prdi: { status: 'pending', value: '--' }
+            };
+
+            const status = item.status_etapa;
+
+            const setSuccess = (stageKey, val = '✅') => {
+                stages[stageKey].status = 'success';
+                stages[stageKey].value = val;
+            };
+
+            const setError = (stageKey, val = '❌') => {
+                stages[stageKey].status = 'error';
+                stages[stageKey].value = val;
+            };
+
+            const setRunning = (stageKey, val = '⏳') => {
+                stages[stageKey].status = 'running';
+                stages[stageKey].value = val;
+            };
+
+            if (status === 'CONCLUIDO') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('apontamento', '✅');
+                setSuccess('consumo', '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
+                setSuccess('prdi', '✅');
+            } else if (status === 'MIGO_TRANSF_OK') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('apontamento', '✅');
+                setSuccess('consumo', '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
+                if (rpaRodando) setRunning('prdi');
+            } else if (status === 'MIGO_ZP1_OK' || status === 'APONTAMENTO_OK') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('apontamento', '✅');
+                setSuccess('consumo', '✅');
+                if (rpaRodando) setRunning('migo');
+            } else if (status === 'CONSUMO_OK') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('consumo', '✅');
+                if (rpaRodando) setRunning('apontamento');
+            } else if (status === 'CO01_OK') {
+                setSuccess('ordem', item.op || '✅');
+                if (rpaRodando) setRunning('consumo');
+            } else if (status === 'PENDENTE') {
+                if (rpaRodando) setRunning('ordem');
+            } else if (status === 'ERRO_CO01') {
+                setError('ordem');
+            } else if (status === 'ERRO_MIGO_ZP1') {
+                setSuccess('ordem', item.op || '✅');
+                setError('consumo');
+                setError('apontamento');
+            } else if (status === 'ERRO_MIGO_TRANSF') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('apontamento', '✅');
+                setSuccess('consumo', '✅');
+                setError('migo');
+            } else if (status === 'ERRO_PRDI') {
+                setSuccess('ordem', item.op || '✅');
+                setSuccess('apontamento', '✅');
+                setSuccess('consumo', '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
+                setError('prdi');
+            } else if (status === 'ERRO_GERAL') {
+                setError('ordem');
+                setError('apontamento');
+                setError('consumo');
+                setError('migo');
+                setError('prdi');
+            }
+
+            return stages;
+        }
+
+        function renderizarTrackingRows(itens, rpaRodando) {
+            const container = document.getElementById('tracking-rows-container');
+            if (!itens || itens.length === 0) return;
+
+            let html = '';
+            itens.forEach((item, index) => {
+                const stages = mapearStatusEtapas(item, rpaRodando);
+                
+                html += `
+                <div class="tracking-row" id="row-${item.id}">
+                    <div class="row-info" style="justify-content: center; align-items: center;">
+                        <div class="row-material" style="font-size: 16px;">VL32: ${item.material || 'Carregando...'}</div>
+                    </div>
+                    
+                    <div class="stage-cell status-pending">
+                        <div class="stage-label">VL32 (Lido)</div>
+                        <div class="stage-value">${item.inbound || '--'}</div>
+                    </div>
+
+                    <!-- ORDEM DE PRODUÇÃO -->
+                    <div class="stage-cell status-${stages.ordem.status}">
+                        <div class="stage-label">Ordem de Produção</div>
+                        <div class="stage-value">${stages.ordem.value}</div>
+                    </div>
+
+                    <!-- APONTAMENTO -->
+                    <div class="stage-cell status-${stages.apontamento.status}">
+                        <div class="stage-label">Apontamento</div>
+                        <div class="stage-value">${stages.apontamento.value === '✅' ? '✅' : stages.apontamento.value === '❌' ? '❌' : stages.apontamento.value === '⏳' ? '⏳' : '--'}</div>
+                    </div>
+
+                    <!-- CONSUMO -->
+                    <div class="stage-cell status-${stages.consumo.status}">
+                        <div class="stage-label">Consumo</div>
+                        <div class="stage-value">${stages.consumo.value === '✅' ? '✅' : stages.consumo.value === '❌' ? '❌' : stages.consumo.value === '⏳' ? '⏳' : '--'}</div>
+                    </div>
+
+                    <!-- MIGO -->
+                    <div class="stage-cell status-${stages.migo.status}">
+                        <div class="stage-label">Migo (411)</div>
+                        <div class="stage-value">${stages.migo.value}</div>
+                    </div>
+
+                    <!-- PRDI -->
+                    <div class="stage-cell status-${stages.prdi.status}">
+                        <div class="stage-label">PRDI</div>
+                        <div class="stage-value">${stages.prdi.value === '✅' ? '✅' : stages.prdi.value === '❌' ? '❌' : stages.prdi.value === '⏳' ? '⏳' : '--'}</div>
+                    </div>
+
+                    <!-- TEMPO -->
+                    <div class="stage-cell status-pending">
+                        <div class="stage-label">Tempo</div>
+                        <div class="stage-value">${item.tempo || '--'}</div>
+                    </div>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function atualizarStatusReal() {
+            fetch('/api/logs')
+                .then(res => res.json())
+                .then(logsData => {
+                    isRpaRunning = logsData.rodando;
+                    document.getElementById('status-rpa').innerText = isRpaRunning ? 'Processando' : 'Aguardando ação';
+
+                    if (logsData.novos_logs && logsData.novos_logs.length > 0) {
+                        logsData.novos_logs.forEach(log => {
+                            let logClass = '';
+                            if (log.includes('❌') || log.includes('Erro') || log.includes('Falha')) logClass = 'log-error';
+                            else if (log.includes('✅') || log.includes('Sucesso') || log.includes('Concluído')) logClass = 'log-success';
+                            adicionarLog(log, logClass);
+                        });
+                    }
+                    return fetch('/api/estoque/status');
+                })
+                .then(res => res ? res.json() : null)
+                .then(statusData => {
+                    if (statusData && statusData.status === 'success' && statusData.lote) {
+                        // Só renderiza aqui se for o lote de sem_planilha, ou não tem problema, mas é bom filtrar.
+                        if (statusData.lote.caminho_excel === "SEM_PLANILHA") {
+                            renderizarTrackingRows(statusData.lote.itens, isRpaRunning);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro ao atualizar status:', err);
+                });
+        }
+    </script>
+</body>
+</html>

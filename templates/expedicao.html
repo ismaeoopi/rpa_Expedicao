@@ -335,7 +335,7 @@
         }
 
         .log-success {
-            color: #33ff33;
+            color: #1b5e20;
             font-weight: 600;
         }
 
@@ -494,10 +494,23 @@
         // ============== LOGS ==============
         function adicionarLog(msg, tipo = '') {
             const box = document.getElementById('console-box');
-            const p = document.createElement('p');
-            if (tipo) p.className = tipo;
-            p.innerText = msg;
-            box.appendChild(p);
+            
+            // Exibe o print no console do navegador (F12)
+            console.log(msg);
+
+            // Verifica se a mensagem começa com \r para sumir em cima da outra (sobrescrever)
+            const isOverwrite = msg.startsWith('\r');
+            const cleanMsg = msg.replace(/^\r/, '');
+
+            if (isOverwrite && box.lastElementChild) {
+                box.lastElementChild.innerText = cleanMsg;
+                if (tipo) box.lastElementChild.className = tipo;
+            } else {
+                const p = document.createElement('p');
+                if (tipo) p.className = tipo;
+                p.innerText = cleanMsg;
+                box.appendChild(p);
+            }
             box.scrollTop = box.scrollHeight;
         }
 

@@ -34,6 +34,9 @@ def fechar_popups(session, keywords):
                 elif "monitor" in titulo:
                     session.findById("wnd[1]/usr/ctxtP_LGNUM").text = "sp10"
                     session.findById("wnd[1]/tbar[0]/btn[8]").press()
+                elif "verific" in titulo:
+                    session.findById("wnd[1]/usr/btnSPOP-VAROPTION1").press()
+                    
                 else:
                     janela.sendVKey(0) # Enter padrão
                 time.sleep(0.5)

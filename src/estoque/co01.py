@@ -25,14 +25,21 @@ def executar_co01_processo(session, acabado, semi, peso):
 
         session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOWE").select()
         
-        if session.findById("wnd[0]/sbar").text.startswith("Data de fornecimento pode ser cumprida?"):
+        if session.findById("wnd[0]/sbar").text.startswith("Data de fornecimento pode ser cumprida?") or session.findById("wnd[0]/sbar").text.startswith("Não está prevista produção interna para material"):
             session.findById("wnd[0]").sendVKey(0)
+        fechar_popups(session, ["Verific.status de material"])
         fechar_popups(session, ["Informação"])
+
 
         session.findById("wnd[0]/usr/tabsTABSTRIP_0115/tabpKOWE/ssubSUBSCR_0115:SAPLCOKO1:0190/ctxtAFPOD-LGORT").text = depOrigem
 
         session.findById("wnd[0]/tbar[1]/btn[5]").press()
+        
+        if session.findById("wnd[0]/sbar").text.startswith("Depósito"):
+            print("⚠️  Depósito não cadastrado para o material. Verifique a configuração do depósito ou do material.")
+            return None
         session.findById("wnd[0]/tbar[1]/btn[6]").press()
+        
 
         # Limpeza de componentes
         session.findById("wnd[0]/usr/tblSAPLCOMKTCTRL_0120").columns.elementAt(1).selected = True
@@ -49,7 +56,10 @@ def executar_co01_processo(session, acabado, semi, peso):
                 session.findById("wnd[1]/usr/btnSPOP-VAROPTION1").press()
 
         session.findById("wnd[0]/usr/tblSAPLCOMKTCTRL_0120").columns.elementAt(1).selected = True
+        session.findById("wnd[0]/usr/tblSAPLCOMKTCTRL_0120/ctxtRESBD-LGORT[9,0]").text = "INT"
+
         session.findById("wnd[0]/tbar[1]/btn[25]").press() # Liberar
+        fechar_popups(session, ["Verific.status de material"])
         fechar_popups(session, ["Liberar ordem"])
         session.findById("wnd[0]/tbar[0]/btn[11]").press() # Salvar
         fechar_popups(session, ["Determ.custos"])

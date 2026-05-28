@@ -13,6 +13,7 @@ from src.expedicao.sm_remessa import smRemessa
 from src.expedicao.fip_etiquetas import salvarFIP
 from src.estoque.packlist import analisar_planilha_packlist
 from src.estoque.processo_completo import processo_estoque
+from src.estoque.processo_sap import processo_estoque_sem_planilha
 import src.utils.db as db
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
@@ -43,6 +44,10 @@ def expedicao():
 @app.route('/estoque')
 def estoque():
     return render_template('estoque.html')
+
+@app.route('/estoque_sem_planilha')
+def estoque_sem_planilha():
+    return render_template('estoque_sem_planilha.html')
 
 @app.route('/api/inicializar', methods=['GET'])
 def inicializar():
@@ -165,6 +170,32 @@ def executar_estoque():
                 localizarMon(caminho)
         except Exception as e:
             log_sys.write(f"❌ Falha fatal na thread do processo de estoque: {e}")
+        finally:
+            log_sys.is_running = False
+
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    return jsonify({"status": "started"})
+
+@app.route('/api/estoque_sem_planilha/executar', methods=['POST'])
+def executar_estoque_sem_planilha():
+    dados = request.json
+    vl32_list = dados.get('vl32_list', [])
+    ponto_partida = int(dados.get('ponto_partida', 1))
+    op_global = dados.get('op_global', None)
+    migo_global = dados.get('migo_global', None)
+    lote_id = dados.get('lote_id', None)
+
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+
+    def worker():
+        log_sys.is_running = True
+        try:
+            processo_estoque_sem_planilha(vl32_list, ponto_partida, op_global, migo_global, lote_id)
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal na thread do processo sem planilha: {e}")
         finally:
             log_sys.is_running = False
 

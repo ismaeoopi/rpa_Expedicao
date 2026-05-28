@@ -3,7 +3,7 @@ from src.utils.common import log_sys
 from src.utils.sap_utils import conectar_sap
 from src.utils.excel_utils import ler_excel_universal, valorFloatPy, valorFloatexcel
 
-def executar_prdi(caminho, auto=False, inbound="", filtro=""):
+def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs_unicas=None):
     if isinstance(caminho, str):
         aba = "Exportação SAPUI5" if auto else "PRDI"
         df = ler_excel_universal(caminho, aba, 1) # Coluna validação index 1 conforme original
@@ -17,7 +17,9 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
     else:
         df_filtrado = df.copy()
     
-    tamanho = len(df_filtrado)
+    # Se o tamanho não for passado, calcula o padrão (tamanho do dataframe)
+    if tamanho is None:
+        tamanho = len(df_filtrado)
     log_sys.write(f"🚀 Iniciando PRDI para {tamanho} itens...")
 
 
@@ -55,8 +57,10 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
         # Packing Dialog
         session.findById("wnd[0]/mbar/menu[0]/menu[2]/menu[2]").Select() # Função Follow-up -> Pack
         
-        if tamanho>99:
-            restante = tamanho
+        # Se nUcs_unicas for informado, usamos esse valor para NUMBER_HUS
+        total_a_criar = nUcs_unicas if nUcs_unicas is not None else tamanho
+        if total_a_criar > 99:
+            restante = total_a_criar
             while restante > 0:
                 if restante > 99:
                     nUcs = 99
@@ -68,10 +72,14 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
                 restante -= nUcs
         else:
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpHU_CREATE/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0202/ctxt/SCWM/S_PACK_VIEW_SCANNER-DEST_PMAT_NO").Text = "EWMS4-PAL06"
-            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpHU_CREATE/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0202/txt/SCWM/S_PACK_VIEW_SCANNER-NUMBER_HUS").Text = str(tamanho)
+            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpHU_CREATE/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0202/txt/SCWM/S_PACK_VIEW_SCANNER-NUMBER_HUS").Text = str(total_a_criar)
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpHU_CREATE/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0202/btnPB_CREATE").press()
         time.sleep(2)
         session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK").Select()
+
+        # Lista de UCs únicas na ordem em que aparecem no df_filtrado
+        ucs_unicas_lista = list(df_filtrado['UC'].unique()) if 'UC' in df_filtrado.columns else []
+        ucs_processadas = {} # Cache para armazenar as UCs geradas e não repetir preenchimento de tara
 
         for i, (index, row) in enumerate(df_filtrado.iterrows()):
 
@@ -81,39 +89,56 @@ def executar_prdi(caminho, auto=False, inbound="", filtro=""):
                 peso = valorFloatexcel(row['Peso Líquido']).strip()
                 bob = valorFloatexcel(row['Nº Bobinas']).strip()
                 peso_bruto = float(row['Peso Bruto'])
-                peso_liq_float = float(row['Peso Líquido'])
-                print(f"Peso Bruto: {peso_bruto}, Peso Líquido: {peso_liq_float}")
-                tara = valorFloatexcel(peso_bruto - peso_liq_float)
+                # Se houver Peso LIQ (peso total do palete para a tara), usamos. Caso contrário, usamos Peso Líquido.
+                peso_liq_total = float(row['Peso LIQ']) if 'Peso LIQ' in row else float(row['Peso Líquido'])
+                print(f"Peso Bruto: {peso_bruto}, Peso Líquido Total para Tara: {peso_liq_total}")
+                tara = valorFloatexcel(peso_bruto - peso_liq_total)
             else:
                 peso = valorFloatexcel(row["Peso líquido"]).strip()
                 bob = valorFloatexcel(row["Bobinas"]).strip()
                 tara = valorFloatexcel(row["Tara"])
 
             itemNum = i + 1
-            node_id = str(tamanho + itemNum + 1).rjust(11)
+            identificador_uc_excel = row.get('UC', None)
 
-            # Preenche Scanner
+            # Preenche Scanner (Sempre ocorre para cada lote/item)
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-DOCNO").Text = doc_ref
             time.sleep(0.1)
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-ITMNO").Text = str((itemNum * 10))
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-UIQUAN").Text = peso
             
-            # Seleciona Nó na árvore
-            tree = session.findById("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell/shellcont[1]/shell[1]")
-            tree.doubleClickNode(node_id)
-            time.sleep(0.1)
+            # Verifica se essa UC já teve tara/volume preenchidos neste processo
+            if identificador_uc_excel and identificador_uc_excel in ucs_processadas:
+                # Já processamos, reaproveita o ID e pula a seleção na árvore
+                uc = ucs_processadas[identificador_uc_excel]
+            else:
+                # Primeira vez com esta UC, precisa ir na árvore, colocar tara/volume e pegar ID gerado
+                if ucs_unicas_lista and identificador_uc_excel:
+                    idx_uc = ucs_unicas_lista.index(identificador_uc_excel) + 1
+                    node_id = str(tamanho + idx_uc + 1).rjust(11)
+                else:
+                    node_id = str(tamanho + itemNum + 1).rjust(11)
 
-            # Preenche Tara e Volume
-            session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL").Select()
-            session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0320/txt/SCWM/S_PACK_VIEW_HUHDR-T_WEIGHT").Text = tara
-            session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0320/txt/SCWM/S_PACK_VIEW_HUHDR-T_VOLUME").Text = bob
+                # Seleciona Nó na árvore
+                tree = session.findById("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell/shellcont[1]/shell[1]")
+                tree.doubleClickNode(node_id)
+                time.sleep(0.1)
+    
+                # Preenche Tara e Volume
+                session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL").Select()
+                session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0320/txt/SCWM/S_PACK_VIEW_HUHDR-T_WEIGHT").Text = tara
+                session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0320/txt/SCWM/S_PACK_VIEW_HUHDR-T_VOLUME").Text = bob
+    
+                # Pega ID da HU gerada
+                session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2").Select()
+                uc = session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0335/txt/SCWM/S_PACK_VIEW_HUHDR-HUIDENT").Text
+                time.sleep(0.5)
 
-            # Pega ID da HU gerada
-            session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2").Select()
-            uc = session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0335/txt/SCWM/S_PACK_VIEW_HUHDR-HUIDENT").Text
-            time.sleep(0.5)
+                # Salva no cache
+                if identificador_uc_excel:
+                    ucs_processadas[identificador_uc_excel] = uc
 
-            # Finaliza Packing do item
+            # Finaliza Packing do item (Sempre executa, com o ID da UC lido ou salvo)
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-DHUNO").Text = uc
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/btnPB_PACK").press()
             df.at[i,"UC"] = uc

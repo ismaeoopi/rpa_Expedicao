@@ -32,10 +32,18 @@ def inicializar_banco():
                 peso REAL,
                 op TEXT,
                 inbound TEXT,
+                inbound_gerada TEXT,
                 status_etapa TEXT,
                 FOREIGN KEY (lote_id) REFERENCES lote(id)
             )
         ''')
+        # Adiciona a coluna inbound_gerada dinamicamente caso a tabela já exista sem ela
+        cursor.execute("PRAGMA table_info(item)")
+        colunas = [info[1] for info in cursor.fetchall()]
+        if "inbound_gerada" not in colunas:
+            cursor.execute("ALTER TABLE item ADD COLUMN inbound_gerada TEXT")
+        if "tempo" not in colunas:
+            cursor.execute("ALTER TABLE item ADD COLUMN tempo TEXT")
 
 def criar_novo_lote(caminho_excel):
     inicializar_banco()
@@ -56,7 +64,7 @@ def inserir_item(lote_id, material, peso):
         )
         return cursor.lastrowid
 
-def atualizar_item(item_id, op=None, inbound=None, status_etapa=None):
+def atualizar_item(item_id, op=None, inbound=None, inbound_gerada=None, status_etapa=None, material=None, peso=None, tempo=None):
     query = "UPDATE item SET "
     params = []
     if op is not None:
@@ -65,9 +73,21 @@ def atualizar_item(item_id, op=None, inbound=None, status_etapa=None):
     if inbound is not None:
         query += "inbound = ?, "
         params.append(inbound)
+    if inbound_gerada is not None:
+        query += "inbound_gerada = ?, "
+        params.append(inbound_gerada)
     if status_etapa is not None:
         query += "status_etapa = ?, "
         params.append(status_etapa)
+    if material is not None:
+        query += "material = ?, "
+        params.append(material)
+    if peso is not None:
+        query += "peso = ?, "
+        params.append(peso)
+    if tempo is not None:
+        query += "tempo = ?, "
+        params.append(tempo)
     
     if not params:
         return
@@ -92,10 +112,10 @@ def buscar_lote_pendente():
         row = cursor.fetchone()
         if row:
             lote_id, caminho_excel = row
-            cursor.execute("SELECT id, material, peso, op, inbound, status_etapa FROM item WHERE lote_id = ?", (lote_id,))
+            cursor.execute("SELECT id, material, peso, op, inbound, status_etapa, inbound_gerada, tempo FROM item WHERE lote_id = ?", (lote_id,))
             itens = cursor.fetchall()
             return {"lote_id": lote_id, "caminho_excel": caminho_excel, "itens": [
-                {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5]} for r in itens
+                {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5], "inbound_gerada": r[6], "tempo": r[7]} for r in itens
             ]}
     return None
 
@@ -109,10 +129,10 @@ def buscar_itens_por_lote(lote_id):
     inicializar_banco()
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, material, peso, op, inbound, status_etapa FROM item WHERE lote_id = ?", (lote_id,))
+        cursor.execute("SELECT id, material, peso, op, inbound, status_etapa, inbound_gerada, tempo FROM item WHERE lote_id = ?", (lote_id,))
         itens = cursor.fetchall()
         return [
-            {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5]} for r in itens
+            {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5], "inbound_gerada": r[6], "tempo": r[7]} for r in itens
         ]
 
 def buscar_ultimo_lote():
@@ -123,9 +143,9 @@ def buscar_ultimo_lote():
         row = cursor.fetchone()
         if row:
             lote_id, caminho_excel, status = row
-            cursor.execute("SELECT id, material, peso, op, inbound, status_etapa FROM item WHERE lote_id = ?", (lote_id,))
+            cursor.execute("SELECT id, material, peso, op, inbound, status_etapa, inbound_gerada, tempo FROM item WHERE lote_id = ?", (lote_id,))
             itens = cursor.fetchall()
             return {"lote_id": lote_id, "caminho_excel": caminho_excel, "status": status, "itens": [
-                {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5]} for r in itens
+                {"id": r[0], "material": r[1], "peso": r[2], "op": r[3], "inbound": r[4], "status_etapa": r[5], "inbound_gerada": r[6], "tempo": r[7]} for r in itens
             ]}
     return None

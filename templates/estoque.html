@@ -403,7 +403,7 @@
         }
 
         .log-success {
-            color: #33ff33;
+            color: #1b5e20;
             font-weight: 600;
         }
 
@@ -420,7 +420,7 @@
 
         .tracking-row {
             display: grid;
-            grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr 1fr;
             gap: 12px;
             align-items: center;
             background: #ffffff;
@@ -716,10 +716,23 @@
         // ============== LOGS ==============
         function adicionarLog(msg, tipo = '') {
             const box = document.getElementById('console-box');
-            const p = document.createElement('p');
-            if (tipo) p.className = tipo;
-            p.innerText = msg;
-            box.appendChild(p);
+            
+            // Exibe o print no console do navegador (F12)
+            console.log(msg);
+
+            // Verifica se a mensagem começa com \r para sumir em cima da outra (sobrescrever)
+            const isOverwrite = msg.startsWith('\r');
+            const cleanMsg = msg.replace(/^\r/, '');
+
+            if (isOverwrite && box.lastElementChild) {
+                box.lastElementChild.innerText = cleanMsg;
+                if (tipo) box.lastElementChild.className = tipo;
+            } else {
+                const p = document.createElement('p');
+                if (tipo) p.className = tipo;
+                p.innerText = cleanMsg;
+                box.appendChild(p);
+            }
             box.scrollTop = box.scrollHeight;
         }
 
@@ -982,7 +995,7 @@
                 ordem: { status: 'pending', value: item.op || '--' },
                 apontamento: { status: 'pending', value: '--' },
                 consumo: { status: 'pending', value: '--' },
-                migo: { status: 'pending', value: item.inbound || '--' },
+                migo: { status: 'pending', value: item.inbound_gerada || '--' },
                 prdi: { status: 'pending', value: '--' }
             };
 
@@ -1007,13 +1020,13 @@
                 setSuccess('ordem', item.op || '✅');
                 setSuccess('apontamento', '✅');
                 setSuccess('consumo', '✅');
-                setSuccess('migo', item.inbound || '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
                 setSuccess('prdi', '✅');
             } else if (status === 'MIGO_TRANSF_OK') {
                 setSuccess('ordem', item.op || '✅');
                 setSuccess('apontamento', '✅');
                 setSuccess('consumo', '✅');
-                setSuccess('migo', item.inbound || '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
                 if (rpaRodando) {
                     setRunning('prdi');
                 }
@@ -1054,7 +1067,7 @@
                 setSuccess('ordem', item.op || '✅');
                 setSuccess('apontamento', '✅');
                 setSuccess('consumo', '✅');
-                setSuccess('migo', item.inbound || '✅');
+                setSuccess('migo', item.inbound_gerada || '✅');
                 setError('prdi');
             } else if (status === 'ERRO_GERAL') {
                 setError('ordem');
@@ -1117,6 +1130,12 @@
                     <div class="stage-cell status-${stages.prdi.status}" id="stage-prdi-${item.id}">
                         <div class="stage-label">PRDI</div>
                         <div class="stage-value">${stages.prdi.value === '✅' ? '✅' : stages.prdi.value === '❌' ? '❌' : stages.prdi.value === '⏳' ? '⏳' : '--'}</div>
+                    </div>
+
+                    <!-- TEMPO -->
+                    <div class="stage-cell status-pending">
+                        <div class="stage-label">Tempo</div>
+                        <div class="stage-value">${item.tempo || '--'}</div>
                     </div>
                 </div>
                 `;
