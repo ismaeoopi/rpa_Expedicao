@@ -19,19 +19,24 @@ def valorFloatexcel(valor):
     try:
         valorRound = round(float(valorParaFloat),3)
         return f"{valorRound:.3f}".replace('.',',')
+        #return valorRound
     except ValueError:
         log_sys.write(f"Erro ao converter o valor '{valor}' para float.")
         return 0.0
 
 def valorFloatPy(valor):
-    """Substitui suas funções valorFloatexcel e valorFloatPy por uma única robusta."""
+    """Converte estritamente valores no formato brasileiro (milhar com ponto opcional, decimal com vírgula) para float americano."""
     if pd.isna(valor) or str(valor).strip() == "":
         return 0.0
     
+    # Garante que é string e limpa espaços nas pontas
     valor_str = str(valor).strip()
-    # Se tiver vírgula, assume formato brasileiro (1.000,00 -> 1000.00)
-    if "," in valor_str:
-        valor_str = valor_str.replace(".", "").replace(",", ".")
+    
+    # 1. Remove os pontos de milhar do padrão BR (ex: 1.234,56 vira 1234,56)
+    valor_str = valor_str.replace(".", "")
+    
+    # 2. Transforma a vírgula decimal em ponto (ex: 1234,56 vira 1234.56)
+    valor_str = valor_str.replace(",", ".")
     
     try:
         return round(float(valor_str), 3)
