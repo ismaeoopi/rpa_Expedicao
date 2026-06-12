@@ -18,6 +18,29 @@ import tempfile
 import traceback
 from pathlib import Path
 
+# Imports falsos apenas para o PyInstaller detectar as dependências do app.py
+if False:
+    import requests
+    import dotenv
+    import pandas
+    import openpyxl
+    import flask
+    import flask_cors
+    import reportlab
+    import jinja2
+    import werkzeug
+    import win32com
+    import win32com.client
+    import win32con
+    import win32gui
+    import PIL
+    import plyer
+    import geopy
+    import customtkinter
+    import git
+    import sqlite3
+
+
 def atualizar_repositorio():
     """
     Executa git pull silenciosamente sem mostrar terminal no Windows.

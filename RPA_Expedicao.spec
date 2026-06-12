@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [('templates', 'templates'), ('src', 'src'), ('app.py', '.'), ('updater.py', '.'), ('version.txt', '.')]
 binaries = []
-hiddenimports = ['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter', 'urllib']
+hiddenimports = ['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter', 'urllib', 'requests', 'dotenv', 'flask_cors', 'customtkinter', 'PIL', 'plyer', 'geopy', 'git', 'sqlite3']
 tmp_ret = collect_all('reportlab')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('flask')
@@ -11,6 +11,16 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('pandas')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('tkinter')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('requests')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('dotenv')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('flask_cors')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('customtkinter')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('geopy')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 

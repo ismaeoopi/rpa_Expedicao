@@ -68,10 +68,24 @@ python -m PyInstaller ^
     --hidden-import=reportlab ^
     --hidden-import=tkinter ^
     --hidden-import=urllib ^
+    --hidden-import=requests ^
+    --hidden-import=dotenv ^
+    --hidden-import=flask_cors ^
+    --hidden-import=customtkinter ^
+    --hidden-import=PIL ^
+    --hidden-import=plyer ^
+    --hidden-import=geopy ^
+    --hidden-import=git ^
+    --hidden-import=sqlite3 ^
     --collect-all=reportlab ^
     --collect-all=flask ^
     --collect-all=pandas ^
     --collect-all=tkinter ^
+    --collect-all=requests ^
+    --collect-all=dotenv ^
+    --collect-all=flask_cors ^
+    --collect-all=customtkinter ^
+    --collect-all=geopy ^
     launcher.py
 
 if errorlevel 1 (
