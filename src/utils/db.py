@@ -44,6 +44,63 @@ def inicializar_banco():
             cursor.execute("ALTER TABLE item ADD COLUMN inbound_gerada TEXT")
         if "tempo" not in colunas:
             cursor.execute("ALTER TABLE item ADD COLUMN tempo TEXT")
+            
+        # Tabela de multiplicadores para itens não-KG
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS multiplicador (
+                material TEXT PRIMARY KEY,
+                multiplo REAL NOT NULL
+            )
+        ''')
+        cursor.execute("SELECT COUNT(*) FROM multiplicador")
+        if cursor.fetchone()[0] == 0:
+            valores_padrao = [
+                ("HA2200", 27.8),
+                ("HA2192", 69.32),
+                ("HA2198", 29.06),
+                ("HA2310", 30.0),
+                ("HA2203", 26.8),
+                ("HA2311", 32.15),
+                ("HA2312", 27.4),
+                ("HA2201", 28.15),
+                ("HA2309", 31.25),
+                ("HA2596", 24.475),
+                ("HA2595", 27.24),
+                ("HA2597", 30.36),
+                ("HA2598", 28.4)
+            ]
+            cursor.executemany("INSERT INTO multiplicador (material, multiplo) VALUES (?, ?)", valores_padrao)
+
+def obter_multiplicadores():
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT material, multiplo FROM multiplicador ORDER BY material")
+        rows = cursor.fetchall()
+        return [{"material": r[0], "multiplo": r[1]} for r in rows]
+
+def obter_multiplicador_por_material(material):
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT multiplo FROM multiplicador WHERE material = ?", (material,))
+        row = cursor.fetchone()
+        return row[0] if row else None
+
+def salvar_multiplicador(material, multiplo):
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO multiplicador (material, multiplo) VALUES (?, ?) ON CONFLICT(material) DO UPDATE SET multiplo=excluded.multiplo",
+            (material, multiplo)
+        )
+
+def deletar_multiplicador(material):
+    inicializar_banco()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM multiplicador WHERE material = ?", (material,))
 
 def criar_novo_lote(caminho_excel):
     inicializar_banco()

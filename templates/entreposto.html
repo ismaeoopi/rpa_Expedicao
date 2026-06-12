@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - Entreposto</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER COM GRADIENTE PREMIUM (VERDE/ESCURO) */
+        .header {
+            background: linear-gradient(135deg, #1b5e20 0%, #0d3c15 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #4caf50;
+            box-shadow: 0 8px 32px rgba(76, 175, 80, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #8bc34a;
+        }
+
+        .header h1 .nome {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #aeb8c2;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* CARDS */
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(76, 175, 80, 0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #4caf50, #2e7d32);
+            border-radius: 2px;
+        }
+
+        /* SELECT E COMPONENTES DE FORMULÁRIO */
+        .form-group {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .select-style {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cfd8dc;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #2c3e50;
+            outline: none;
+            background-color: #fff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .select-style:focus {
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        /* PAINEL DE DETALHES DO ENTREPOSTO */
+        .entreposto-details {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .details-header {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            border-left: 4px solid #4caf50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .details-info {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eceff1;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #78909c;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #27272a;
+            font-weight: 600;
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(76, 175, 80, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(76, 175, 80, 0.15);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CONFIGURAÇÕES DO SHAREPOINT (ESTILOS PREMIUM) */
+        .btn-config {
+            background: #ffffff;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-config:hover {
+            background: #e8f5e9;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .input-style {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-style:focus {
+            border-color: #2e7d32;
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span id="saudacao-texto">Carregando</span>
+                    <span class="nome" id="saudacao-nome">...</span>
+                </h1>
+                <p>🏢 Painel de Controle - Módulo Entreposto</p>
+            </div>
+            <a href="/" class="btn-voltar">← Voltar ao Início</a>
+        </div>
+
+        <div class="grid-layout">
+            <!-- SELEÇÃO DO ENTREPOSTO -->
+            <div class="card">
+                <h3>Configuração e Seleção</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">
+                    Selecione o entreposto de destino para gerenciar os processos correspondentes.
+                </p>
+
+                <div class="form-group">
+                    <label for="select-entreposto">Selecione o Entreposto</label>
+                    <select id="select-entreposto" class="select-style" onchange="selecionarEntreposto()">
+                        <option value="" disabled selected>-- Selecione --</option>
+                        <option value="IPOJUCA">IPOJUCA</option>
+                        <option value="ITAJAI">ITAJAI</option>
+                    </select>
+                </div>
+
+                <!-- Detalhes dinâmicos -->
+                <div id="detalhes-entreposto" class="entreposto-details">
+                    <div class="details-header">
+                        <span id="entreposto-nome">IPOJUCA</span>
+                        <span>📍 Ativo</span>
+                    </div>
+                    <div class="details-info">
+                        <div class="info-item">
+                            <span class="info-label">Localização</span>
+                            <span class="info-value" id="entreposto-local">Ipojuca - PE</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tipo</span>
+                            <span class="info-value">Centro de Distribuição / Entreposto</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status do Módulo</span>
+                            <span class="info-value" style="color: #4caf50;">Pronto para Automação</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-config" onclick="toggleConfiguracao()">⚙️ Configurações SharePoint</button>
+                <button class="btn-config" onclick="toggleMultiplicadores()" style="margin-top: 10px;">📊 Múltiplos (Não-KG)</button>
+            </div>
+
+            <!-- DASHBOARD DE PROCESSO -->
+            <div class="card">
+                <h3>Processos de Entreposto</h3>
+                <div id="processos-placeholder" style="text-align: center; color: #94a3b8; padding: 60px 0;">
+                    <span style="font-size: 48px; display: block; margin-bottom: 15px;">🏢</span>
+                    Por favor, selecione um entreposto para visualizar os processos e automações disponíveis.
+                </div>
+
+                <div id="processos-conteudo" style="display: none; animation: fadeIn 0.5s ease-in-out forwards;">
+                    <p style="font-size: 14px; color: #5a6c7d; margin-bottom: 20px;">
+                        Módulo de automação logística configurado para o entreposto <strong id="processos-titulo-entreposto"></strong>.
+                    </p>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px; font-size: 15px;">🚀 Ações Disponíveis</h4>
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
+                            O robô fará o download das duas planilhas correspondentes do SharePoint (conforme mapeado nas configurações) e realizará a importação dos dados automaticamente.
+                        </p>
+                        <button class="btn-primary" id="btn-executar-rpa" onclick="dispararAutomacao()">
+                            ⚡ Iniciar Processamento
+                        </button>
+                    </div>
+                    
+                    <!-- TABELA DE RESULTADOS DO CONFRONTO DE CARGAS E ESTOQUE -->
+                    <div id="resultado-processamento" style="display: none; margin-top: 20px; background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                            <h4 style="color: #2e7d32; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                                📋 Status das Cargas (Cruzamento Cargas x Estoque)
+                            </h4>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-secondary" onclick="marcarTodasCargas(true)" style="padding: 6px 12px; font-size: 12px; height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0;">☑️ Marcar Todas</button>
+                                <button class="btn-secondary" onclick="marcarTodasCargas(false)" style="padding: 6px 12px; font-size: 12px; height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0;">⬜ Desmarcar Todas</button>
+                            </div>
+                        </div>
+                        <div id="lista-cargas-tabela" style="max-height: 250px; overflow-y: auto; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
+                        
+                        <div style="margin-top: 15px; display: flex; justify-content: flex-end; align-items: center; gap: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                            <span style="font-size: 13px; color: #64748b;" id="selecionadas-info">Nenhuma carga selecionada</span>
+                            <button class="btn-primary" id="btn-processar-selecionadas" onclick="processarCargasSelecionadas()" style="padding: 10px 20px; font-size: 13px;" disabled>
+                                ⚙️ Processar Selecionadas
+                            </button>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 12px; color: #94a3b8; font-style: italic; margin-top: 15px;">
+                        O progresso detalhado das etapas e downloads será reportado em tempo real no console de execução abaixo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD CONFIGURAÇÕES DO SHAREPOINT (TOGGLE) -->
+            <div class="card" id="card-config-sharepoint" style="display: none; grid-column: span 2; animation: fadeIn 0.5s ease-in-out forwards;">
+                <h3>Credenciais e Caminhos do SharePoint</h3>
+                <p style="font-size: 13px; color: #64748b;">
+                    Preencha as credenciais da aplicação Azure AD (Client Credentials flow) e os caminhos das planilhas relativos à raiz do SharePoint.
+                </p>
+
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label>Tenant ID (Azure AD)</label>
+                        <input type="text" id="cfg-tenant-id" class="input-style" placeholder="Ex: 8527a2b9-...">
+                    </div>
+                    <div class="form-group">
+                        <label>Client ID (Aplicação)</label>
+                        <input type="text" id="cfg-client-id" class="input-style" placeholder="Ex: e6175b28-...">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Secret (Segredo)</label>
+                        <input type="password" id="cfg-client-secret" class="input-style" placeholder="••••••••••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Drive ID (ID da Biblioteca do SharePoint)</label>
+                        <input type="text" id="cfg-drive-id" class="input-style" placeholder="Ex: b!9q02J...">
+                    </div>
+                </div>
+
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label>Ipojuca - Planilha de Cargas</label>
+                        <input type="text" id="cfg-pl-ipojuca-1" class="input-style" placeholder="Ex: Documentos Compartilhados/Geral/Ipojuca_Cargas.xlsx">
+                    </div>
+                    <div class="form-group">
+                        <label>Ipojuca - Planilha de Estoque</label>
+                        <input type="text" id="cfg-pl-ipojuca-2" class="input-style" placeholder="Ex: Documentos Compartilhados/Geral/Ipojuca_Estoque.xlsx">
+                    </div>
+                    <div class="form-group">
+                        <label>Itajaí - Planilha de Cargas</label>
+                        <input type="text" id="cfg-pl-itajai-1" class="input-style" placeholder="Ex: Documentos Compartilhados/Geral/Itajai_Cargas.xlsx">
+                    </div>
+                    <div class="form-group">
+                        <label>Itajaí - Planilha de Estoque</label>
+                        <input type="text" id="cfg-pl-itajai-2" class="input-style" placeholder="Ex: Documentos Compartilhados/Geral/Itajai_Estoque.xlsx">
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: flex; gap: 15px; justify-content: flex-end;">
+                    <button class="btn-secondary" onclick="testarConexao()">🧪 Testar Conexão</button>
+                    <button class="btn-primary" onclick="salvarConfiguracoes()">💾 Salvar Configurações</button>
+                </div>
+            </div>
+
+            <!-- CARD CONFIGURAÇÕES DE MÚLTIPLOS (TOGGLE) -->
+            <div class="card" id="card-config-multiplicadores" style="display: none; grid-column: span 2; animation: fadeIn 0.5s ease-in-out forwards;">
+                <h3>Configuração de Múltiplos (Não-KG)</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                    Gerencie os multiplicadores de quantidade padrão que serão aplicados durante o picking para materiais que não utilizam a unidade KG.
+                </p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #5a6c7d; margin-bottom: 6px; text-transform: uppercase;">Código do Material</label>
+                        <input type="text" id="new-material-id" class="input-style" placeholder="Ex: HA2200" style="text-transform: uppercase;">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #5a6c7d; margin-bottom: 6px; text-transform: uppercase;">Múltiplo</label>
+                        <input type="text" id="new-multiplier-val" class="input-style" placeholder="Ex: 27,8">
+                    </div>
+                    <div>
+                        <button class="btn-primary" onclick="salvarMultiplicadorBackend()" style="padding: 10px 20px; font-size: 13px; margin: 0; height: 38px; display: inline-flex; align-items: center; justify-content: center;">💾 Salvar</button>
+                    </div>
+                </div>
+
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif;">
+                        <thead>
+                            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700;">
+                                <th style="padding: 10px 15px;">Código do Material</th>
+                                <th style="padding: 10px 15px;">Múltiplo Padrão</th>
+                                <th style="padding: 10px 15px; text-align: center; width: 120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-multiplicadores-corpo">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLE DE EXECUÇÃO -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa" style="background: rgba(76, 175, 80, 0.15); padding: 6px 12px; border-radius: 4px; color: #4caf50; font-weight: 700;">Online</span>
+            </div>
+            <div class="console-box" id="console-box">
+                <p>✅ Módulo de Entreposto carregado com sucesso.</p>
+                <p>Aguardando seleção do entreposto para iniciar atividades...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pollingInterval = null;
+        let entrepostoAtivo = null;
+
+        // ============== INICIALIZAÇÃO ==============
+        window.addEventListener('load', () => {
+            fetch('/api/inicializar')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('saudacao-texto').innerText = data.saudacao;
+                    document.getElementById('saudacao-nome').innerText = data.nome;
+                })
+                .catch(err => {
+                    console.error('Erro ao inicializar:', err);
+                    document.getElementById('saudacao-texto').innerText = "Bem-vindo";
+                    document.getElementById('saudacao-nome').innerText = "Usuário";
+                });
+
+            // Carrega as configurações existentes no arquivo .env
+            carregarConfiguracoes();
+            
+            // Inicia o polling de logs se houver algum processo rodando em segundo plano
+            iniciarLogs();
+        });
+
+        // ============== SELEÇÃO DE ENTREPOSTO ==============
+        function selecionarEntreposto() {
+            const select = document.getElementById('select-entreposto');
+            const entreposto = select.value;
+            entrepostoAtivo = entreposto;
+
+            const divDetalhes = document.getElementById('detalhes-entreposto');
+            const elNome = document.getElementById('entreposto-nome');
+            const elLocal = document.getElementById('entreposto-local');
+
+            const placeholder = document.getElementById('processos-placeholder');
+            const conteudo = document.getElementById('processos-conteudo');
+            const elTituloProc = document.getElementById('processos-titulo-entreposto');
+
+            const consoleBox = document.getElementById('console-box');
+
+            if (entreposto) {
+                elNome.innerText = entreposto;
+                if (entreposto === 'IPOJUCA') {
+                    elLocal.innerText = 'Ipojuca - PE';
+                } else if (entreposto === 'ITAJAI') {
+                    elLocal.innerText = 'Itajaí - SC';
+                }
+
+                divDetalhes.style.display = 'block';
+                placeholder.style.display = 'none';
+                conteudo.style.display = 'block';
+                elTituloProc.innerText = entreposto;
+
+                const p = document.createElement('p');
+                p.innerText = `⚙️ Entreposto alterado para: ${entreposto} (${elLocal.innerText})`;
+                consoleBox.appendChild(p);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+        }
+
+        // ============== CONFIGURAÇÕES SHAREPOINT ==============
+        function toggleConfiguracao() {
+            const card = document.getElementById('card-config-sharepoint');
+            if (card.style.display === 'none') {
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                card.style.display = 'none';
+            }
+        }
+
+        function carregarConfiguracoes() {
+            fetch('/api/sharepoint/config')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('cfg-tenant-id').value = data.tenant_id;
+                    document.getElementById('cfg-client-id').value = data.client_id;
+                    document.getElementById('cfg-client-secret').value = data.client_secret;
+                    document.getElementById('cfg-drive-id').value = data.drive_id;
+                    
+                    document.getElementById('cfg-pl-ipojuca-1').value = data.planilha_ipojuca_1;
+                    document.getElementById('cfg-pl-ipojuca-2').value = data.planilha_ipojuca_2;
+                    document.getElementById('cfg-pl-itajai-1').value = data.planilha_itajai_1;
+                    document.getElementById('cfg-pl-itajai-2').value = data.planilha_itajai_2;
+                })
+                .catch(err => console.error("Erro ao carregar configurações:", err));
+        }
+
+        function salvarConfiguracoes() {
+            const config = {
+                tenant_id: document.getElementById('cfg-tenant-id').value,
+                client_id: document.getElementById('cfg-client-id').value,
+                client_secret: document.getElementById('cfg-client-secret').value,
+                drive_id: document.getElementById('cfg-drive-id').value,
+                planilha_ipojuca_1: document.getElementById('cfg-pl-ipojuca-1').value,
+                planilha_ipojuca_2: document.getElementById('cfg-pl-ipojuca-2').value,
+                planilha_itajai_1: document.getElementById('cfg-pl-itajai-1').value,
+                planilha_itajai_2: document.getElementById('cfg-pl-itajai-2').value,
+            };
+
+            fetch('/api/sharepoint/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                logNoConsole(`💾 Configurações de credenciais e caminhos do SharePoint salvas com sucesso.`);
+            })
+            .catch(err => {
+                alert("Erro ao salvar configurações.");
+                console.error(err);
+            });
+        }
+
+        function testarConexao() {
+            logNoConsole("🧪 Iniciando teste de conexão e acessibilidade aos arquivos do SharePoint...");
+            
+            const config = {
+                tenant_id: document.getElementById('cfg-tenant-id').value,
+                client_id: document.getElementById('cfg-client-id').value,
+                client_secret: document.getElementById('cfg-client-secret').value,
+                drive_id: document.getElementById('cfg-drive-id').value,
+                planilha_ipojuca_1: document.getElementById('cfg-pl-ipojuca-1').value,
+                planilha_ipojuca_2: document.getElementById('cfg-pl-ipojuca-2').value,
+                planilha_itajai_1: document.getElementById('cfg-pl-itajai-1').value,
+                planilha_itajai_2: document.getElementById('cfg-pl-itajai-2').value,
+            };
+
+            fetch('/api/sharepoint/testar_conexao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.autenticado) {
+                    logNoConsole(`❌ Falha de Autenticação Azure AD: ${data.erro_autenticacao}`);
+                    return;
+                }
+                logNoConsole("✅ Autenticado com sucesso na Azure AD!");
+
+                if (!data.drive_acessivel) {
+                    logNoConsole(`❌ Falha ao acessar Biblioteca SharePoint (DRIVE_ID): ${data.erro_drive}`);
+                    return;
+                }
+                logNoConsole("✅ Biblioteca do SharePoint acessada com sucesso!");
+
+                // Validar arquivos individualmente
+                for (let k in data.arquivos) {
+                    const info = data.arquivos[k];
+                    let rotulo = k.toUpperCase().replace('_', ' ');
+                    if (k === 'planilha_ipojuca_1') rotulo = 'IPOJUCA - PLANILHA DE CARGAS';
+                    if (k === 'planilha_ipojuca_2') rotulo = 'IPOJUCA - PLANILHA DE ESTOQUE';
+                    if (k === 'planilha_itajai_1') rotulo = 'ITAJAÍ - PLANILHA DE CARGAS';
+                    if (k === 'planilha_itajai_2') rotulo = 'ITAJAÍ - PLANILHA DE ESTOQUE';
+                    if (info.status === 'ok') {
+                        logNoConsole(`✔️ [${rotulo}]: Arquivo localizado no SharePoint ('${info.nome}')`);
+                    } else if (info.status === 'nao_configurado') {
+                        logNoConsole(`⚠️ [${rotulo}]: Caminho do arquivo não preenchido.`);
+                    } else {
+                        logNoConsole(`❌ [${rotulo}]: Erro ao localizar arquivo. Verifique o caminho. Detalhe: ${info.detalhe}`);
+                    }
+                }
+            })
+            .catch(err => {
+                logNoConsole(`❌ Erro interno ao realizar o teste: ${err}`);
+            });
+        }
+
+        // ============== EXECUÇÃO DE AUTOMAÇÃO ==============
+        function dispararAutomacao() {
+            if (!entrepostoAtivo) {
+                alert("Por favor, selecione um entreposto primeiro.");
+                return;
+            }
+
+            logNoConsole(`⚡ Disparando automação do SharePoint para ${entrepostoAtivo}...`);
+            
+            fetch('/api/entreposto/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entreposto: entrepostoAtivo })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'started') {
+                    logNoConsole(`🚀 Processo iniciado em segundo plano. Aguarde.`);
+                    iniciarLogs();
+                } else {
+                    logNoConsole(`⚠️ Não foi possível iniciar: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                logNoConsole(`❌ Erro ao disparar processo: ${err}`);
+            });
+        }
+
+        // ============== LOGS DO CONSOLE ==============
+        function logNoConsole(msg) {
+            const consoleBox = document.getElementById('console-box');
+            const timestamp = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            p.innerText = `[${timestamp}] ${msg}`;
+            consoleBox.appendChild(p);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function iniciarLogs() {
+            if (pollingInterval) return;
+            
+            const statusRpa = document.getElementById('status-rpa');
+            const consoleBox = document.getElementById('console-box');
+
+            pollingInterval = setInterval(() => {
+                fetch('/api/logs')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rodando) {
+                            statusRpa.innerText = "Executando";
+                            statusRpa.style.background = "rgba(255, 152, 0, 0.15)";
+                            statusRpa.style.color = "#ff9800";
+                        } else {
+                            statusRpa.innerText = "Online";
+                            statusRpa.style.background = "rgba(76, 175, 80, 0.15)";
+                            statusRpa.style.color = "#4caf50";
+                            
+                            // Parar polling quando o robô terminar a execução
+                            clearInterval(pollingInterval);
+                            pollingInterval = null;
+                            
+                            // Carrega a lista de cargas cruzadas
+                            carregarResultadoCargas();
+                        }
+
+                        if (data.novos_logs && data.novos_logs.length > 0) {
+                            data.novos_logs.forEach(log => {
+                                const p = document.createElement('p');
+                                p.innerText = log;
+                                consoleBox.appendChild(p);
+                            });
+                            consoleBox.scrollTop = consoleBox.scrollHeight;
+                        }
+                    })
+                    .catch(err => console.error("Erro ao ler logs:", err));
+            }, 1000);
+        }
+
+        function carregarResultadoCargas() {
+            fetch('/api/entreposto/resultado')
+                .then(res => res.json())
+                .then(data => {
+                    const divResultado = document.getElementById('resultado-processamento');
+                    const listaCargas = document.getElementById('lista-cargas-tabela');
+                    
+                    if (data.cargas && data.cargas.length > 0) {
+                        divResultado.style.display = 'block';
+                        
+                        let html = `<table style="width: 100%; border-collapse: collapse; text-align: left; font-family: sans-serif;">
+                            <thead>
+                                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700;">
+                                    <th style="padding: 12px 16px; width: 40px; text-align: center;">
+                                        <input type="checkbox" id="header-select-all" onclick="toggleHeaderCheckbox(this)" style="transform: scale(1.2); cursor: pointer;">
+                                    </th>
+                                    <th style="padding: 12px 16px;">Número da Carga</th>
+                                    <th style="padding: 12px 16px;">Status no Estoque</th>
+                                    <th style="padding: 12px 16px;">Peso Líquido</th>
+                                    <th style="padding: 12px 16px;">Peso Bruto</th>
+                                    <th style="padding: 12px 16px;">Qtd. Paletes</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                        
+                        data.cargas.forEach(c => {
+                            const badgeColor = c.status === "OK" ? "#15803d" : "#b45309";
+                            const badgeBg = c.status === "OK" ? "#dcfce7" : "#fef3c7";
+                            
+                            // Format weights if they are numbers
+                            const pesoLiqFormato = typeof c.peso_liquido === 'number' ? c.peso_liquido.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : c.peso_liquido;
+                            const pesoBrutoFormato = typeof c.peso_bruto === 'number' ? c.peso_bruto.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : c.peso_bruto;
+                            
+                            const temRemessas = c.status === "OK" && c.remessas && c.remessas.length > 0;
+                            const cursorStyle = temRemessas ? 'cursor: pointer;' : '';
+                            const onClickAttr = temRemessas ? `onclick="toggleCargaDetails('${c.carga}')"` : '';
+                            
+                            html += `<tr style="border-bottom: 1px solid #e2e8f0; ${cursorStyle}" ${onClickAttr}>
+                                <td style="padding: 12px 16px; text-align: center;" onclick="event.stopPropagation()">
+                                    <input type="checkbox" class="carga-checkbox" data-carga="${c.carga}" onchange="atualizarContagemSelecionadas()" style="transform: scale(1.2); cursor: pointer;">
+                                </td>
+                                <td style="padding: 12px 16px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                    ${temRemessas ? `<span id="arrow-${c.carga}" style="display: inline-block; transition: transform 0.2s; font-size: 10px; color: #64748b;">▶</span>` : '<span style="display: inline-block; width: 10px;"></span>'}
+                                    ${c.carga}
+                                </td>
+                                <td style="padding: 12px 16px;">
+                                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 6px 12px; border-radius: 9999px; font-weight: 700; font-size: 12px; display: inline-block;">
+                                        ${c.status}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #334155;">${pesoLiqFormato} kg</td>
+                                <td style="padding: 12px 16px; color: #334155;">${pesoBrutoFormato}${typeof c.peso_bruto === 'number' ? ' kg' : ''}</td>
+                                <td style="padding: 12px 16px; color: #334155;">${c.qtd_paletes}</td>
+                            </tr>`;
+ 
+                            if (temRemessas) {
+                                html += `<tr id="details-${c.carga}" style="display: none; background-color: #f8fafc;">
+                                    <td colspan="6" style="padding: 12px 24px; border-bottom: 1px solid #e2e8f0;">
+                                        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                            <h5 style="margin-top: 0; margin-bottom: 12px; color: #2e7d32; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                                📦 Detalhamento da Carga ${c.carga} por Remessa
+                                            </h5>
+                                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                                                <thead>
+                                                    <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
+                                                        <th style="padding: 8px 12px;">Remessa</th>
+                                                        <th style="padding: 8px 12px;">OV</th>
+                                                        <th style="padding: 8px 12px;">Peso Líquido</th>
+                                                        <th style="padding: 8px 12px;">Peso Bruto</th>
+                                                        <th style="padding: 8px 12px;">Qtd. Paletes</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>`;
+                                
+                                c.remessas.forEach(r => {
+                                    const rPesoLiq = typeof r.peso_liquido === 'number' ? r.peso_liquido.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : r.peso_liquido;
+                                    const rPesoBruto = typeof r.peso_bruto === 'number' ? r.peso_bruto.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : r.peso_bruto;
+                                    
+                                    html += `<tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 8px 12px; font-weight: 600; color: #475569;">${r.remessa}</td>
+                                        <td style="padding: 8px 12px; color: #475569;">${r.ov}</td>
+                                        <td style="padding: 8px 12px; color: #334155;">${rPesoLiq} kg</td>
+                                        <td style="padding: 8px 12px; color: #334155;">${rPesoBruto} kg</td>
+                                        <td style="padding: 8px 12px; color: #334155;">${r.qtd_paletes}</td>
+                                    </tr>`;
+                                });
+                                
+                                html += `</tbody></table></div></td></tr>`;
+                            }
+                        });
+                        
+                        html += `</tbody></table>`;
+                        listaCargas.innerHTML = html;
+                        atualizarContagemSelecionadas();
+                    } else {
+                        divResultado.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error("Erro ao buscar resultado das cargas:", err));
+        }
+ 
+        function toggleCargaDetails(cargaId) {
+            const detailsRow = document.getElementById(`details-${cargaId}`);
+            const arrowSpan = document.getElementById(`arrow-${cargaId}`);
+            if (detailsRow) {
+                if (detailsRow.style.display === 'none') {
+                    detailsRow.style.display = 'table-row';
+                    if (arrowSpan) {
+                        arrowSpan.style.transform = 'rotate(90deg)';
+                    }
+                } else {
+                    detailsRow.style.display = 'none';
+                    if (arrowSpan) {
+                        arrowSpan.style.transform = 'rotate(0deg)';
+                    }
+                }
+            }
+        }
+
+        function toggleHeaderCheckbox(headerCheckbox) {
+            const checkboxes = document.querySelectorAll('.carga-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = headerCheckbox.checked;
+            });
+            atualizarContagemSelecionadas();
+        }
+
+        function marcarTodasCargas(status) {
+            const checkboxes = document.querySelectorAll('.carga-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = status;
+            });
+            const headerCheckbox = document.getElementById('header-select-all');
+            if (headerCheckbox) {
+                headerCheckbox.checked = status;
+            }
+            atualizarContagemSelecionadas();
+        }
+
+        function atualizarContagemSelecionadas() {
+            const checkboxes = document.querySelectorAll('.carga-checkbox');
+            const selecionadas = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.getAttribute('data-carga'));
+            
+            const infoText = document.getElementById('selecionadas-info');
+            const btnProcessar = document.getElementById('btn-processar-selecionadas');
+            
+            if (selecionadas.length === 0) {
+                infoText.innerText = "Nenhuma carga selecionada";
+                btnProcessar.disabled = true;
+            } else {
+                infoText.innerHTML = `<strong>${selecionadas.length}</strong> carga(s) selecionada(s)`;
+                btnProcessar.disabled = false;
+            }
+            
+            // Sincronizar status do checkbox do cabeçalho
+            const headerCheckbox = document.getElementById('header-select-all');
+            if (headerCheckbox) {
+                headerCheckbox.checked = checkboxes.length > 0 && selecionadas.length === checkboxes.length;
+            }
+        }
+
+        function processarCargasSelecionadas() {
+            if (!entrepostoAtivo) {
+                alert("Por favor, selecione um entreposto primeiro.");
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.carga-checkbox');
+            const selecionadas = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.getAttribute('data-carga'));
+            
+            if (selecionadas.length === 0) {
+                alert("Por favor, selecione pelo menos uma carga.");
+                return;
+            }
+            
+            logNoConsole(`⚡ Enviando solicitação para processar cargas selecionadas: ${selecionadas.join(', ')}...`);
+            
+            fetch('/api/entreposto/processar_selecionadas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    entreposto: entrepostoAtivo,
+                    cargas: selecionadas
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    logNoConsole(`🚀 Redirecionando para a tela de processamento...`);
+                    setTimeout(() => {
+                        window.location.href = '/entreposto_processamento';
+                    }, 500);
+                } else {
+                    logNoConsole(`⚠️ Falha ao iniciar processamento: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                logNoConsole(`❌ Erro na requisição de processamento: ${err}`);
+            });
+        }
+
+        // ============== GERENCIAMENTO DE MULTIPLICADORES ==============
+        function toggleMultiplicadores() {
+            const card = document.getElementById('card-config-multiplicadores');
+            if (card.style.display === 'none') {
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth' });
+                carregarMultiplicadores();
+            } else {
+                card.style.display = 'none';
+            }
+        }
+
+        function carregarMultiplicadores() {
+            fetch('/api/entreposto/multiplicadores')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tabela-multiplicadores-corpo');
+                    tbody.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(m => {
+                            const tr = document.createElement('tr');
+                            tr.style.borderBottom = '1px solid #e2e8f0';
+                            tr.innerHTML = `
+                                <td style="padding: 10px 15px; font-weight: 600; color: #1e293b;">${m.material}</td>
+                                <td style="padding: 10px 15px; color: #334155;">${m.multiplo.toString().replace('.', ',')}</td>
+                                <td style="padding: 10px 15px; text-align: center;">
+                                    <button class="btn-secondary" onclick="editarMultiplicador('${m.material}', ${m.multiplo})" style="padding: 4px 8px; font-size: 11px; margin-right: 5px; height: 26px;">✏️ Editar</button>
+                                    <button class="btn-secondary" onclick="deletarMultiplicadorBackend('${m.material}')" style="padding: 4px 8px; font-size: 11px; color: #dc2626; border-color: rgba(220, 38, 38, 0.2); height: 26px;">❌ Excluir</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #94a3b8;">Nenhum multiplicador cadastrado.</td></tr>`;
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro ao carregar multiplicadores:", err);
+                });
+        }
+
+        function editarMultiplicador(material, multiplo) {
+            document.getElementById('new-material-id').value = material;
+            document.getElementById('new-multiplier-val').value = multiplo.toString().replace('.', ',');
+            document.getElementById('new-multiplier-val').focus();
+        }
+
+        function salvarMultiplicadorBackend() {
+            const matInput = document.getElementById('new-material-id');
+            const multInput = document.getElementById('new-multiplier-val');
+            
+            const material = matInput.value.trim().toUpperCase();
+            const multiplo = multInput.value.trim();
+
+            if (!material || !multiplo) {
+                alert("Por favor, preencha o código do material e o múltiplo.");
+                return;
+            }
+
+            fetch('/api/entreposto/multiplicadores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ material, multiplo })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    matInput.value = '';
+                    multInput.value = '';
+                    carregarMultiplicadores();
+                    logNoConsole(`✅ Multiplicador para o material ${material} salvo com sucesso!`);
+                } else {
+                    alert("Erro ao salvar multiplicador: " + data.message);
+                }
+            })
+            .catch(err => {
+                console.error("Erro ao salvar:", err);
+                alert("Erro de rede ao salvar multiplicador.");
+            });
+        }
+
+        function deletarMultiplicadorBackend(material) {
+            if (!confirm(`Deseja realmente excluir o multiplicador do material ${material}?`)) {
+                return;
+            }
+
+            fetch(`/api/entreposto/multiplicadores/${material}`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    carregarMultiplicadores();
+                    logNoConsole(`❌ Multiplicador para o material ${material} removido.`);
+                } else {
+                    alert("Erro ao excluir multiplicador: " + data.message);
+                }
+            })
+            .catch(err => {
+                console.error("Erro ao excluir:", err);
+                alert("Erro de rede ao excluir multiplicador.");
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -5,7 +5,7 @@ from src.utils.excel_utils import lerDados, colunaRemessa
 logsErro = []
 logsSucesso = []
 
-def processarPicking(caminhoExcel, dados_colados=None):
+def processarPicking(caminhoExcel, dados_colados=None, status_etapas=None):
     session = conectar_sap()
     if not session: return
     df = lerDados(caminhoExcel, dados_colados)
@@ -16,6 +16,10 @@ def processarPicking(caminhoExcel, dados_colados=None):
     
     for remessa, grupo in df.groupby(colunaRemessa):
         log_sys.write(f"🚛 Processando remessa: {remessa}")
+        if status_etapas is not None and remessa in status_etapas:
+            status_etapas[remessa]["picking"] = "running"
+            status_etapas[remessa]["erro_detalhe"] = ""
+            
         try:
             session.findById("wnd[0]").maximize()
             session.findById("wnd[0]/tbar[0]/okcd").text = "/n/scwm/prdo"
@@ -29,8 +33,11 @@ def processarPicking(caminhoExcel, dados_colados=None):
                 log_sys.write(f"⚠️ AVISO: Remessa {remessa} não encontrada. Pulando...") 
                 global logsErro
                 logsErro.append(f"{remessa} não encontrada")
+                if status_etapas is not None and remessa in status_etapas:
+                    status_etapas[remessa]["picking"] = "error"
+                    status_etapas[remessa]["erro_detalhe"] = "Remessa não encontrada"
                 continue
-
+ 
             session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/cntlCONTAINER_TB_OIP_1/shellcont/shell").pressContextButton("OIP_DETAIL_TO")
             session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/cntlCONTAINER_TB_OIP_1/shellcont/shell").selectContextMenuItem("OIP_DETAIL_TO")
             session.findById("wnd[0]/usr/subSUB_OIP:/SCWM/SAPLUI_TO_DISP:0120/subSUB_SEARCH_RESULT:/SCWM/SAPLUI_TO_DISP:0130/cntlCC_OIP/shellcont/shell").selectAll()
@@ -46,5 +53,10 @@ def processarPicking(caminhoExcel, dados_colados=None):
             session.findById("wnd[0]/tbar[0]/btn[3]").press()
             session.findById("wnd[0]/tbar[0]/btn[3]").press()
             log_sys.write(f"✅ Remessa {remessa} Picking concluído.")
+            if status_etapas is not None and remessa in status_etapas:
+                status_etapas[remessa]["picking"] = "success"
         except Exception as e:
             log_sys.write(f"❌ ERRO ao processar a remessa {remessa}: {e}")
+            if status_etapas is not None and remessa in status_etapas:
+                status_etapas[remessa]["picking"] = "error"
+                status_etapas[remessa]["erro_detalhe"] = f"Erro no picking: {e}"

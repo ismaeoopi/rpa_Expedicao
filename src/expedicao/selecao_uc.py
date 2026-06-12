@@ -31,8 +31,7 @@ def filtrarUcs(session, grupo):
     except Exception as e:
         log_sys.write(f"❌ Erro ao filtrar as UC's: {e}")
         return False
-
-def processarRemessaComUc(caminhoExcel, dados_colados=None):
+def processarRemessaComUc(caminhoExcel, dados_colados=None, status_etapas=None):
     session = conectar_sap()
     if not session: return
     df = lerDados(caminhoExcel, dados_colados)
@@ -44,6 +43,10 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
     
     for remessa, grupo in df.groupby(colunaRemessa):
         log_sys.write(f"🚛 Processando remessa: {remessa}")
+        if status_etapas is not None and remessa in status_etapas:
+            status_etapas[remessa]["selecao_uc"] = "running"
+            status_etapas[remessa]["erro_detalhe"] = ""
+            
         ucs = []; pesoUcs = 0; i = 0; scroll = 0; qtdUc = len(grupo); qtd = 0
         try:
             session.findById("wnd[0]").maximize()
@@ -56,8 +59,11 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
             if session.findById("wnd[0]/sbar").text == 'Nenhum documento encontrado':
                 log_sys.write(f"⚠️ AVISO: Remessa {remessa} não localizada.")
                 logsErro.append(f"{remessa} não encontrada")
+                if status_etapas is not None and remessa in status_etapas:
+                    status_etapas[remessa]["selecao_uc"] = "error"
+                    status_etapas[remessa]["erro_detalhe"] = f"Remessa {remessa} não localizada."
                 continue
-
+ 
             session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").currentCellColumn = "QTY_UI"
             session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").clearSelection()
             session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/cntlCONTAINER_TB_OIP_1/shellcont/shell").pressButton("OIP_CHANGE")
@@ -65,7 +71,7 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
             
             pesoRemessa = valorFloatPy(session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").getCellValue(0,"QTY_UI"))
             ilimitado = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").getCellValue(0,"PART_DEL_UNLTD")
-
+ 
             if ilimitado == "X":
                 pesoRemessaMin = pesoRemessa - (pesoRemessa * valorFloatPy(10) / 100)
                 pesoRemessaMax = (pesoRemessa * valorFloatPy(10) / 100) + pesoRemessa
@@ -74,7 +80,7 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
                 pesoRemessaMin = pesoRemessa - (pesoRemessa * valorFloatPy(tolerancia) / 100)
                 tolerancia = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").getCellValue(0, "TOL_OVERPCT")
                 pesoRemessaMax = (pesoRemessa * valorFloatPy(tolerancia) / 100) + pesoRemessa
-
+ 
             log_sys.write(f"P.Min: {pesoRemessaMin} | P.Max: {pesoRemessaMax} | Peso Alvo: {pesoRemessa}")
             
             session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/cntlCONTAINER_TB_ODP1_1/shellcont/shell").pressButton("OK_ODP1_TOGGLE")
@@ -92,11 +98,17 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
             
             if not filtrarUcs(session, grupo):
                 logsErro.append(f"{remessa} Erro ao filtrar as UC's")
+                if status_etapas is not None and remessa in status_etapas:
+                    status_etapas[remessa]["selecao_uc"] = "error"
+                    status_etapas[remessa]["erro_detalhe"] = "Erro ao filtrar as UC's"
                 continue
-
+ 
             qtdUcReal = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP:/SCWM/SAPLUI_TODLV:4000/tabsGV_TAB_ODP/tabpOK_TAB_ODP_AVSTKDLV/ssubSUB_ODP_AVSTKDLV:/SCWM/SAPLUI_TODLV:4400/subSUB_ODP_AVSTKDLV_DATA:/SCWM/SAPLUI_TODLV:4410/cntlCC_ALV_OD_AVSTKDLV/shellcont/shell").RowCount
             if (qtdUcReal - 1) < qtdUc:
                 logsErro.append(f"{remessa} Divergência na qtd de UCs SAP x Planilha")
+                if status_etapas is not None and remessa in status_etapas:
+                    status_etapas[remessa]["selecao_uc"] = "error"
+                    status_etapas[remessa]["erro_detalhe"] = "Divergência na qtd de UCs SAP x Planilha"
                 continue
                 
             while qtd < (qtdUcReal - 1):
@@ -112,14 +124,17 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
             if pesoUcs < pesoRemessaMin or pesoRemessaMax < pesoUcs:
                 log_sys.write("❌ Peso fora da tolerância. Verifique as UCs.")
                 logsErro.append(f"{remessa} fora da tolerância")
+                if status_etapas is not None and remessa in status_etapas:
+                    status_etapas[remessa]["selecao_uc"] = "error"
+                    status_etapas[remessa]["erro_detalhe"] = "Peso fora da tolerância"
                 continue
-
+ 
             if pesoUcs != pesoRemessa: 
                 session.findById("wnd[0]/tbar[0]/btn[3]").press()
                 session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/cntlCONTAINER_TB_OIP_1/shellcont/shell").pressButton("OIP_CHANGE")
                 time.sleep(1)
                 pesoUcs_str = valorFloatexcel(pesoUcs)
-                session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:3212/txt/SCWM/S_SP_A_ITEM_PRDO-QTY_UI").text = pesoUcs_str
+                session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell").text = pesoUcs_str
                 session.findById("wnd[0]/tbar[0]/btn[11]").press()
                 session.findById("wnd[0]").sendVKey(25)
                 session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP:/SCWM/SAPLUI_TODLV:4000/tabsGV_TAB_ODP/tabpOK_TAB_ODP_DEFDLV").select()
@@ -134,5 +149,10 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None):
             session.findById("wnd[0]/tbar[0]/btn[3]").press()
             log_sys.write(f"✅ Remessa {remessa} Seleção concluída com sucesso.")
             logsSucesso.append(remessa)
+            if status_etapas is not None and remessa in status_etapas:
+                status_etapas[remessa]["selecao_uc"] = "success"
         except Exception as e:
             log_sys.write(f"❌ ERRO GERAL na remessa {remessa}: {e}")
+            if status_etapas is not None and remessa in status_etapas:
+                status_etapas[remessa]["selecao_uc"] = "error"
+                status_etapas[remessa]["erro_detalhe"] = f"ERRO GERAL: {e}"

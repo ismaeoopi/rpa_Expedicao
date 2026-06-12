@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPA Logistica - Início V.1.1.4</title>
+    <title>RPA Logistica - Início V.1.1.5</title>
     <style>
         * {
             box-sizing: border-box;
@@ -131,6 +131,10 @@
             background: linear-gradient(90deg, #ff9800, #ffc107);
         }
 
+        .module-card.entreposto::before {
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+        }
+
         .module-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 20px 40px rgba(0, 102, 204, 0.15);
@@ -138,6 +142,10 @@
 
         .module-card.estoque:hover {
             box-shadow: 0 20px 40px rgba(255, 152, 0, 0.15);
+        }
+
+        .module-card.entreposto:hover {
+            box-shadow: 0 20px 40px rgba(76, 175, 80, 0.15);
         }
 
         .module-card:hover::before {
@@ -155,6 +163,12 @@
 
         .module-card.estoque .module-icon {
             background: -webkit-linear-gradient(45deg, #e65100, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .module-card.entreposto .module-icon {
+            background: -webkit-linear-gradient(45deg, #1b5e20, #4caf50);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -188,6 +202,11 @@
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        .badge.em-desenvolvimento {
+            background: #e8f5e9;
+            color: #2e7d32;
         }
 
         /* MODAL */
@@ -302,6 +321,13 @@
                 <h2 class="module-title">Estoque</h2>
                 <p class="module-desc">Automações para Inventário, Packlist, Transferências e gestão de materiais.</p>
             </div>
+
+            <!-- ENTREPOSTO -->
+            <a href="/entreposto" class="module-card entreposto">
+                <div class="module-icon">🏢</div>
+                <h2 class="module-title">Entreposto</h2>
+                <p class="module-desc">Automações e controles para processos de Entreposto.</p>
+            </a>
         </div>
     </div>
 
@@ -325,6 +351,16 @@
         </div>
     </div>
 
+    <!-- MODAL ENTREPOSTO -->
+    <div class="modal-overlay" id="modal-entreposto">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-icon">🏢</div>
+            <h3 class="modal-title">Módulo de Entreposto</h3>
+            <p class="modal-desc">Esta funcionalidade está em fase de planejamento e desenvolvimento.</p>
+            <button class="modal-btn" style="margin-top: 20px; background: linear-gradient(135deg, #4caf50, #45a049); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);" onclick="fecharModalEntreposto()">Entendido</button>
+        </div>
+    </div>
+
     <script>
         // ============== INICIALIZAÇÃO ==============
         function inicializar() {
@@ -342,19 +378,34 @@
                 });
         }
 
-        // ============== MODAL ==============
+        // ============== MODAL ESTOQUE ==============
         function abrirModalSelecaoEstoque() {
             document.getElementById('modal-selecao-estoque').classList.add('active');
+        }
+
+        // ============== MODAL ENTREPOSTO ==============
+        function abrirModalEntreposto() {
+            document.getElementById('modal-entreposto').classList.add('active');
         }
 
         function fecharModalSelecaoEstoque() {
             document.getElementById('modal-selecao-estoque').classList.remove('active');
         }
 
-        // Fechar modal ao clicar fora
+        function fecharModalEntreposto() {
+            document.getElementById('modal-entreposto').classList.remove('active');
+        }
+
+        // Fechar modals ao clicar fora
         document.getElementById('modal-selecao-estoque').addEventListener('click', function(e) {
             if (e.target === this) {
                 fecharModalSelecaoEstoque();
+            }
+        });
+
+        document.getElementById('modal-entreposto').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalEntreposto();
             }
         });
 

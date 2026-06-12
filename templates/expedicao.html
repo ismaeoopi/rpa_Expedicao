@@ -360,6 +360,117 @@
             color: #f44336;
         }
 
+        /* TRACKING ROWS - ESTILO KANBAN */
+        #tracking-rows-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tracking-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s;
+        }
+
+        .tracking-row:hover {
+            box-shadow: 0 6px 16px rgba(0, 102, 204, 0.08);
+            transform: translateY(-1px);
+            border-color: #0066cc;
+        }
+
+        .row-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-remessa {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stage-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            min-height: 48px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stage-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .stage-value {
+            font-size: 12px;
+        }
+
+        /* Estados das Etapas */
+        .stage-cell.status-pending {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #94a3b8;
+        }
+        .stage-cell.status-pending .stage-value {
+            color: #94a3b8;
+        }
+
+        .stage-cell.status-running {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #d97706;
+            animation: pulseGlow 1.5s infinite;
+        }
+        .stage-cell.status-running .stage-value {
+            color: #b45309;
+        }
+
+        .stage-cell.status-success {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .stage-cell.status-success .stage-value {
+            color: #15803d;
+        }
+
+        .stage-cell.status-error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+        .stage-cell.status-error .stage-value {
+            color: #b91c1c;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
         /* RESPONSIVIDADE */
         @media (max-width: 768px) {
             .grid-actions {
@@ -416,11 +527,14 @@
                 <div class="input-group" style="margin-top: 15px;">
                     <label for="dados-colados">Ou cole os dados do Excel aqui (Remessa e UC)</label>
                     <textarea id="dados-colados" rows="3" placeholder="Cole aqui os dados copiados do Excel..."
-                              oninput="verificarEstadoBotoes()"
+                              oninput="verificarEstadoBotoes(); carregarDadosKanban();"
                               style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 102, 204, 0.3); background-color: #ffffff; color: #2c3e50; font-size: 13px; resize: vertical;"></textarea>
                 </div>
 
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn-primary" id="btn-rodar-tudo" onclick="executarOpcao(100)" style="background: linear-gradient(135deg, #0066cc 0%, #002e5c 100%); font-size: 14px;" disabled>
+                        ⚡ Rodar Todas Etapas Seguidas
+                    </button>
                     <button class="btn btn-primary" id="btn-opcao1" onclick="executarOpcao(1)" disabled>
                         1️⃣ Seleção via UC
                     </button>
@@ -458,6 +572,17 @@
                 <button class="btn btn-primary" onclick="executarOpcao4()">
                     4️⃣ Gerar PDFs para JBS
                 </button>
+            </div>
+        </div>
+
+        <!-- CARD 3: KANBAN FLOW (ESCONDIDO ATÉ CARREGAR DADOS) -->
+        <div class="card" id="card-kanban" style="margin-bottom: 30px; display: none;">
+            <h3>Fluxo de Processamento das Remessas</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                Acompanhe o progresso das remessas em tempo real nas etapas de automação SAP.
+            </p>
+            <div id="tracking-rows-container">
+                <!-- Gerado dinamicamente -->
             </div>
         </div>
 
@@ -527,6 +652,7 @@
 
                         // Ativar botões
                         verificarEstadoBotoes();
+                        carregarDadosKanban();
 
                         adicionarLog(`📂 Planilha carregada: ${data.caminho}`);
                     } else {
@@ -553,6 +679,77 @@
                 });
         }
 
+        // ============== KANBAN DADOS ==============
+        function carregarDadosKanban() {
+            const dadosColados = document.getElementById('dados-colados').value;
+            fetch('/api/expedicao/carregar_dados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ caminho: caminhoExcelSelecionado, dados_colados: dadosColados })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('card-kanban').style.display = 'block';
+                    renderizarKanban(data.remessas, {});
+                } else {
+                    document.getElementById('card-kanban').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error("Erro ao carregar dados do Kanban:", err);
+                document.getElementById('card-kanban').style.display = 'none';
+            });
+        }
+
+        function renderizarKanban(remessas, statusEtapas) {
+            const container = document.getElementById('tracking-rows-container');
+            container.innerHTML = "";
+            
+            let html = "";
+            remessas.forEach(remessa => {
+                const status = statusEtapas[remessa] || { selecao_uc: "pending", picking: "pending", sm: "pending", erro_detalhe: "" };
+                
+                let erroHtml = "";
+                if (status.erro_detalhe) {
+                    erroHtml = `<div style="color: #dc2626; font-size: 11px; margin-top: 4px; font-weight: 600;">⚠️ ${status.erro_detalhe}</div>`;
+                }
+
+                html += `
+                <div class="tracking-row" id="row-${remessa}">
+                    <div class="row-info">
+                        <div class="row-remessa">Remessa: ${remessa}</div>
+                        ${erroHtml}
+                    </div>
+                    
+                    <div class="stage-cell status-${status.selecao_uc}">
+                        <div class="stage-label">Seleção UC</div>
+                        <div class="stage-value">${formatarStatusEtapa(status.selecao_uc)}</div>
+                    </div>
+                    
+                    <div class="stage-cell status-${status.picking}">
+                        <div class="stage-label">Picking</div>
+                        <div class="stage-value">${formatarStatusEtapa(status.picking)}</div>
+                    </div>
+                    
+                    <div class="stage-cell status-${status.sm}">
+                        <div class="stage-label">Saída (SM)</div>
+                        <div class="stage-value">${formatarStatusEtapa(status.sm)}</div>
+                    </div>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function formatarStatusEtapa(st) {
+            if (st === 'pending') return 'Aguardando';
+            if (st === 'running') return 'Processando...';
+            if (st === 'success') return 'Concluído ✅';
+            if (st === 'error') return 'Erro ❌';
+            return st;
+        }
+
         // ============== CONTROLE DE BOTÕES ==============
         function verificarEstadoBotoes() {
             const temArquivo = caminhoExcelSelecionado !== "";
@@ -562,12 +759,14 @@
             document.getElementById('btn-opcao1').disabled = !ativo;
             document.getElementById('btn-opcao2').disabled = !ativo;
             document.getElementById('btn-opcao3').disabled = !ativo;
+            document.getElementById('btn-rodar-tudo').disabled = !ativo;
         }
 
         function travarBotoes(status) {
             document.getElementById('btn-opcao1').disabled = status;
             document.getElementById('btn-opcao2').disabled = status;
             document.getElementById('btn-opcao3').disabled = status;
+            document.getElementById('btn-rodar-tudo').disabled = status;
             document.querySelectorAll('.btn-secondary').forEach(b => b.disabled = status);
             document.getElementById('dados-colados').disabled = status;
 
@@ -580,6 +779,7 @@
         // ============== MONITORAMENTO DE LOGS ==============
         let intervoLog;
         function iniciarMonitoramentoLogs() {
+            if (intervoLog) clearInterval(intervoLog);
             intervoLog = setInterval(() => {
                 fetch('/api/logs')
                     .then(res => res.json())
@@ -595,14 +795,25 @@
 
                         if (!data.rodando) {
                             clearInterval(intervoLog);
+                            intervoLog = null;
                             travarBotoes(false);
                             const statusEl = document.getElementById('status-rpa');
                             statusEl.innerText = "✅ Finalizado";
                             statusEl.classList.add('finalizado');
                             statusEl.classList.remove('executando');
                         }
-                    });
-            }, 400);
+
+                        // Buscar dados do Kanban atualizado
+                        return fetch('/api/expedicao/dados_processamento');
+                    })
+                    .then(res => res ? res.json() : null)
+                    .then(state => {
+                        if (state && state.remessas) {
+                            renderizarKanban(state.remessas, state.status_etapas);
+                        }
+                    })
+                    .catch(err => console.error("Erro no polling de logs/kanban:", err));
+            }, 500);
         }
 
         // ============== EXECUÇÃO ==============

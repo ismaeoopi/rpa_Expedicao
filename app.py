@@ -15,6 +15,12 @@ from src.estoque.packlist import analisar_planilha_packlist
 from src.estoque.processo_completo import processo_estoque
 from src.estoque.processo_sap import processo_estoque_sem_planilha
 import src.utils.db as db
+from dotenv import load_dotenv
+from src.utils.sharepoint import SharePointClient, salvar_configuracoes_env, ENV_PATH
+from Entreposto import executar_automacao_entreposto
+from src.expedicao import EntrepostoProcessador
+from src.utils.sap_utils import conectar_sap
+
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
 try:
@@ -48,6 +54,14 @@ def estoque():
 @app.route('/estoque_sem_planilha')
 def estoque_sem_planilha():
     return render_template('estoque_sem_planilha.html')
+
+@app.route('/entreposto')
+def entreposto():
+    return render_template('entreposto.html')
+
+@app.route('/entreposto_processamento')
+def entreposto_processamento():
+    return render_template('entreposto_processamento.html')
 
 @app.route('/api/inicializar', methods=['GET'])
 def inicializar():
@@ -204,6 +218,53 @@ def executar_estoque_sem_planilha():
     t.start()
     return jsonify({"status": "started"})
 
+# Estado global para processamento da Expedição
+expedicao_processamento_estado = {
+    "caminho": "",
+    "dados_colados": "",
+    "remessas": [],
+    "status_etapas": {}  # {remessa: {"selecao_uc": "pending", "picking": "pending", "sm": "pending", "erro_detalhe": ""}}
+}
+
+@app.route('/api/expedicao/carregar_dados', methods=['POST'])
+def carregar_dados_expedicao():
+    global expedicao_processamento_estado
+    dados = request.json
+    caminho = dados.get('caminho', '')
+    dados_colados = dados.get('dados_colados', '')
+    
+    from src.utils.excel_utils import lerDados, colunaRemessa
+    try:
+        df = lerDados(caminho, dados_colados)
+        if df is None or df.empty:
+            return jsonify({"status": "error", "message": "Nenhum dado válido encontrado na planilha/texto colado."}), 400
+        
+        remessasUnicas = sorted(list(df[colunaRemessa].unique()))
+        
+        status_etapas = {}
+        for remessa in remessasUnicas:
+            status_etapas[remessa] = {
+                "selecao_uc": "pending",
+                "picking": "pending",
+                "sm": "pending",
+                "erro_detalhe": ""
+            }
+            
+        expedicao_processamento_estado = {
+            "caminho": caminho,
+            "dados_colados": dados_colados,
+            "remessas": remessasUnicas,
+            "status_etapas": status_etapas
+        }
+        return jsonify({"status": "success", "remessas": remessasUnicas})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/expedicao/dados_processamento', methods=['GET'])
+def dados_processamento_expedicao():
+    global expedicao_processamento_estado
+    return jsonify(expedicao_processamento_estado)
+
 @app.route('/api/executar', methods=['POST'])
 def executar():
     dados = request.json
@@ -219,14 +280,19 @@ def executar():
     def worker():
         log_sys.is_running = True
         try:
+            status = expedicao_processamento_estado.get("status_etapas", {})
             if opcao == 1:
-                processarRemessaComUc(caminho, dados_colados)
+                processarRemessaComUc(caminho, dados_colados, status)
             elif opcao == 2:
-                processarPicking(caminho, dados_colados)
+                processarPicking(caminho, dados_colados, status)
             elif opcao == 3:
-                smRemessa(caminho, dados_colados)
+                smRemessa(caminho, dados_colados, status)
             elif opcao == 4:
                 salvarFIP(remessas, caminho_pasta if caminho_pasta else None)
+            elif opcao == 100:
+                processarRemessaComUc(caminho, dados_colados, status)
+                processarPicking(caminho, dados_colados, status)
+                smRemessa(caminho, dados_colados, status)
         except Exception as e:
             log_sys.write(f"❌ Falha fatal na thread do processo: {e}")
         finally:
@@ -243,6 +309,221 @@ def buscar_logs():
         "novos_logs": log_sys.fetch_new(),
         "rodando": log_sys.is_running
     })
+
+@app.route('/api/sharepoint/config', methods=['GET', 'POST'])
+def sharepoint_config():
+    if request.method == 'POST':
+        dados = request.json
+        salvar_configuracoes_env({
+            "SHAREPOINT_TENANT_ID": dados.get("tenant_id"),
+            "SHAREPOINT_CLIENT_ID": dados.get("client_id"),
+            "SHAREPOINT_CLIENT_SECRET": dados.get("client_secret"),
+            "SHAREPOINT_DRIVE_ID": dados.get("drive_id"),
+            "PLANILHA_IPOJUCA_1": dados.get("planilha_ipojuca_1"),
+            "PLANILHA_IPOJUCA_2": dados.get("planilha_ipojuca_2"),
+            "PLANILHA_ITAJAI_1": dados.get("planilha_itajai_1"),
+            "PLANILHA_ITAJAI_2": dados.get("planilha_itajai_2"),
+        })
+        return jsonify({"status": "success", "message": "Configurações salvas no arquivo .env!"})
+    
+    # GET
+    load_dotenv(ENV_PATH)
+    return jsonify({
+        "tenant_id": os.getenv("SHAREPOINT_TENANT_ID") or "",
+        "client_id": os.getenv("SHAREPOINT_CLIENT_ID") or "",
+        "client_secret": os.getenv("SHAREPOINT_CLIENT_SECRET") or "",
+        "drive_id": os.getenv("SHAREPOINT_DRIVE_ID") or "",
+        "planilha_ipojuca_1": os.getenv("PLANILHA_IPOJUCA_1") or "",
+        "planilha_ipojuca_2": os.getenv("PLANILHA_IPOJUCA_2") or "",
+        "planilha_itajai_1": os.getenv("PLANILHA_ITAJAI_1") or "",
+        "planilha_itajai_2": os.getenv("PLANILHA_ITAJAI_2") or "",
+    })
+
+@app.route('/api/sharepoint/testar_conexao', methods=['POST'])
+def sharepoint_testar_conexao():
+    dados = request.json
+    tenant_id = dados.get("tenant_id")
+    client_id = dados.get("client_id")
+    client_secret = dados.get("client_secret")
+    drive_id = dados.get("drive_id")
+    
+    caminhos = {
+        "planilha_ipojuca_1": dados.get("planilha_ipojuca_1"),
+        "planilha_ipojuca_2": dados.get("planilha_ipojuca_2"),
+        "planilha_itajai_1": dados.get("planilha_itajai_1"),
+        "planilha_itajai_2": dados.get("planilha_itajai_2"),
+    }
+    
+    client = SharePointClient(
+        tenant_id=tenant_id,
+        client_id=client_id,
+        client_secret=client_secret,
+        drive_id=drive_id
+    )
+    
+    res = client.testar_conexao(caminhos)
+    return jsonify(res)
+
+@app.route('/api/entreposto/executar', methods=['POST'])
+def executar_entreposto():
+    dados = request.json
+    entreposto = dados.get("entreposto")
+    
+    if not entreposto:
+        return jsonify({"status": "error", "message": "Entreposto não informado."}), 400
+        
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+
+    def worker():
+        log_sys.is_running = True
+        try:
+            executar_automacao_entreposto(entreposto)
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal na thread do entreposto: {e}")
+        finally:
+            log_sys.is_running = False
+
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    return jsonify({"status": "started"})
+
+# Estado global para processamento
+entreposto_processamento_estado = {
+    "entreposto": None,
+    "cargas": [],
+    "dados": {},
+    "status_etapas": {}  # {remessa: {"basico": "pending", "picking": "pending", "sm": "pending", "tolerancia": "pending"}}
+}
+
+@app.route('/api/entreposto/resultado', methods=['GET'])
+def buscar_resultado_entreposto():
+    from Entreposto import ultimo_resultado
+    return jsonify(ultimo_resultado)
+
+@app.route('/api/entreposto/dados_processamento', methods=['GET'])
+def dados_processamento():
+    global entreposto_processamento_estado
+    return jsonify(entreposto_processamento_estado)
+
+@app.route('/api/entreposto/multiplicadores', methods=['GET', 'POST'])
+def api_multiplicadores():
+    if request.method == 'POST':
+        dados = request.json
+        material = dados.get("material")
+        try:
+            multiplo = float(str(dados.get("multiplo")).replace(",", "."))
+            if not material:
+                raise ValueError("Material inválido")
+            db.salvar_multiplicador(material.strip().upper(), multiplo)
+            return jsonify({"status": "success", "message": "Multiplicador salvo com sucesso!"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
+    
+    # GET
+    try:
+        return jsonify(db.obter_multiplicadores())
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/entreposto/multiplicadores/<material>', methods=['DELETE'])
+def api_deletar_multiplicador(material):
+    try:
+        db.deletar_multiplicador(material.strip().upper())
+        return jsonify({"status": "success", "message": "Multiplicador deletado com sucesso!"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/entreposto/processar_selecionadas', methods=['POST'])
+def processar_selecionadas_entreposto():
+    global entreposto_processamento_estado
+    dados = request.json
+    cargas = dados.get("cargas", [])
+    entreposto = dados.get("entreposto")
+    
+    if not cargas or not entreposto:
+        return jsonify({"status": "error", "message": "Cargas ou Entreposto não informado."}), 400
+        
+    try:
+        # Carrega os dados estruturados do SharePoint
+        cargas_dados = EntrepostoProcessador.obter_dados_etapas(entreposto, cargas)
+        
+        # Inicializa o status das etapas para cada remessa
+        status_etapas = {}
+        for c_id, c_val in cargas_dados.items():
+            for r_val in c_val["remessas"]:
+                status_etapas[r_val["remessa"]] = {
+                    "basico": "pending",
+                    "picking": "pending",
+                    "sm": "pending",
+                    "tolerancia": "pending"
+                }
+                
+        entreposto_processamento_estado = {
+            "entreposto": entreposto,
+            "cargas": cargas,
+            "dados": cargas_dados,
+            "status_etapas": status_etapas
+        }
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/entreposto/processar_etapa', methods=['POST'])
+def processar_etapa_entreposto():
+    global entreposto_processamento_estado
+    dados = request.json
+    etapa = dados.get("etapa")  # "1", "2", "3", "tolerancia", "all"
+    multiplos_custom = dados.get("multiplos", {})  # {remessa: valor}
+    
+    if not entreposto_processamento_estado["cargas"]:
+        return jsonify({"status": "error", "message": "Nenhuma carga selecionada para processar."}), 400
+        
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+        
+    def worker():
+        log_sys.is_running = True
+        session = conectar_sap()
+        if not session:
+            log_sys.write("❌ Falha de conexão com o SAP GUI. Encerrando.")
+            log_sys.is_running = False
+            return
+            
+        dados_cargas = entreposto_processamento_estado["dados"]
+        status_etapas = entreposto_processamento_estado["status_etapas"]
+        
+        try:
+            # ETAPA 1: Básico (Atualizar informações básicas)
+            if etapa in ["1", "all"]:
+                EntrepostoProcessador.rodar_atualizar_basico(session, dados_cargas, status_etapas)
+                    
+            # ETAPA 2: Picking
+            if etapa in ["2", "all"]:
+                EntrepostoProcessador.rodar_picking(session, dados_cargas, multiplos_custom, status_etapas)
+                    
+            # ETAPA 3: SM (Transportadora parceira)
+            if etapa in ["3", "all"]:
+                EntrepostoProcessador.rodar_sm(session, dados_cargas, status_etapas)
+            
+            # ETAPA Tolerância: Checar Tolerâncias via MM
+            if etapa == "tolerancia":
+                EntrepostoProcessador.rodar_verificar_tolerancia(session, dados_cargas, status_etapas)
+                    
+            log_sys.write("🎉 Processamento das etapas de Entreposto finalizado com sucesso!")
+        except Exception as ex:
+            log_sys.write(f"❌ Ocorreu um erro inesperado durante a automação: {ex}")
+        finally:
+            log_sys.is_running = False
+
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    return jsonify({"status": "started"})
+
+
+
 
 if __name__ == '__main__':
     
