@@ -39,6 +39,8 @@ if False:
     import customtkinter
     import git
     import sqlite3
+    import Entreposto
+
 
 
 def atualizar_repositorio():

@@ -59,6 +59,7 @@ python -m PyInstaller ^
     --add-data "app.py;." ^
     --add-data "updater.py;." ^
     --add-data "version.txt;." ^
+    --add-data "Entreposto.py;." ^
     --hidden-import=pandas ^
     --hidden-import=openpyxl ^
     --hidden-import=win32com ^
@@ -77,6 +78,7 @@ python -m PyInstaller ^
     --hidden-import=geopy ^
     --hidden-import=git ^
     --hidden-import=sqlite3 ^
+    --hidden-import=Entreposto ^
     --collect-all=reportlab ^
     --collect-all=flask ^
     --collect-all=pandas ^
