@@ -11,6 +11,7 @@ from src.expedicao.picking import processarPicking
 from src.expedicao.selecao_uc import processarRemessaComUc
 from src.expedicao.sm_remessa import smRemessa
 from src.expedicao.fip_etiquetas import salvarFIP
+from src.expedicao.sap_packlist import baixar_packlist_sap
 from src.estoque.packlist import analisar_planilha_packlist
 from src.estoque.processo_completo import processo_estoque
 from src.estoque.processo_sap import processo_estoque_sem_planilha
@@ -476,6 +477,7 @@ def processar_etapa_entreposto():
     dados = request.json
     etapa = dados.get("etapa")  # "1", "2", "3", "tolerancia", "all"
     multiplos_custom = dados.get("multiplos", {})  # {remessa: valor}
+    remessas_selecionadas = dados.get("remessas_selecionadas", None)
     
     if not entreposto_processamento_estado["cargas"]:
         return jsonify({"status": "error", "message": "Nenhuma carga selecionada para processar."}), 400
@@ -494,22 +496,35 @@ def processar_etapa_entreposto():
         dados_cargas = entreposto_processamento_estado["dados"]
         status_etapas = entreposto_processamento_estado["status_etapas"]
         
+        # Reset status for selected remessas
+        if remessas_selecionadas:
+            for r_sel in remessas_selecionadas:
+                if r_sel in status_etapas:
+                    if etapa in ["1", "all"]:
+                        status_etapas[r_sel]["basico"] = "pending"
+                    if etapa in ["2", "all"]:
+                        status_etapas[r_sel]["picking"] = "pending"
+                    if etapa in ["3", "all"]:
+                        status_etapas[r_sel]["sm"] = "pending"
+                    if etapa == "tolerancia":
+                        status_etapas[r_sel]["tolerancia"] = "pending"
+        
         try:
             # ETAPA 1: Básico (Atualizar informações básicas)
             if etapa in ["1", "all"]:
-                EntrepostoProcessador.rodar_atualizar_basico(session, dados_cargas, status_etapas)
+                EntrepostoProcessador.rodar_atualizar_basico(session, dados_cargas, status_etapas, remessas_selecionadas)
                     
             # ETAPA 2: Picking
             if etapa in ["2", "all"]:
-                EntrepostoProcessador.rodar_picking(session, dados_cargas, multiplos_custom, status_etapas)
+                EntrepostoProcessador.rodar_picking(session, dados_cargas, multiplos_custom, status_etapas, remessas_selecionadas)
                     
             # ETAPA 3: SM (Transportadora parceira)
             if etapa in ["3", "all"]:
-                EntrepostoProcessador.rodar_sm(session, dados_cargas, status_etapas)
+                EntrepostoProcessador.rodar_sm(session, dados_cargas, status_etapas, remessas_selecionadas)
             
             # ETAPA Tolerância: Checar Tolerâncias via MM
             if etapa == "tolerancia":
-                EntrepostoProcessador.rodar_verificar_tolerancia(session, dados_cargas, status_etapas)
+                EntrepostoProcessador.rodar_verificar_tolerancia(session, dados_cargas, status_etapas, remessas_selecionadas)
                     
             log_sys.write("🎉 Processamento das etapas de Entreposto finalizado com sucesso!")
         except Exception as ex:
@@ -517,6 +532,58 @@ def processar_etapa_entreposto():
         finally:
             log_sys.is_running = False
 
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    return jsonify({"status": "started"})
+
+@app.route('/api/sap_web/config', methods=['GET', 'POST'])
+def sap_web_config():
+    if request.method == 'POST':
+        dados = request.json
+        salvar_configuracoes_env({
+            "SAP_WEB_USER": dados.get("sap_web_user"),
+            "SAP_WEB_PASSWORD": dados.get("sap_web_password"),
+        })
+        return jsonify({"status": "success", "message": "Credenciais SAP Web salvas com sucesso!"})
+    
+    # GET
+    load_dotenv(ENV_PATH)
+    return jsonify({
+        "sap_web_user": os.getenv("SAP_WEB_USER") or "",
+        "sap_web_password": os.getenv("SAP_WEB_PASSWORD") or "",
+    })
+
+@app.route('/api/packlist/baixar', methods=['POST'])
+def baixar_packlist():
+    dados = request.json
+    remessas_str = dados.get('remessas', '')
+    pasta_destino = dados.get('pasta_destino', '')
+    
+    remessas = [r.strip() for r in remessas_str.split(',') if r.strip()]
+    
+    if not remessas:
+        return jsonify({"status": "error", "message": "Nenhuma remessa informada."}), 400
+    
+    if not pasta_destino:
+        return jsonify({"status": "error", "message": "Pasta de destino não selecionada."}), 400
+    
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+    
+    load_dotenv(ENV_PATH)
+    usuario = os.getenv("SAP_WEB_USER") or ""
+    senha = os.getenv("SAP_WEB_PASSWORD") or ""
+    
+    def worker():
+        log_sys.is_running = True
+        try:
+            baixar_packlist_sap(remessas, pasta_destino, usuario, senha)
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal no download de Packlist: {e}")
+        finally:
+            log_sys.is_running = False
+    
     t = threading.Thread(target=worker)
     t.daemon = True
     t.start()

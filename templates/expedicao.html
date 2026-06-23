@@ -552,7 +552,7 @@
                 <h3>Etiquetas & PDFs JBS</h3>
                 
                 <!-- Seleção de Pasta de Destino -->
-                <button class="btn btn-secondary" onclick="selecionarPasta()">
+                <button class="btn btn-secondary" onclick="selecionarPastaJBS()">
                     📁 Selecionar Pasta de Destino
                 </button>
                 <div id="caminho-pasta-txt" class="file-status empty">
@@ -571,6 +571,62 @@
                 
                 <button class="btn btn-primary" onclick="executarOpcao4()">
                     4️⃣ Gerar PDFs para JBS
+                </button>
+            </div>
+
+            <!-- CARD 3: PACKLIST SAP -->
+            <div class="card">
+                <h3>📋 Packlist SAP (Download PDF)</h3>
+                
+                <!-- Config Credenciais SAP Web -->
+                <div id="config-sap-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Credenciais SAP Web</span>
+                        <button class="btn" style="width: auto; padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; box-shadow: 0 2px 8px rgba(100,116,139,0.3);" onclick="toggleConfigSAP()" id="btn-toggle-config-sap">
+                            ⚙️ Configurar
+                        </button>
+                    </div>
+                    <div id="config-sap-fields" style="display: none;">
+                        <div class="input-group">
+                            <label for="sap-web-user">Usuário SAP</label>
+                            <input type="text" id="sap-web-user" placeholder="Ex: SP3IBNASCIME" />
+                        </div>
+                        <div class="input-group">
+                            <label for="sap-web-password">Senha SAP</label>
+                            <div style="position: relative;">
+                                <input type="password" id="sap-web-password" placeholder="Sua senha SAP" style="padding-right: 45px;" />
+                                <button type="button" onclick="toggleSenhaVisibilidade()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px;" id="btn-toggle-senha" title="Mostrar/ocultar senha">👁️</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-bottom: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3);" onclick="salvarConfigSAP()">
+                            💾 Salvar Credenciais
+                        </button>
+                    </div>
+                    <div id="sap-config-status" class="file-status empty" style="margin-bottom: 15px;">
+                        Verificando credenciais...
+                    </div>
+                </div>
+                
+                <!-- Seleção de Pasta de Destino -->
+                <button class="btn btn-secondary" onclick="selecionarPastaPacklist()">
+                    📁 Selecionar Pasta de Destino
+                </button>
+                <div id="caminho-pasta-packlist-txt" class="file-status empty">
+                    Nenhuma pasta selecionada
+                </div>
+                
+                <!-- Entrada de Remessas -->
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="remessas-packlist">Números das Remessas</label>
+                    <input
+                        type="text"
+                        id="remessas-packlist"
+                        placeholder="Ex: 80718055, 80723774"
+                    />
+                </div>
+                
+                <button class="btn btn-primary" onclick="executarPacklist()" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); box-shadow: 0 4px 15px rgba(124,58,237,0.3);">
+                    📥 Baixar Packlists
                 </button>
             </div>
         </div>
@@ -662,7 +718,7 @@
         }
 
         // ============== SELEÇÃO DE PASTA PARA JBS ==============
-        function selecionarPasta() {
+        function selecionarPastaJBS() {
             fetch('/api/selecionar_pasta')
                 .then(res => res.json())
                 .then(data => {
@@ -672,11 +728,110 @@
                         statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
                         statusElement.classList.remove('empty');
 
-                        adicionarLog(`📁 Pasta de destino selecionada: ${data.caminho}`);
+                        adicionarLog(`📁 Pasta de destino JBS selecionada: ${data.caminho}`);
                     } else {
                         adicionarLog("⚠️ Nenhuma pasta foi selecionada.");
                     }
                 });
+        }
+
+        // ============== SELEÇÃO DE PASTA PARA PACKLIST ==============
+        let caminhoPastaPacklist = "";
+
+        function selecionarPastaPacklist() {
+            fetch('/api/selecionar_pasta')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.caminho) {
+                        caminhoPastaPacklist = data.caminho;
+                        const statusElement = document.getElementById('caminho-pasta-packlist-txt');
+                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.classList.remove('empty');
+
+                        adicionarLog(`📁 Pasta de destino Packlist selecionada: ${data.caminho}`);
+                    } else {
+                        adicionarLog("⚠️ Nenhuma pasta foi selecionada.");
+                    }
+                });
+        }
+
+        // ============== CONFIG SAP WEB ==============
+        function toggleConfigSAP() {
+            const fields = document.getElementById('config-sap-fields');
+            if (fields.style.display === 'none') {
+                fields.style.display = 'block';
+                document.getElementById('btn-toggle-config-sap').innerText = '✕ Fechar';
+            } else {
+                fields.style.display = 'none';
+                document.getElementById('btn-toggle-config-sap').innerText = '⚙️ Configurar';
+            }
+        }
+
+        function toggleSenhaVisibilidade() {
+            const input = document.getElementById('sap-web-password');
+            const btn = document.getElementById('btn-toggle-senha');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '🔒';
+                btn.title = 'Ocultar senha';
+            } else {
+                input.type = 'password';
+                btn.innerText = '👁️';
+                btn.title = 'Mostrar senha';
+            }
+        }
+
+        function carregarConfigSAP() {
+            fetch('/api/sap_web/config')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('sap-web-user').value = data.sap_web_user || '';
+                    document.getElementById('sap-web-password').value = data.sap_web_password || '';
+                    const statusEl = document.getElementById('sap-config-status');
+                    if (data.sap_web_user) {
+                        statusEl.innerText = `✅ Usuário configurado: ${data.sap_web_user}`;
+                        statusEl.classList.remove('empty');
+                    } else {
+                        statusEl.innerText = '⚠️ Credenciais SAP Web não configuradas';
+                        statusEl.classList.add('empty');
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('sap-config-status').innerText = '❌ Erro ao carregar configurações';
+                });
+        }
+
+        function salvarConfigSAP() {
+            const user = document.getElementById('sap-web-user').value.trim();
+            const pass = document.getElementById('sap-web-password').value;
+            
+            if (!user || !pass) {
+                alert('⚠️ Preencha o usuário e a senha SAP Web.');
+                return;
+            }
+            
+            fetch('/api/sap_web/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sap_web_user: user, sap_web_password: pass })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    adicionarLog('✅ Credenciais SAP Web salvas com sucesso!', 'log-success');
+                    const statusEl = document.getElementById('sap-config-status');
+                    statusEl.innerText = `✅ Usuário configurado: ${user}`;
+                    statusEl.classList.remove('empty');
+                    // Fecha o painel de configuração
+                    document.getElementById('config-sap-fields').style.display = 'none';
+                    document.getElementById('btn-toggle-config-sap').innerText = '⚙️ Configurar';
+                } else {
+                    adicionarLog(`❌ Erro ao salvar: ${data.message}`, 'log-error');
+                }
+            })
+            .catch(err => {
+                adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
+            });
         }
 
         // ============== KANBAN DADOS ==============
@@ -866,8 +1021,51 @@
                 });
         }
 
+        // ============== EXECUÇÃO PACKLIST ==============
+        function executarPacklist() {
+            const inputRemessas = document.getElementById('remessas-packlist').value;
+            if (!inputRemessas.trim()) {
+                alert("⚠️ Por favor, digite ao menos uma remessa.");
+                return;
+            }
+            if (!caminhoPastaPacklist) {
+                alert("⚠️ Por favor, selecione a pasta de destino para os PDFs.");
+                return;
+            }
+            
+            travarBotoes(true);
+            const statusEl = document.getElementById('status-rpa');
+            statusEl.innerText = "⏳ Baixando Packlists...";
+            statusEl.classList.remove('finalizado', 'erro');
+            statusEl.classList.add('executando');
+
+            fetch('/api/packlist/baixar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ remessas: inputRemessas, pasta_destino: caminhoPastaPacklist })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    adicionarLog(`❌ ${data.message}`, 'log-error');
+                    travarBotoes(false);
+                    statusEl.innerText = "❌ Erro";
+                    statusEl.classList.add('erro');
+                } else {
+                    iniciarMonitoramentoLogs();
+                }
+            })
+            .catch(err => {
+                adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
+                travarBotoes(false);
+            });
+        }
+
         // Inicializar ao carregar a página
-        window.addEventListener('load', inicializar);
+        window.addEventListener('load', () => {
+            inicializar();
+            carregarConfigSAP();
+        });
     </script>
 </body>
 </html>

@@ -32,7 +32,7 @@ echo [4] Iniciando compilacao (isso pode demorar 1-2 minutos)...
 :: --name: Nome do arquivo final
 :: --add-data: Inclui arquivos e pastas no executavel (formato Origem;Destino)
 :: --runtime-tmpdir: Usa um diretorio temporario sem espacos para evitar erro de DLL
-python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." --runtime-tmpdir=C:\Temp app.py
+python -m PyInstaller --onefile --windowed --name "RPA_Expedicao" --add-data "templates;templates" --add-data "version.txt;." --runtime-tmpdir=C:\Temp --hidden-import=playwright --hidden-import=playwright.sync_api --hidden-import=playwright._impl._driver --hidden-import=greenlet --collect-all=playwright app.py
 
 if errorlevel 1 (
     echo.

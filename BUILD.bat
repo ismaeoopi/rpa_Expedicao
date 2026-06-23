@@ -47,6 +47,21 @@ if %ERRORLEVEL% neq 0 (
 echo ✅ Dependências instaladas com sucesso!
 echo.
 
+REM Instala o greenlet (dependência do Playwright)
+echo 🔧 Instalando greenlet (dependência do Playwright)...
+pip install greenlet --quiet
+
+REM Garante que o browser Chromium está instalado (necessário para Playwright)
+echo 🌐 Verificando browser Chromium do Playwright...
+python -m playwright install chromium
+if %ERRORLEVEL% neq 0 (
+    echo ⚠️ Aviso: Falha ao instalar Chromium - a função de Packlist instalará automaticamente no primeiro uso.
+) else (
+    echo ✅ Chromium verificado!
+)
+echo.
+
+
 REM Limpa compilações anteriores
 echo 🧹 Limpando compilações anteriores...
 if exist build rmdir /s /q build > nul 2>&1

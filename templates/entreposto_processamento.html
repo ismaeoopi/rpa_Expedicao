@@ -414,6 +414,46 @@
                 margin-bottom: 0;
             }
         }
+
+        /* ESTILOS DOS FILTROS E ABAS */
+        .filter-tab {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .filter-tab:hover {
+            color: #1b5e20;
+        }
+        .filter-tab.active {
+            color: #1b5e20 !important;
+            border-bottom-color: #1b5e20 !important;
+        }
+        .btn-mini {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 11px;
+            margin-bottom: 0;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .btn-mini:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
     </style>
 </head>
 <body>
@@ -487,6 +527,35 @@
                     Carregando dados das cargas selecionadas...
                 </p>
 
+                <!-- BARRA DE CONTROLE E FILTROS DE REMESSAS -->
+                <div class="control-filter-bar" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <!-- Botões de Marcação -->
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn-mini" onclick="marcarTodasRemessas(true)">
+                            ☑️ Marcar Todas
+                        </button>
+                        <button type="button" class="btn-mini" onclick="marcarTodasRemessas(false)">
+                            ⬜ Desmarcar Todas
+                        </button>
+                        <button type="button" class="btn-mini" onclick="marcarApenasErros()" style="background: #fef2f2; color: #b91c1c; border-color: #fca5a5;">
+                            ⚠️ Marcar Apenas Erros
+                        </button>
+                    </div>
+                    
+                    <!-- Abas de Filtros -->
+                    <div style="display: flex; border-bottom: 1px solid #cbd5e1; gap: 5px; margin-top: 5px;">
+                        <button type="button" id="tab-todas" class="filter-tab active" onclick="filtrarRemessas('todas')">
+                            Todas (<span id="badge-total">0</span>)
+                        </button>
+                        <button type="button" id="tab-erro" class="filter-tab" onclick="filtrarRemessas('erro')">
+                            Com Erro (<span id="badge-erro">0</span>)
+                        </button>
+                        <button type="button" id="tab-sem_erro" class="filter-tab" onclick="filtrarRemessas('sem_erro')">
+                            Sem Erro (<span id="badge-sem-erro">0</span>)
+                        </button>
+                    </div>
+                </div>
+
                 <div id="tracking-rows-container">
                     <!-- Gerado dinamicamente -->
                 </div>
@@ -510,6 +579,9 @@
         let dadosCargas = {};
         let rpaRunning = false;
         let pollingInterval = null;
+        let remessasSelecionadas = new Set();
+        let filtroAtivo = "todas";
+        let ultimoStatusEtapas = {};
 
         window.addEventListener('load', () => {
             carregarDadosIniciais();
@@ -523,9 +595,19 @@
                     entreposto = state.entreposto;
                     dadosCargas = state.dados;
                     
+                    // Inicializa remessasSelecionadas com todas as remessas
+                    if (remessasSelecionadas.size === 0) {
+                        for (let cId in dadosCargas) {
+                            dadosCargas[cId].remessas.forEach(r => {
+                                remessasSelecionadas.add(r.remessa);
+                            });
+                        }
+                    }
+                    
                     document.getElementById('info-carga-ativa').innerText = `Processando cargas no Entreposto ${entreposto}.`;
                     
-                    renderizarKanban(state.status_etapas);
+                    ultimoStatusEtapas = state.status_etapas || {};
+                    renderizarKanban(ultimoStatusEtapas);
                     verificarItensNaoKG();
                 })
                 .catch(err => {
@@ -534,9 +616,38 @@
                 });
         }
 
+        function temErro(remessa, statusEtapas) {
+            const status = statusEtapas[remessa];
+            if (!status) return false;
+            return status.basico === 'error' || status.picking === 'error' || status.sm === 'error' || status.tolerancia === 'error';
+        }
+
+        function atualizarContadoresFiltros(statusEtapas) {
+            let total = 0;
+            let comErro = 0;
+            let semErro = 0;
+            
+            for (let cId in dadosCargas) {
+                dadosCargas[cId].remessas.forEach(r => {
+                    total++;
+                    if (temErro(r.remessa, statusEtapas)) {
+                        comErro++;
+                    } else {
+                        semErro++;
+                    }
+                });
+            }
+            
+            document.getElementById('badge-total').innerText = total;
+            document.getElementById('badge-erro').innerText = comErro;
+            document.getElementById('badge-sem-erro').innerText = semErro;
+        }
+
         function renderizarKanban(statusEtapas) {
             const container = document.getElementById('tracking-rows-container');
             container.innerHTML = "";
+            
+            atualizarContadoresFiltros(statusEtapas);
             
             let html = "";
             for (let cId in dadosCargas) {
@@ -544,6 +655,13 @@
                 cVal.remessas.forEach(r => {
                     const status = statusEtapas[r.remessa] || { basico: "pending", picking: "pending", sm: "pending", tolerancia: "pending" };
                     const statusTolerancia = status.tolerancia || "pending";
+                    
+                    // Aplica filtro
+                    const remessaComErro = temErro(r.remessa, statusEtapas);
+                    if (filtroAtivo === 'erro' && !remessaComErro) return;
+                    if (filtroAtivo === 'sem_erro' && remessaComErro) return;
+                    
+                    const isChecked = remessasSelecionadas.has(r.remessa);
                     
                     let tolValueHTML = formatarStatusEtapa(statusTolerancia);
                     if (statusTolerancia === 'success' && (r.tolerancia_exc !== undefined || r.tolerancia_inc !== undefined)) {
@@ -554,9 +672,12 @@
 
                     html += `
                     <div class="tracking-row" id="row-${r.remessa}">
-                        <div class="row-info">
-                            <div class="row-remessa">Remessa: ${r.remessa}</div>
-                            <div class="row-subinfo">Carga: ${cId} | Peso: ${r.peso_liquido} kg | Plts: ${r.qtd_paletes}</div>
+                        <div class="row-info" style="display: flex; flex-direction: row; align-items: center; gap: 12px;">
+                            <input type="checkbox" id="chk-${r.remessa}" onchange="toggleSelecaoRemessa('${r.remessa}')" ${isChecked ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #1b5e20;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div class="row-remessa">Remessa: ${r.remessa}</div>
+                                <div class="row-subinfo">Carga: ${cId} | Peso: ${r.peso_liquido} kg | Plts: ${r.qtd_paletes}</div>
+                            </div>
                         </div>
                         
                         <div class="stage-cell status-${status.basico}">
@@ -588,6 +709,50 @@
                 });
             }
             container.innerHTML = html;
+        }
+
+        function toggleSelecaoRemessa(remessa) {
+            const chk = document.getElementById(`chk-${remessa}`);
+            if (chk.checked) {
+                remessasSelecionadas.add(remessa);
+            } else {
+                remessasSelecionadas.delete(remessa);
+            }
+        }
+
+        function marcarTodasRemessas(marcar) {
+            for (let cId in dadosCargas) {
+                dadosCargas[cId].remessas.forEach(r => {
+                    if (marcar) {
+                        remessasSelecionadas.add(r.remessa);
+                    } else {
+                        remessasSelecionadas.delete(r.remessa);
+                    }
+                    const chk = document.getElementById(`chk-${r.remessa}`);
+                    if (chk) chk.checked = marcar;
+                });
+            }
+        }
+
+        function marcarApenasErros() {
+            remessasSelecionadas.clear();
+            for (let cId in dadosCargas) {
+                dadosCargas[cId].remessas.forEach(r => {
+                    if (temErro(r.remessa, ultimoStatusEtapas)) {
+                        remessasSelecionadas.add(r.remessa);
+                    }
+                    const chk = document.getElementById(`chk-${r.remessa}`);
+                    if (chk) chk.checked = remessasSelecionadas.has(r.remessa);
+                });
+            }
+            renderizarKanban(ultimoStatusEtapas);
+        }
+
+        function filtrarRemessas(filtro) {
+            filtroAtivo = filtro;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${filtro}`).classList.add('active');
+            renderizarKanban(ultimoStatusEtapas);
         }
 
         function formatarStatusEtapa(st) {
@@ -632,6 +797,11 @@
                 return;
             }
 
+            if (remessasSelecionadas.size === 0) {
+                alert("⚠️ Nenhuma remessa selecionada. Por favor, marque ao menos uma remessa.");
+                return;
+            }
+
             // Coleta multiplicadores informados
             const multiplos = {};
             document.querySelectorAll('.input-multiplo').forEach(input => {
@@ -649,7 +819,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     etapa: etapa,
-                    multiplos: multiplos
+                    multiplos: multiplos,
+                    remessas_selecionadas: Array.from(remessasSelecionadas)
                 })
             })
             .then(res => res.json())
@@ -728,7 +899,8 @@
                     .then(res => res ? res.json() : null)
                     .then(state => {
                         if (state && state.status_etapas) {
-                            renderizarKanban(state.status_etapas);
+                            ultimoStatusEtapas = state.status_etapas;
+                            renderizarKanban(ultimoStatusEtapas);
                         }
                     })
                     .catch(err => console.error("Erro no polling de logs:", err));

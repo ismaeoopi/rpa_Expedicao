@@ -79,15 +79,21 @@ python -m PyInstaller ^
     --hidden-import=git ^
     --hidden-import=sqlite3 ^
     --hidden-import=Entreposto ^
+    --hidden-import=playwright ^
+    --hidden-import=playwright.sync_api ^
+    --hidden-import=playwright._impl._driver ^
+    --hidden-import=greenlet ^
     --collect-all=reportlab ^
     --collect-all=flask ^
-    --collect-all=pandas ^
     --collect-all=tkinter ^
     --collect-all=requests ^
     --collect-all=dotenv ^
     --collect-all=flask_cors ^
     --collect-all=customtkinter ^
     --collect-all=geopy ^
+    --collect-all=playwright ^
+    --exclude-module=pandas.tests ^
+    --exclude-module=pytest ^
     launcher.py
 
 if errorlevel 1 (

@@ -182,11 +182,13 @@ def obter_dados_etapas(entreposto_nome, cargas_selecionadas):
         
     return resultado_cargas
 
-def rodar_atualizar_basico(session, dados_cargas, status_etapas):
+def rodar_atualizar_basico(session, dados_cargas, status_etapas, remessas_a_processar=None):
     log_sys.write("=== [Passo 1] Iniciando Atualização Básica (VL02N) ===")
     for carga_id, c_info in dados_cargas.items():
         for rem_info in c_info["remessas"]:
             remessa = rem_info["remessa"]
+            if remessas_a_processar is not None and remessa not in remessas_a_processar:
+                continue
             peso_liq = rem_info["peso_liquido"]
             paletes = rem_info["qtd_paletes"]
             
@@ -205,6 +207,17 @@ def rodar_atualizar_basico(session, dados_cargas, status_etapas):
                 session.findById("wnd[0]").sendVKey(0)
                 time.sleep(0.5)
                 fechar_popups_VL02N(session)
+                
+                # Verificar se o picking já está concluído
+                session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02").select()
+                picking = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02/ssubSUBSCREEN_BODY:SAPMV50A:1104/ctxtVBUK-KOSTK").text.strip()
+                if picking == "C":
+                    log_sys.write(f"ℹ️ Remessa {remessa} já possui Picking completo (C). Marcando básico e picking como concluídos.")
+                    status_etapas[remessa]["basico"] = "success"
+                    status_etapas[remessa]["picking"] = "success"
+                    session.findById("wnd[0]/tbar[0]/btn[3]").press()
+                    time.sleep(0.5)
+                    continue
                 
                 # Aguarda e seleciona aba de Item Overview
                 overview_tab_id = "wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\\01"
@@ -278,12 +291,19 @@ def rodar_atualizar_basico(session, dados_cargas, status_etapas):
                 status_etapas[remessa]["basico"] = "error"
                 log_sys.write(f"❌ Erro básico na remessa {remessa}: {e}")
 
-def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas):
+def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas, remessas_a_processar=None):
     log_sys.write("=== [Passo 2] Iniciando Picking (VL02N) ===")
     for carga_id, c_info in dados_cargas.items():
         for rem_info in c_info["remessas"]:
             remessa = rem_info["remessa"]
+            if remessas_a_processar is not None and remessa not in remessas_a_processar:
+                continue
             
+            # Se o picking já está concluído, pula
+            if status_etapas.get(remessa, {}).get("picking") == "success":
+                log_sys.write(f"⏭️ Ignorando Picking para a remessa {remessa} pois já está concluído.")
+                continue
+
             # Se a etapa básica desta remessa falhou anteriormente, pula
             if status_etapas.get(remessa, {}).get("basico") == "error":
                 log_sys.write(f"⏭️ Ignorando Picking para a remessa {remessa} pois a Atualização Básica falhou.")
@@ -311,6 +331,16 @@ def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas):
                 session.findById("wnd[0]").sendVKey(0)
                 time.sleep(0.5)
                 fechar_popups_VL02N(session)
+                
+                # Verificar se o picking já está concluído
+                session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02").select()
+                picking = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\02/ssubSUBSCREEN_BODY:SAPMV50A:1104/ctxtVBUK-KOSTK").text.strip()
+                if picking == "C":
+                    log_sys.write(f"ℹ️ Remessa {remessa} já possui Picking completo (C). Marcando picking como concluído.")
+                    status_etapas[remessa]["picking"] = "success"
+                    session.findById("wnd[0]/tbar[0]/btn[3]").press()
+                    time.sleep(0.5)
+                    continue
                 
                 # Acessa aba de Item Overview para identificar a unidade diretamente no SAP
                 overview_tab_id = "wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\\01"
@@ -479,13 +509,15 @@ def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas):
                 status_etapas[remessa]["picking"] = "error"
                 log_sys.write(f"❌ Erro no Picking da remessa {remessa}: {e}")
 
-def rodar_sm(session, dados_cargas, status_etapas):
+def rodar_sm(session, dados_cargas, status_etapas, remessas_a_processar=None):
     log_sys.write("=== [Passo 3] Iniciando SM / Transportadora (VL02N) ===")
     for carga_id, c_info in dados_cargas.items():
         transp_cod = c_info["transportadora_codigo"]
         
         for rem_info in c_info["remessas"]:
             remessa = rem_info["remessa"]
+            if remessas_a_processar is not None and remessa not in remessas_a_processar:
+                continue
             
             # Se alguma etapa anterior falhou, pula
             if status_etapas.get(remessa, {}).get("basico") == "error" or status_etapas.get(remessa, {}).get("picking") == "error":
@@ -545,11 +577,13 @@ def rodar_sm(session, dados_cargas, status_etapas):
                 status_etapas[remessa]["sm"] = "error"
                 log_sys.write(f"❌ Erro ao registrar SM/Transportadora da remessa {remessa}: {e}")
 
-def rodar_verificar_tolerancia(session, dados_cargas, status_etapas):
+def rodar_verificar_tolerancia(session, dados_cargas, status_etapas, remessas_a_processar=None):
     log_sys.write("=== [Tolerância MM] Iniciando Verificação de Tolerâncias (VL03N) ===")
     for carga_id, c_info in dados_cargas.items():
         for rem_info in c_info["remessas"]:
             remessa = rem_info["remessa"]
+            if remessas_a_processar is not None and remessa not in remessas_a_processar:
+                continue
             log_sys.write(f"🔍 Checando tolerância para a Remessa: {remessa}")
             
             if remessa not in status_etapas:

@@ -3,8 +3,14 @@ import requests
 import urllib.parse
 from dotenv import load_dotenv, set_key
 
-# Caminho para o arquivo .env no diretório raiz do projeto
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+
+# Caminho para o arquivo .env no diretório raiz do projeto ou na pasta do executável
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
 class SharePointClient:

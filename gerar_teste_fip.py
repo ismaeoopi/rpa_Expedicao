@@ -129,9 +129,33 @@ def gerar_pdf_teste_fip(caminho_pdf):
             row_y -= 35
         
     # --- Rodapé ---
-    c.setFont("Helvetica-Oblique", 8)
+    import base64
+    from io import BytesIO
+    from reportlab.lib.utils import ImageReader
+    from src.expedicao.logo import LOGO_BASE64
+
+    try:
+        cm = 72 / 2.54
+        dados_imagem = base64.b64decode(LOGO_BASE64)
+        buffer_imagem = BytesIO(dados_imagem)
+        imagem_para_pdf = ImageReader(buffer_imagem)
+
+        largura_img = 7.89 * cm
+        altura_img = 1.84 * cm
+        pos_x_imagem = (largura - largura_img) / 2
+        pos_y_imagem = 45
+
+        c.drawImage(imagem_para_pdf, pos_x_imagem, pos_y_imagem,
+                    width=largura_img, height=altura_img, mask='auto')
+    except Exception as e:
+        print(f"Erro ao processar imagem: {e}")
+
+    c.setFont("Helvetica-Bold", 8)
     c.setFillColor(colors.black)
-    c.drawCentredString(largura / 2, 30, "Ficha de Identificação de Produto (FIP) - Documento de Validação de Layout")
+    c.drawCentredString(largura / 2, 32, "INDUSTRIA DE EMBALAGENS LTDA.")
+
+    c.setFont("Helvetica", 7)
+    c.drawCentredString(largura / 2, 20, "Feito no Brasil / Made in Brazil / Hecho en Brasil")
     
     c.save()
     print(f"Ficha de teste PDF gerada com sucesso em: {caminho_pdf}")
