@@ -80,14 +80,16 @@ def _garantir_playwright_instalado():
                 try:
                     from playwright._impl._driver import compute_driver_executable
                     driver_executable, driver_cli = compute_driver_executable()
+                    # O driver_executable é o node.exe e o driver_cli é o cli.js do playwright.
+                    # Devemos passar o cli.js como argumento para o node executá-lo.
                     result_alt = subprocess.run(
-                        [driver_executable, "install", "chromium"],
+                        [driver_executable, driver_cli, "install", "chromium"],
                         capture_output=True, text=True, env=env
                     )
                     if result_alt.returncode == 0:
                         log_sys.write("✅ Chromium instalado com sucesso (método alternativo)!")
                     else:
-                        log_sys.write(f"❌ Falha ao instalar Chromium: {result_alt.stderr[:300] if result_alt.stderr else 'Erro desconhecido'}")
+                        log_sys.write(f"❌ Falha ao instalar Chromium: {result_alt.stderr[:500] if result_alt.stderr else 'Erro desconhecido'}")
                         return False
                 except Exception as ex:
                     log_sys.write(f"❌ Falha na instalação alternativa: {ex}")
