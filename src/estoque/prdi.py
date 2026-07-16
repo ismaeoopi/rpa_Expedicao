@@ -128,11 +128,12 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
                 uc = ucs_processadas[identificador_uc_excel]
             else:
                 # Primeira vez com esta UC, precisa ir na árvore, colocar tara/volume e pegar ID gerado
+                t_calc = 1 if num_linhas == 1 else tamanho
                 if ucs_unicas_lista and identificador_uc_excel:
                     idx_uc = ucs_unicas_lista.index(identificador_uc_excel) + 1
-                    node_id = str(tamanho + idx_uc + 1).rjust(11)
+                    node_id = str(t_calc + idx_uc + 1).rjust(11)
                 else:
-                    node_id = str(tamanho + itemNum + 1).rjust(11)
+                    node_id = str(t_calc + itemNum + 1).rjust(11)
 
                 # Seleciona Nó na árvore
                 tree = session.findById("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell/shellcont[1]/shell[1]")
