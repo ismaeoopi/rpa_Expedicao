@@ -59,6 +59,15 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
         grid.selectedRows = "0"
         doc_ref = grid.getcellvalue(0, "DOCNO")
         
+        # Conta o número de linhas no Grid ODP1 para verificar lote único
+        num_linhas = 0
+        try:
+            grid_odp1 = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell")
+            num_linhas = grid_odp1.rowCount
+            log_sys.write(f"📊 Quantidade de linhas detectadas no ODP1: {num_linhas}")
+        except Exception as e:
+            log_sys.write(f"⚠️ Não foi possível obter rowCount do ODP1 (pode não estar visível): {e}")
+
         # Packing Dialog
         session.findById("wnd[0]/mbar/menu[0]/menu[2]/menu[2]").Select() # Função Follow-up -> Pack
         
@@ -109,7 +118,8 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
             # Preenche Scanner (Sempre ocorre para cada lote/item)
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-DOCNO").Text = doc_ref
             time.sleep(0.1)
-            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-ITMNO").Text = str((itemNum * 10))
+            itm_no = "10" if num_linhas == 1 else str((itemNum * 10))
+            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-ITMNO").Text = itm_no
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-UIQUAN").Text = peso
             
             # Verifica se essa UC já teve tara/volume preenchidos neste processo
