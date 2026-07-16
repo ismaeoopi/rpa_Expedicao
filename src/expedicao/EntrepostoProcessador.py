@@ -85,6 +85,8 @@ def obter_dados_etapas(entreposto_nome, cargas_selecionadas):
     col_cargas_transp = encontrar_coluna(df_cargas, ["TRANSP.", "TRANSPORTADORA", "TRANSP", "TRANSPORT"], "Planilha de Cargas")
     col_cargas_peso_liq = encontrar_coluna(df_cargas, ["PESO LIQ", "PESO LIQUIDO", "P LIQ", "PESO LIQ. DADOS", "NET WEIGHT"], "Planilha de Cargas")
     col_cargas_pllt = encontrar_coluna(df_cargas, ["PLLT", "PALETE", "PALETES", "QTD PALETES", "PALLETS"], "Planilha de Cargas")
+    col_cargas_of = encontrar_coluna(df_cargas, ["OF", "ORDEM DE FRETE", "NUMERO OF", "Nº OF", "N° OF", "Nº DA OF", "N° DA OF"], "Planilha de Cargas")
+    col_cargas_cliente = encontrar_coluna(df_cargas, ["CLIENTE ABREV", "CLIENTE", "NOME CLIENTE", "ABREV CLIENTE"], "Planilha de Cargas")
 
     col_estoque_n_carga = encontrar_coluna(df_estoque, ["Nº CARGA", "N° CARGA", "CARGA", "NUM CARGA"], "Planilha de Estoque")
     col_estoque_remessa = encontrar_coluna(df_estoque, ["REMESSA", "REMESSA/PICKING", "REMESSA / PICKING", "DELIVERY", "REMESSA SAP", "REMESSAPICKING", "Nº REMESSA", "N° REMESSA"], "Planilha de Estoque")
@@ -148,12 +150,25 @@ def obter_dados_etapas(entreposto_nome, cargas_selecionadas):
                             "peso_bruto": converter_para_float(r_row.get(col_estoque_peso_bruto, 0))
                         })
 
+                # Busca a linha da remessa em df_cargas para obter o cliente e OF
+                cliente_val = ""
+                of_val = ""
+                if col_cargas_remessa:
+                    linhas_cargas_rem = df_cargas[df_cargas[col_cargas_remessa].astype(str).str.strip() == rem_str]
+                    if not linhas_cargas_rem.empty:
+                        if col_cargas_cliente:
+                            cliente_val = str(linhas_cargas_rem[col_cargas_cliente].iloc[0]).strip()
+                        if col_cargas_of:
+                            of_val = str(linhas_cargas_rem[col_cargas_of].iloc[0]).strip()
+
                 remessas_map[rem_str] = {
                     "remessa": rem_str,
                     "peso_liquido": round(p_liq, 3),
                     "peso_bruto": round(p_bruto, 3),
                     "qtd_paletes": plts,
                     "unidade_medida": "KG",  # Padrão
+                    "cliente_abrev": cliente_val,
+                    "of_planilha": of_val,
                     "lotes": lotes_list
                 }
         else:
@@ -165,12 +180,21 @@ def obter_dados_etapas(entreposto_nome, cargas_selecionadas):
                 p_liq = converter_para_float(row.get(col_cargas_peso_liq, 0))
                 plts = int(converter_para_float(row.get(col_cargas_pllt, 0)))
                 
+                cliente_val = ""
+                of_val = ""
+                if col_cargas_cliente:
+                    cliente_val = str(row.get(col_cargas_cliente, "")).strip()
+                if col_cargas_of:
+                    of_val = str(row.get(col_cargas_of, "")).strip()
+
                 remessas_map[rem_str] = {
                     "remessa": rem_str,
                     "peso_liquido": round(p_liq, 3),
                     "peso_bruto": "-",
                     "qtd_paletes": plts,
                     "unidade_medida": "KG",
+                    "cliente_abrev": cliente_val,
+                    "of_planilha": of_val,
                     "lotes": []
                 }
                 
@@ -661,3 +685,80 @@ def rodar_verificar_tolerancia(session, dados_cargas, status_etapas, remessas_a_
                 status_etapas[remessa]["tolerancia"] = "error"
                 log_sys.write(f"❌ Erro ao verificar tolerância da remessa {remessa}: {e}")
 
+
+def rodar_criar_ordem_frete(usuario, senha, dados_cargas, status_etapas, remessas_a_processar=None):
+    from src.expedicao.sap_ordem_frete import rodar_criacao_of_playwright_multipla
+    
+    log_sys.write("=== [Etapa 4] Iniciando Criação de Ordem de Frete (SAP Web) ===")
+    
+    # 1. Agrupar remessas elegíveis por Carga e por Cliente
+    for carga_id, c_info in dados_cargas.items():
+        remessas_por_cliente = {}
+        
+        for rem_info in c_info["remessas"]:
+            remessa = rem_info["remessa"]
+            
+            if remessas_a_processar is not None and remessa not in remessas_a_processar:
+                continue
+                
+            of_planilha = rem_info.get("of_planilha", "")
+            is_of_empty = not of_planilha or str(of_planilha).strip().lower() in ["nan", "", "none", "-"]
+            
+            if not is_of_empty:
+                log_sys.write(f"ℹ️ Remessa {remessa} já possui OF: {of_planilha}. Pulando criação.")
+                if remessa not in status_etapas:
+                    status_etapas[remessa] = {}
+                status_etapas[remessa]["of"] = "success"
+                status_etapas[remessa]["of_numero"] = of_planilha
+                continue
+                
+            cliente = rem_info.get("cliente_abrev", "SEM_CLIENTE").strip().upper()
+            if not cliente or cliente == "NAN":
+                cliente = "SEM_CLIENTE"
+                
+            if cliente not in remessas_por_cliente:
+                remessas_por_cliente[cliente] = []
+            remessas_por_cliente[cliente].append(rem_info)
+            
+        # 2. Agrupar os dados para envio múltiplo
+        grupos_a_processar = []
+        grupos_rem_list = []
+        
+        for cliente, rem_list in remessas_por_cliente.items():
+            remessas_ids = [r["remessa"] for r in rem_list]
+            grupos_a_processar.append(remessas_ids)
+            grupos_rem_list.append(rem_list)
+            
+            # Marca como running no status_etapas
+            for r in rem_list:
+                if r["remessa"] not in status_etapas:
+                    status_etapas[r["remessa"]] = {}
+                status_etapas[r["remessa"]]["of"] = "running"
+                
+        if grupos_a_processar:
+            try:
+                resultados = rodar_criacao_of_playwright_multipla(grupos_a_processar, usuario, senha)
+                
+                # Mapeia os resultados de volta para as remessas
+                for res, rem_list in zip(resultados, grupos_rem_list):
+                    of_numero = res["of"]
+                    erro = res["erro"]
+                    
+                    if of_numero:
+                        for r in rem_list:
+                            status_etapas[r["remessa"]]["of"] = "success"
+                            status_etapas[r["remessa"]]["of_numero"] = of_numero
+                            r["of_planilha"] = of_numero
+                        log_sys.write(f"✅ Ordem de Frete {of_numero} criada com sucesso para as remessas: {', '.join([r['remessa'] for r in rem_list])}")
+                    else:
+                        for r in rem_list:
+                            status_etapas[r["remessa"]]["of"] = "error"
+                            status_etapas[r["remessa"]]["erro_detalhe"] = erro
+                        log_sys.write(f"❌ Erro ao criar Ordem de Frete para as remessas {', '.join([r['remessa'] for r in rem_list])}: {erro}")
+            except Exception as e:
+                # Trata erro geral do processo
+                for rem_list in grupos_rem_list:
+                    for r in rem_list:
+                        status_etapas[r["remessa"]]["of"] = "error"
+                        status_etapas[r["remessa"]]["erro_detalhe"] = str(e)
+                log_sys.write(f"❌ Erro geral ao criar Ordens de Frete: {e}")

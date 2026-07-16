@@ -33,11 +33,16 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
                 inbound = input("Digite a inbound: ")
         
         # Busca Inbound
+        if inbound:
+            inbound = str(inbound).strip()
+            if inbound.endswith(".0"):
+                inbound = inbound[:-2]
+
         criterio = "REFDOCNO_ERP_I" if inbound.startswith("18") else "REFDOCNO_PPO_I"
         campo_busca = "2003" if inbound.startswith("18") else "2015"
         tipo_inbound = "ERP" if inbound.startswith("18") else "PPO"
 
-        session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/cmb/SCWM/S_UI_DLV-V_CRITERION").Key = criterio
+        session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/cmb/SCWM/S_UI_DLV-V_CRITERION").key = criterio
         session.findById(f"wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_SEARCH_VALUE:/SCWM/SAPLUI_DLV_PRD:{campo_busca}/txt/SCWM/S_SP_Q_HEAD-REFDOCNO_{tipo_inbound}_I").Text = inbound
         session.findById(f"wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_SEARCH_VALUE:/SCWM/SAPLUI_DLV_PRD:{campo_busca}/btnCMD_GO").press()
         contadortentativa = 0

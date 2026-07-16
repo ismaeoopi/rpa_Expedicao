@@ -80,17 +80,21 @@ def selecionar_aba_cargas(sheet_names):
             return name
     return sheet_names[0] if sheet_names else 0
 
-def selecionar_aba_estoque(sheet_names):
-    # Procura por 'Estoque SAP 2025', 'Estoque SAP 202', 'Estoque SAP', 'Estoque'
-    # Dá preferência para abas com 'SAP' no nome
-    for name in sheet_names:
-        name_lower = name.lower().strip()
-        if 'estoque sap 2025' in name_lower:
-            return name
-    for name in sheet_names:
-        name_lower = name.lower().strip()
-        if 'estoque sap 202' in name_lower:
-            return name
+def selecionar_aba_estoque(sheet_names, entreposto_nome=None):
+    # 1. Se informou o entreposto (ex: IPOJUCA), busca por 'estoque sap' + o nome do entreposto
+    if entreposto_nome:
+        ent_lower = entreposto_nome.lower().strip()
+        for name in sheet_names:
+            name_lower = name.lower().strip()
+            if 'estoque sap' in name_lower and ent_lower in name_lower:
+                return name
+                
+    # 2. Procura por 'Estoque SAP' com o ano mais recente (decrescente: 2026, 2025, etc.)
+    for ano in range(2026, 2021, -1):
+        for name in sheet_names:
+            name_lower = name.lower().strip()
+            if f'estoque sap {ano}' in name_lower:
+                return name
     for name in sheet_names:
         name_lower = name.lower().strip()
         if 'estoque sap' in name_lower:
@@ -154,7 +158,7 @@ def carregar_planilhas_em_memoria(entreposto_nome):
                 if aba_env and aba_env in xl.sheet_names:
                     aba_selecionada = aba_env
                 else:
-                    aba_selecionada = selecionar_aba_estoque(xl.sheet_names)
+                    aba_selecionada = selecionar_aba_estoque(xl.sheet_names, entreposto_nome)
             
             log_sys.write(f"📖 Lendo aba '{aba_selecionada}'...")
             df = xl.parse(aba_selecionada, dtype=str)

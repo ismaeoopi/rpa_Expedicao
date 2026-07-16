@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPA Logistica - Início V.1.1.6</title>
+    <title>RPA Logistica - Início V.1.1.7</title>
     <style>
         * {
             box-sizing: border-box;
@@ -135,6 +135,10 @@
             background: linear-gradient(90deg, #4caf50, #8bc34a);
         }
 
+        .module-card.cabotagem::before {
+            background: linear-gradient(90deg, #8e2de2, #4a00e0);
+        }
+
         .module-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 20px 40px rgba(0, 102, 204, 0.15);
@@ -146,6 +150,10 @@
 
         .module-card.entreposto:hover {
             box-shadow: 0 20px 40px rgba(76, 175, 80, 0.15);
+        }
+
+        .module-card.cabotagem:hover {
+            box-shadow: 0 20px 40px rgba(142, 45, 226, 0.15);
         }
 
         .module-card:hover::before {
@@ -169,6 +177,12 @@
 
         .module-card.entreposto .module-icon {
             background: -webkit-linear-gradient(45deg, #1b5e20, #4caf50);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .module-card.cabotagem .module-icon {
+            background: -webkit-linear-gradient(45deg, #4a00e0, #8e2de2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -327,6 +341,13 @@
                 <div class="module-icon">🏢</div>
                 <h2 class="module-title">Entreposto</h2>
                 <p class="module-desc">Automações e controles para processos de Entreposto.</p>
+            </a>
+
+            <!-- CABOTAGEM -->
+            <a href="/cabotagem" class="module-card cabotagem">
+                <div class="module-icon">🚢</div>
+                <h2 class="module-title">Cabotagem</h2>
+                <p class="module-desc">Automações e controles para processos de Cabotagem.</p>
             </a>
         </div>
     </div>

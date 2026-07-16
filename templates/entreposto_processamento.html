@@ -286,7 +286,7 @@
 
         .tracking-row {
             display: grid;
-            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr;
             gap: 12px;
             align-items: center;
             background: #ffffff;
@@ -495,6 +495,10 @@
                     <button class="btn btn-step" id="btn-etapa-tolerancia" onclick="dispararEtapa('tolerancia')" style="background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7;">
                         🔍 Checar Tolerâncias via MM
                     </button>
+                    
+                    <button class="btn btn-step" id="btn-etapa-of" onclick="dispararEtapa('of')" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc;">
+                        🚛 4) Criar Ordem de Frete (OF)
+                    </button>
                 </div>
 
                 <!-- SEÇÃO ITENS NÃO KG -->
@@ -530,7 +534,7 @@
                 <!-- BARRA DE CONTROLE E FILTROS DE REMESSAS -->
                 <div class="control-filter-bar" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <!-- Botões de Marcação -->
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%;">
                         <button type="button" class="btn-mini" onclick="marcarTodasRemessas(true)">
                             ☑️ Marcar Todas
                         </button>
@@ -539,6 +543,9 @@
                         </button>
                         <button type="button" class="btn-mini" onclick="marcarApenasErros()" style="background: #fef2f2; color: #b91c1c; border-color: #fca5a5;">
                             ⚠️ Marcar Apenas Erros
+                        </button>
+                        <button type="button" class="btn-mini" onclick="baixarExcelOFs()" style="background: #f0fdf4; color: #166534; border-color: #86efac; margin-left: auto;">
+                            📥 Baixar Excel de OFs
                         </button>
                     </div>
                     
@@ -619,7 +626,7 @@
         function temErro(remessa, statusEtapas) {
             const status = statusEtapas[remessa];
             if (!status) return false;
-            return status.basico === 'error' || status.picking === 'error' || status.sm === 'error' || status.tolerancia === 'error';
+            return status.basico === 'error' || status.picking === 'error' || status.sm === 'error' || status.tolerancia === 'error' || status.of === 'error';
         }
 
         function atualizarContadoresFiltros(statusEtapas) {
@@ -653,7 +660,7 @@
             for (let cId in dadosCargas) {
                 const cVal = dadosCargas[cId];
                 cVal.remessas.forEach(r => {
-                    const status = statusEtapas[r.remessa] || { basico: "pending", picking: "pending", sm: "pending", tolerancia: "pending" };
+                    const status = statusEtapas[r.remessa] || { basico: "pending", picking: "pending", sm: "pending", tolerancia: "pending", of: "pending", of_numero: "" };
                     const statusTolerancia = status.tolerancia || "pending";
                     
                     // Aplica filtro
@@ -676,7 +683,7 @@
                             <input type="checkbox" id="chk-${r.remessa}" onchange="toggleSelecaoRemessa('${r.remessa}')" ${isChecked ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #1b5e20;">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <div class="row-remessa">Remessa: ${r.remessa}</div>
-                                <div class="row-subinfo">Carga: ${cId} | Peso: ${r.peso_liquido} kg | Plts: ${r.qtd_paletes}</div>
+                                <div class="row-subinfo">Carga: ${cId} | Cli: ${r.cliente_abrev || '-'} | OF: ${r.of_planilha || 'Vazia'}</div>
                             </div>
                         </div>
                         
@@ -698,6 +705,11 @@
                         <div class="stage-cell status-${statusTolerancia}">
                             <div class="stage-label">Tolerância MM</div>
                             <div class="stage-value">${tolValueHTML}</div>
+                        </div>
+
+                        <div class="stage-cell status-${status.of}">
+                            <div class="stage-label">Ordem Frete</div>
+                            <div class="stage-value" style="font-size: 11px; font-weight: 700;">${status.of_numero ? status.of_numero : formatarStatusEtapa(status.of)}</div>
                         </div>
  
                         <div class="stage-cell status-pending" style="min-height: auto;">
@@ -846,6 +858,8 @@
             document.getElementById('btn-etapa-3').disabled = !hab;
             const btnTol = document.getElementById('btn-etapa-tolerancia');
             if (btnTol) btnTol.disabled = !hab;
+            const btnOf = document.getElementById('btn-etapa-of');
+            if (btnOf) btnOf.disabled = !hab;
         }
 
         function adicionarLog(msg, tipo = "") {
@@ -905,6 +919,34 @@
                     })
                     .catch(err => console.error("Erro no polling de logs:", err));
             }, 1000);
+        }
+
+        function baixarExcelOFs() {
+            adicionarLog("📥 Gerando e baixando Excel com as remessas e OFs...");
+            fetch('/api/entreposto/exportar_excel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status_etapas: ultimoStatusEtapas })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Erro ao gerar Excel");
+                return res.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `OFs_Entreposto_${entreposto || 'Processado'}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                adicionarLog("✅ Excel baixado com sucesso!");
+            })
+            .catch(err => {
+                console.error(err);
+                adicionarLog("❌ Falha ao baixar Excel: " + err.message, "log-error");
+            });
         }
     </script>
 </body>

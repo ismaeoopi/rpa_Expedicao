@@ -2,6 +2,12 @@
 REM Script de compilação do aplicativo RPA para .exe
 REM Requisitos: Python 3.8+ e PyInstaller instalados
 
+REM Ativar ambiente virtual se existir
+if not exist .venv\Scripts\activate.bat goto skip_venv
+echo [INFO] Ativando ambiente virtual (.venv)...
+call .venv\Scripts\activate.bat
+:skip_venv
+
 chcp 65001 > nul
 cls
 

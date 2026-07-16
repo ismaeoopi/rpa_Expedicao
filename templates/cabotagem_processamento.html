@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - Processamento Cabotagem</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER PREMIUM (ROXO/AZUL ESCURO) */
+        .header {
+            background: linear-gradient(135deg, #4a00e0 0%, #200080 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #8e2de2;
+            box-shadow: 0 8px 32px rgba(142, 45, 226, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 30px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .header h1 .nome {
+            color: #d1b3ff;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #cbd5e1;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CARDS */
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(142, 45, 226, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(142, 45, 226, 0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #4a00e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #8e2de2, #4a00e0);
+            border-radius: 2px;
+        }
+
+        /* BOTÕES */
+        .btn {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .btn-run-all {
+            background: linear-gradient(135deg, #4a00e0 0%, #200080 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 0, 224, 0.25);
+            font-size: 14px;
+            padding: 14px 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn-run-all:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 0, 224, 0.4);
+        }
+
+        .btn:disabled {
+            background: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            box-shadow: none !important;
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(142, 45, 226, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            margin-top: 25px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(142, 45, 226, 0.1);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+            word-break: break-word;
+        }
+
+        .log-error {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .log-success {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        /* TRACKING ROWS - KANBAN */
+        #tracking-rows-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tracking-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s;
+        }
+
+        .tracking-row:hover {
+            box-shadow: 0 6px 16px rgba(142, 45, 226, 0.08);
+            transform: translateY(-1px);
+            border-color: #4a00e0;
+        }
+
+        .row-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-remessa {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .row-subinfo {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .stage-cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            min-height: 48px;
+            text-align: center;
+        }
+
+        .stage-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .stage-value {
+            font-size: 12px;
+        }
+
+        /* Estados */
+        .stage-cell.status-pending {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #94a3b8;
+        }
+        .stage-cell.status-running {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #d97706;
+            animation: pulseGlow 1.5s infinite;
+        }
+        .stage-cell.status-success {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .stage-cell.status-error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        @media (max-width: 768px) {
+            .tracking-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>Acompanhamento <span class="nome">do Processamento</span></h1>
+                <p>🚢 Módulo Cabotagem - Criação de Ordem de Frete (OF)</p>
+            </div>
+            <a href="/cabotagem" class="btn-voltar">← Voltar à Cabotagem</a>
+        </div>
+
+        <div class="grid-layout">
+            <!-- AÇÕES -->
+            <div>
+                <div class="card">
+                    <h3>Controle</h3>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                        O robô processará a criação de OF para os containers selecionados de forma sequencial no SAP.
+                    </p>
+                    <button class="btn btn-run-all" id="btn-iniciar" onclick="dispararProcessamento()" disabled>
+                        ⚡ Processar Containers
+                    </button>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.5; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 10px;">
+                        <strong>Instruções:</strong>
+                        <ul style="margin-left: 15px; margin-top: 5px;">
+                            <li>O robô abrirá o SAP Fiori no modo background.</li>
+                            <li>A despesa (frete) será inserida proporcionalmente de acordo com a quantidade de containers da carga.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD KANBAN -->
+            <div class="card">
+                <h3>Containers em Processamento</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;" id="info-processamento">
+                    Carregando lista de processamento...
+                </p>
+
+                <div id="tracking-rows-container">
+                    <!-- Gerado dinamicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLE -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (Logs)</span>
+                <span id="status-rpa" style="background: rgba(74, 0, 224, 0.1); padding: 4px 10px; border-radius: 4px; color: #4a00e0; font-weight: 700;">Conectando</span>
+            </div>
+            <div class="console-box" id="console-box">
+                <p>⚙️ Inicializando console de Cabotagem...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let containersData = [];
+        let rpaRunning = false;
+        let pollingInterval = null;
+        let statusEtapas = {};
+
+        window.addEventListener('load', () => {
+            carregarDadosProcessamento();
+            iniciarLogs();
+        });
+
+        function carregarDadosProcessamento() {
+            fetch('/api/cabotagem/dados_processamento')
+                .then(res => res.json())
+                .then(state => {
+                    containersData = state.containers || [];
+                    statusEtapas = state.status_etapas || {};
+                    
+                    document.getElementById('info-processamento').innerText = `Lista contendo ${containersData.length} container(s).`;
+                    renderizarKanban();
+                    
+                    // Se algum container estiver rodando, ou se a automação já iniciou, habilita botões
+                    document.getElementById('btn-iniciar').disabled = false;
+                })
+                .catch(err => {
+                    console.error("Erro ao carregar dados:", err);
+                    adicionarLog("❌ Erro ao buscar dados de processamento do backend.", "log-error");
+                });
+        }
+
+        function renderizarKanban() {
+            const container = document.getElementById('tracking-rows-container');
+            container.innerHTML = "";
+            
+            let html = "";
+            containersData.forEach(c => {
+                const key = `${c.carga}_${c.container}`;
+                const st = statusEtapas[key] || { of: "pending", of_numero: "", erro_detalhe: "" };
+                
+                let valorTexto = `R$ ${c.valor_container.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                if (c.dividido) {
+                    valorTexto += ` <span style="font-size: 9px; color: #f59e0b; font-weight: bold;">(1/${c.total_containers_carga})</span>`;
+                }
+
+                html += `
+                <div class="tracking-row" id="row-${key}">
+                    <div class="row-info">
+                        <div class="row-remessa">Carga: ${c.carga}</div>
+                        <div class="row-subinfo">Container: ${c.container} | Remessas: ${c.remessas.join(', ')}</div>
+                        <div class="row-subinfo">Transp: ${c.transportadora}</div>
+                    </div>
+                    
+                    <div class="stage-cell status-pending" style="min-height: auto;">
+                        <div class="stage-label">Valor Frete</div>
+                        <div class="stage-value" style="font-weight: 700;">${valorTexto}</div>
+                    </div>
+                    
+                    <div class="stage-cell status-${st.of}">
+                        <div class="stage-label">Status SAP OF</div>
+                        <div class="stage-value" style="font-weight: 700;">
+                            ${st.of_numero ? st.of_numero : formatarStatus(st.of)}
+                        </div>
+                    </div>
+
+                    <div class="stage-cell status-pending" style="min-height: auto; align-items: flex-start; text-align: left;">
+                        <div class="stage-label">Detalhe/Erro</div>
+                        <div class="stage-value" style="font-size: 10px; color: #94a3b8; word-break: break-all;">
+                            ${st.erro_detalhe ? st.erro_detalhe : (st.of === 'success' ? 'Finalizado com sucesso' : '-')}
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function formatarStatus(st) {
+            if (st === 'pending') return 'Aguardando';
+            if (st === 'running') return 'Criando OF...';
+            if (st === 'success') return 'Concluído';
+            if (st === 'error') return 'Erro';
+            return st;
+        }
+
+        function dispararProcessamento() {
+            document.getElementById('btn-iniciar').disabled = true;
+            adicionarLog("⚡ Disparando criação de OF no SAP...", "log-success");
+            
+            // Pega apenas as chaves dos containers pendentes ou selecionados
+            const keys = containersData.map(c => `${c.carga}_${c.container}`);
+            
+            fetch('/api/cabotagem/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ containers: keys })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'started') {
+                    adicionarLog("🚀 Automação iniciada com sucesso. Acompanhe os logs abaixo.", "log-success");
+                } else {
+                    adicionarLog(`⚠️ Erro ao disparar: ${data.message}`, "log-error");
+                    document.getElementById('btn-iniciar').disabled = false;
+                }
+            })
+            .catch(err => {
+                adicionarLog(`❌ Falha na chamada de execução: ${err}`, "log-error");
+                document.getElementById('btn-iniciar').disabled = false;
+            });
+        }
+
+        // LOGS & POLLING
+        function adicionarLog(msg, classe = "") {
+            const box = document.getElementById('console-box');
+            const timestamp = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            if (classe) p.className = classe;
+            p.innerText = `[${timestamp}] ${msg}`;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function iniciarLogs() {
+            if (pollingInterval) return;
+            const statusRpa = document.getElementById('status-rpa');
+            
+            pollingInterval = setInterval(() => {
+                fetch('/api/logs')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rodando) {
+                            statusRpa.innerText = "Executando";
+                            statusRpa.style.background = "rgba(245, 158, 11, 0.1)";
+                            statusRpa.style.color = "#f59e0b";
+                            document.getElementById('btn-iniciar').disabled = true;
+                        } else {
+                            statusRpa.innerText = "Online";
+                            statusRpa.style.background = "rgba(74, 0, 224, 0.1)";
+                            statusRpa.style.color = "#4a00e0";
+                        }
+                        
+                        // Atualiza logs na caixa
+                        if (data.novos_logs && data.novos_logs.length > 0) {
+                            data.novos_logs.forEach(log => {
+                                let c = "";
+                                if (log.includes("❌")) c = "log-error";
+                                if (log.includes("✅") || log.includes("🎉")) c = "log-success";
+                                adicionarLog(log, c);
+                            });
+                            // Se houver novos logs, atualiza dados do progresso
+                            carregarDadosProcessamento();
+                        }
+                    })
+                    .catch(err => console.error("Erro no polling de logs:", err));
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

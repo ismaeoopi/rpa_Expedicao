@@ -2,7 +2,8 @@ import os
 import sys
 import threading
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file
+import io
 
 # --- IMPORTAÇÕES MODULARES ---
 from src.utils.common import log_sys
@@ -21,6 +22,8 @@ from src.utils.sharepoint import SharePointClient, salvar_configuracoes_env, ENV
 from Entreposto import executar_automacao_entreposto
 from src.expedicao import EntrepostoProcessador
 from src.utils.sap_utils import conectar_sap
+from src.expedicao.cabotagem_processador import obter_dados_cabotagem, rodar_criar_of_cabotagem, cabotagem_estado
+
 
 
 # --- MECANISMO AUTOMÁTICO DE ATUALIZAÇÃO (SEM DEPENDÊNCIAS) ---
@@ -63,6 +66,15 @@ def entreposto():
 @app.route('/entreposto_processamento')
 def entreposto_processamento():
     return render_template('entreposto_processamento.html')
+
+@app.route('/cabotagem')
+def cabotagem():
+    return render_template('cabotagem.html')
+
+@app.route('/cabotagem_processamento')
+def cabotagem_processamento():
+    return render_template('cabotagem_processamento.html')
+
 
 @app.route('/api/inicializar', methods=['GET'])
 def inicializar():
@@ -458,7 +470,9 @@ def processar_selecionadas_entreposto():
                     "basico": "pending",
                     "picking": "pending",
                     "sm": "pending",
-                    "tolerancia": "pending"
+                    "tolerancia": "pending",
+                    "of": "pending",
+                    "of_numero": r_val.get("of_planilha", "")
                 }
                 
         entreposto_processamento_estado = {
@@ -487,11 +501,15 @@ def processar_etapa_entreposto():
         
     def worker():
         log_sys.is_running = True
-        session = conectar_sap()
-        if not session:
-            log_sys.write("❌ Falha de conexão com o SAP GUI. Encerrando.")
-            log_sys.is_running = False
-            return
+        
+        # Só conecta no SAP GUI se a etapa precisar dele
+        session = None
+        if etapa in ["1", "2", "3", "tolerancia", "all"]:
+            session = conectar_sap()
+            if not session:
+                log_sys.write("❌ Falha de conexão com o SAP GUI. Encerrando.")
+                log_sys.is_running = False
+                return
             
         dados_cargas = entreposto_processamento_estado["dados"]
         status_etapas = entreposto_processamento_estado["status_etapas"]
@@ -508,6 +526,21 @@ def processar_etapa_entreposto():
                         status_etapas[r_sel]["sm"] = "pending"
                     if etapa == "tolerancia":
                         status_etapas[r_sel]["tolerancia"] = "pending"
+                    if etapa == "of":
+                        status_etapas[r_sel]["of"] = "pending"
+                        status_etapas[r_sel]["of_numero"] = ""
+        
+        # Carrega credenciais do SAP Web se for etapa "of"
+        usuario = ""
+        senha = ""
+        if etapa == "of":
+            load_dotenv(ENV_PATH)
+            usuario = os.getenv("SAP_WEB_USER") or ""
+            senha = os.getenv("SAP_WEB_PASSWORD") or ""
+            if not usuario or not senha:
+                log_sys.write("❌ Credenciais SAP Web não configuradas nas configurações. Vá em 'Configurar Credenciais SAP' na página de Expedição.")
+                log_sys.is_running = False
+                return
         
         try:
             # ETAPA 1: Básico (Atualizar informações básicas)
@@ -525,6 +558,10 @@ def processar_etapa_entreposto():
             # ETAPA Tolerância: Checar Tolerâncias via MM
             if etapa == "tolerancia":
                 EntrepostoProcessador.rodar_verificar_tolerancia(session, dados_cargas, status_etapas, remessas_selecionadas)
+                
+            # ETAPA OF: Criar Ordem de Frete (SAP Web)
+            if etapa == "of":
+                EntrepostoProcessador.rodar_criar_ordem_frete(usuario, senha, dados_cargas, status_etapas, remessas_selecionadas)
                     
             log_sys.write("🎉 Processamento das etapas de Entreposto finalizado com sucesso!")
         except Exception as ex:
@@ -588,6 +625,107 @@ def baixar_packlist():
     t.daemon = True
     t.start()
     return jsonify({"status": "started"})
+
+
+@app.route('/api/entreposto/exportar_excel', methods=['POST'])
+def exportar_excel_entreposto():
+    import pandas as pd
+    dados = request.json
+    status_etapas = dados.get("status_etapas", {})
+    
+    rows = []
+    for remessa, status in status_etapas.items():
+        of_num = status.get("of_numero", "")
+        rows.append({
+            "Remessa": remessa,
+            "Ordem de Frete (OF)": of_num if of_num else "Não Gerada",
+            "Status OF": status.get("of", "pending")
+        })
+        
+    df = pd.DataFrame(rows)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='OFs Geradas')
+    output.seek(0)
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='remessas_e_ofs.xlsx'
+    )
+
+
+# --- ROTAS DA API DE CABOTAGEM ---
+
+@app.route('/api/cabotagem/config', methods=['GET', 'POST'])
+def api_cabotagem_config():
+    if request.method == 'POST':
+        dados = request.json
+        salvar_configuracoes_env({
+            "PLANILHA_CABOTAGEM": dados.get("planilha_cabotagem"),
+            "PLANILHA_CABOTAGEM_ABA": dados.get("planilha_cabotagem_aba"),
+            "SAP_WEB_USER": dados.get("sap_web_user"),
+            "SAP_WEB_PASSWORD": dados.get("sap_web_password"),
+        })
+        return jsonify({"status": "success", "message": "Configurações de Cabotagem salvas com sucesso!"})
+    
+    # GET
+    load_dotenv(ENV_PATH)
+    return jsonify({
+        "planilha_cabotagem": os.getenv("PLANILHA_CABOTAGEM") or "",
+        "planilha_cabotagem_aba": os.getenv("PLANILHA_CABOTAGEM_ABA") or "",
+        "sap_web_user": os.getenv("SAP_WEB_USER") or "",
+        "sap_web_password": os.getenv("SAP_WEB_PASSWORD") or "",
+    })
+
+@app.route('/api/cabotagem/carregar', methods=['POST'])
+def api_cabotagem_carregar():
+    try:
+        containers = obter_dados_cabotagem()
+        return jsonify({"status": "success", "containers": containers})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/cabotagem/dados_processamento', methods=['GET'])
+def api_cabotagem_dados_processamento():
+    return jsonify(cabotagem_estado)
+
+@app.route('/api/cabotagem/executar', methods=['POST'])
+def api_cabotagem_executar():
+    dados = request.json
+    containers_selecionados = dados.get("containers", [])
+    
+    if not containers_selecionados:
+        return jsonify({"status": "error", "message": "Nenhum container selecionado."}), 400
+        
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+        
+    load_dotenv(ENV_PATH)
+    usuario = os.getenv("SAP_WEB_USER") or ""
+    senha = os.getenv("SAP_WEB_PASSWORD") or ""
+    
+    if not usuario or not senha:
+        return jsonify({"status": "error", "message": "Credenciais SAP Web não configuradas nas configurações."}), 400
+        
+    def worker():
+        log_sys.is_running = True
+        try:
+            rodar_criar_of_cabotagem(usuario, senha, containers_selecionados)
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal na thread de Cabotagem: {e}")
+        finally:
+            log_sys.is_running = False
+            
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    
+    return jsonify({"status": "started"})
+
+
 
 
 

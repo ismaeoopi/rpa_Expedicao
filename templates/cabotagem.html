@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - Cabotagem</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER COM GRADIENTE PREMIUM (ROXO/AZUL ESCURO) */
+        .header {
+            background: linear-gradient(135deg, #4a00e0 0%, #200080 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #8e2de2;
+            box-shadow: 0 8px 32px rgba(142, 45, 226, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .header h1 .nome {
+            color: #d1b3ff;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #cbd5e1;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT PRINCIPAL - LARGURA MÁXIMA */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* CARDS */
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(142, 45, 226, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(142, 45, 226, 0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #4a00e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #8e2de2, #4a00e0);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-style {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-style:focus {
+            border-color: #4a00e0;
+            box-shadow: 0 0 0 2px rgba(74, 0, 224, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a00e0 0%, #200080 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 0, 224, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(74, 0, 224, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(142, 45, 226, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            margin-top: 25px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(142, 45, 226, 0.15);
+        }
+
+        .alert-frete {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* MODAL CONFIGURAÇÃO */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 650px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(74, 0, 224, 0.15);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span id="saudacao-texto">Carregando</span>
+                    <span class="nome" id="saudacao-nome">...</span>
+                </h1>
+                <p>🚢 Painel de Controle - Módulo Cabotagem</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-voltar" onclick="abrirModalConfig()" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.3);">⚙️ Configurações</button>
+                <a href="/" class="btn-voltar">← Voltar ao Início</a>
+            </div>
+        </div>
+
+        <div class="grid-layout">
+            <!-- DASHBOARD DE PROCESSO - LARGURA MÁXIMA -->
+            <div class="card">
+                <h3>Processamento de Ordens de Frete</h3>
+                
+                <!-- PLACEHOLDER INICIAL -->
+                <div id="processos-placeholder" style="text-align: center; color: #94a3b8; padding: 60px 0;">
+                    <span style="font-size: 64px; display: block; margin-bottom: 15px;">🚢</span>
+                    <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
+                        Clique no botão abaixo para sincronizar a planilha de Cabotagem do SharePoint.
+                    </p>
+                    <button class="btn-primary" onclick="carregarPlanilhaCabotagem()">
+                        📥 Sincronizar Planilha
+                    </button>
+                </div>
+
+                <!-- CONTEÚDO APÓS CARREGAMENTO -->
+                <div id="processos-conteudo" style="display: none; animation: fadeIn 0.5s ease-in-out forwards;">
+                    <div id="alerta-sem-frete" class="alert-frete" style="display: none;">
+                        <span>⚠️ Alguns containers estão sem valor de frete preenchido na planilha! Verifique na lista abaixo.</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="color: #4a00e0; font-size: 15px; font-weight: 600; margin: 0;">
+                            📋 Containers Disponíveis (OFs Pendentes)
+                        </h4>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-secondary" onclick="marcarTodos(true)" style="padding: 6px 12px; font-size: 12px;">☑️ Marcar Todos</button>
+                            <button class="btn-secondary" onclick="marcarTodos(false)" style="padding: 6px 12px; font-size: 12px;">⬜ Desmarcar</button>
+                        </div>
+                    </div>
+
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: #475569;">
+                                    <th style="padding: 10px 15px; width: 80px; text-align: center;">Seleção</th>
+                                    <th style="padding: 10px 15px; width: 350px;">Carga / Container</th>
+                                    <th style="padding: 10px 15px;">Remessas</th>
+                                    <th style="padding: 10px 15px; width: 180px;">Valor Frete (OF)</th>
+                                    <th style="padding: 10px 15px; width: 150px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-containers-corpo">
+                                <!-- Dinâmico -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                        <span id="info-selecionados" style="font-size: 13px; color: #64748b;">Nenhum container selecionado</span>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-secondary" onclick="carregarPlanilhaCabotagem()" style="padding: 10px 20px;">🔄 Sincronizar</button>
+                            <button class="btn-primary" id="btn-processar" onclick="executarAutomacaoSelecionada()" disabled>⚡ Criar OFs Selecionadas</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLE -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa" style="background: rgba(142, 45, 226, 0.15); padding: 6px 12px; border-radius: 4px; color: #8e2de2; font-weight: 700;">Pronto</span>
+            </div>
+            <div class="console-box" id="console-box">
+                <p>⚙️ Módulo de Cabotagem carregado e pronto para atividades.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURAÇÃO -->
+    <div id="modal-config" class="modal-overlay" onclick="fecharModalConfigViaFundo(event)">
+        <div class="modal-card">
+            <h3 style="color:#4a00e0; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">Configurações do Processo</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom:20px;">
+                Preencha o caminho da planilha no SharePoint e as credenciais para o SAP Fiori (Web).
+            </p>
+
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Caminho da Planilha Cabotagem (SharePoint)</label>
+                    <input type="text" id="cfg-planilha" class="input-style" placeholder="Ex: Compartilhado/Geral/Cabotagem.xlsx">
+                </div>
+                <div class="form-group">
+                    <label>Aba da Planilha (Opcional)</label>
+                    <input type="text" id="cfg-aba" class="input-style" placeholder="Ex: Base">
+                </div>
+                <div class="form-group">
+                    <label>Usuário SAP (Fiori Web)</label>
+                    <input type="text" id="cfg-sap-user" class="input-style" placeholder="Ex: sp3username">
+                </div>
+                <div class="form-group">
+                    <label>Senha SAP (Fiori Web)</label>
+                    <input type="password" id="cfg-sap-password" class="input-style" placeholder="••••••••••••••">
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 15px; border-top:1px solid #e2e8f0; padding-top:15px;">
+                <button class="btn-secondary" onclick="fecharModalConfig()">Cancelar</button>
+                <button class="btn-primary" onclick="salvarConfiguracao()">💾 Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cargasList = [];
+        let selecionados = new Set();
+        let pollingInterval = null;
+
+        window.addEventListener('load', () => {
+            fetch('/api/inicializar')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('saudacao-texto').innerText = data.saudacao;
+                    document.getElementById('saudacao-nome').innerText = data.nome;
+                })
+                .catch(err => {
+                    document.getElementById('saudacao-texto').innerText = "Bem-vindo";
+                    document.getElementById('saudacao-nome').innerText = "Usuário";
+                });
+
+            carregarConfiguracaoCampos();
+            iniciarLogs();
+        });
+
+        function abrirModalConfig() {
+            document.getElementById('modal-config').style.display = 'flex';
+        }
+
+        function fecharModalConfig() {
+            document.getElementById('modal-config').style.display = 'none';
+        }
+
+        function fecharModalConfigViaFundo(e) {
+            if (e.target.id === 'modal-config') {
+                fecharModalConfig();
+            }
+        }
+
+        function carregarConfiguracaoCampos() {
+            fetch('/api/cabotagem/config')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('cfg-planilha').value = data.planilha_cabotagem;
+                    document.getElementById('cfg-aba').value = data.planilha_cabotagem_aba;
+                    document.getElementById('cfg-sap-user').value = data.sap_web_user;
+                    document.getElementById('cfg-sap-password').value = data.sap_web_password;
+                })
+                .catch(err => console.error("Erro ao obter configurações:", err));
+        }
+
+        function salvarConfiguracao() {
+            const payload = {
+                planilha_cabotagem: document.getElementById('cfg-planilha').value,
+                planilha_cabotagem_aba: document.getElementById('cfg-aba').value,
+                sap_web_user: document.getElementById('cfg-sap-user').value,
+                sap_web_password: document.getElementById('cfg-sap-password').value,
+            };
+
+            fetch('/api/cabotagem/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                logNoConsole("💾 Configurações de Cabotagem salvas localmente.");
+                fecharModalConfig();
+            })
+            .catch(err => alert("Erro ao salvar configurações."));
+        }
+
+        function carregarPlanilhaCabotagem() {
+            logNoConsole("📥 Sincronizando dados da planilha de Cabotagem do SharePoint...");
+            
+            fetch('/api/cabotagem/carregar', {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    cargasList = data.containers;
+                    logNoConsole(`✅ Planilha processada com sucesso! ${cargasList.length} carga(s) mapeada(s).`);
+                    
+                    document.getElementById('processos-placeholder').style.display = 'none';
+                    document.getElementById('processos-conteudo').style.display = 'block';
+                    
+                    renderizarTabela();
+                } else {
+                    logNoConsole(`❌ Falha ao carregar dados: ${data.message}`);
+                }
+            })
+            .catch(err => {
+                logNoConsole(`❌ Erro de conexão com o servidor: ${err}`);
+            });
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabela-containers-corpo');
+            tbody.innerHTML = "";
+            
+            let temSemFrete = false;
+            selecionados.clear();
+            let idxGroup = 0;
+
+            cargasList.forEach(c => {
+                if (!c.frete_preenchido) temSemFrete = true;
+                
+                const cargaKey = `carga-${idxGroup}`;
+                
+                // Formata valor total
+                let valorTotalTexto = `R$ ${c.valor_total_carga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                if (!c.frete_preenchido) {
+                    valorTotalTexto = `<span style="color:#dc2626; font-weight:bold;">Sem Frete ⚠️</span>`;
+                }
+
+                // Cria linha pai (Carga)
+                const trCarga = document.createElement('tr');
+                trCarga.style.background = '#f8fafc';
+                trCarga.style.borderBottom = '1px solid #e2e8f0';
+                trCarga.style.fontWeight = 'bold';
+                trCarga.innerHTML = `
+                    <td style="padding: 12px 15px; text-align: center;">
+                        <input type="checkbox" id="chk-${c.carga}" onchange="toggleSelecaoCarga('${c.carga}')" style="width:16px; height:16px; cursor:pointer;">
+                    </td>
+                    <td style="padding: 12px 15px; color: #1e293b; cursor: pointer;" onclick="toggleDropdown('${cargaKey}')">
+                        <span id="icon-${cargaKey}" style="color: #4a00e0; margin-right: 5px;">▶</span> 📦 Carga: ${c.carga} <span style="font-weight:normal; font-size:12px; color:#64748b; margin-left: 10px;">| Cliente: ${c.cliente || 'Não Informado'}</span>
+                    </td>
+                    <td style="padding: 12px 15px; font-size:12px; color:#64748b; cursor: pointer;" onclick="toggleDropdown('${cargaKey}')">
+                        ${c.containers.length} container(s)
+                    </td>
+                    <td style="padding: 12px 15px; color: #2c3e50;">
+                        ${valorTotalTexto}
+                    </td>
+                    <td style="padding: 12px 15px; font-size:11px; color:#4a00e0; cursor: pointer;" onclick="toggleDropdown('${cargaKey}')">
+                        Ver Detalhes
+                    </td>
+                `;
+                tbody.appendChild(trCarga);
+
+                // Cria linhas filhos (Containers) - FECHADO POR PADRÃO (display: none)
+                c.containers.forEach(container => {
+                    const key = `${c.carga}_${container.container}`;
+                    
+                    let valorFreteTexto = `R$ ${container.valor_container.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                    if (container.dividido) {
+                        valorFreteTexto += ` <span style="color:#d97706; font-size:11px; font-weight:bold;">(1/${c.total_containers_carga})</span>`;
+                    }
+                    if (!c.frete_preenchido) {
+                        valorFreteTexto = `<span style="color:#dc2626;">Sem Frete ⚠️</span>`;
+                    }
+
+                    const trContainer = document.createElement('tr');
+                    trContainer.className = `sub-row-${cargaKey}`;
+                    trContainer.style.borderBottom = '1px solid #cbd5e1';
+                    trContainer.style.display = 'none'; // Fechado por padrão
+                    trContainer.innerHTML = `
+                        <td style="padding: 10px 15px; text-align: center; color: #64748b;">
+                            ↳
+                        </td>
+                        <td style="padding: 10px 15px; padding-left: 20px;">
+                            <span style="font-size:13px; color:#475569;">🚢 Container: <strong>${container.container}</strong></span>
+                        </td>
+                        <td style="padding: 10px 15px; font-size: 11px; color:#64748b;">
+                            Remessas: ${container.remessas.join(', ')}
+                        </td>
+                        <td style="padding: 10px 15px; font-weight: 500; font-size: 13px;">
+                            ${valorFreteTexto}
+                        </td>
+                        <td style="padding: 10px 15px;">
+                            ${container.of_numero ? `<span style="color:#16a34a; font-weight:bold; font-size:12px;">OF: ${container.of_numero}</span>` : `<span style="color:#2563eb; font-weight:bold; font-size:12px;">Pendente</span>`}
+                        </td>
+                    `;
+                    tbody.appendChild(trContainer);
+                });
+
+                idxGroup++;
+            });
+
+            document.getElementById('alerta-sem-frete').style.display = temSemFrete ? 'flex' : 'none';
+            atualizarInfoSelecionados();
+        }
+
+        function toggleDropdown(cargaKey) {
+            const rows = document.querySelectorAll(`.sub-row-${cargaKey}`);
+            const icon = document.getElementById(`icon-${cargaKey}`);
+            rows.forEach(r => {
+                r.style.display = r.style.display === 'none' ? 'table-row' : 'none';
+            });
+            if (icon) {
+                icon.innerText = icon.innerText === '▼' ? '▶' : '▼';
+            }
+        }
+
+        function toggleSelecaoCarga(carga) {
+            if (selecionados.has(carga)) {
+                selecionados.delete(carga);
+            } else {
+                selecionados.add(carga);
+            }
+            atualizarInfoSelecionados();
+        }
+
+        function marcarTodos(marcar) {
+            cargasList.forEach(c => {
+                const chk = document.getElementById(`chk-${c.carga}`);
+                if (chk) {
+                    chk.checked = marcar;
+                    if (marcar) selecionados.add(c.carga);
+                    else selecionados.delete(c.carga);
+                }
+            });
+            atualizarInfoSelecionados();
+        }
+
+        function atualizarInfoSelecionados() {
+            const count = selecionados.size;
+            document.getElementById('info-selecionados').innerText = count === 0 ? "Nenhuma carga selecionada" : `${count} carga(s) selecionada(s)`;
+            document.getElementById('btn-processar').disabled = count === 0;
+        }
+
+        function executarAutomacaoSelecionada() {
+            const chaves = [];
+            cargasList.forEach(c => {
+                if (selecionados.has(c.carga)) {
+                    c.containers.forEach(container => {
+                        if (container.pendente) {
+                            chaves.push(`${c.carga}_${container.container}`);
+                        }
+                    });
+                }
+            });
+            
+            logNoConsole("⚙️ Salvando chaves selecionadas e preparando ambiente...");
+            
+            fetch('/api/cabotagem/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ containers: chaves })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'started') {
+                    window.location.href = "/cabotagem_processamento";
+                } else {
+                    alert("Erro ao iniciar processamento: " + data.message);
+                }
+            })
+            .catch(err => {
+                alert("Erro ao disparar chamada no backend: " + err);
+            });
+        }
+
+        // LOGS
+        function logNoConsole(msg) {
+            const box = document.getElementById('console-box');
+            const timestamp = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            p.innerText = `[${timestamp}] ${msg}`;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function iniciarLogs() {
+            if (pollingInterval) return;
+            const statusRpa = document.getElementById('status-rpa');
+            
+            pollingInterval = setInterval(() => {
+                fetch('/api/logs')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rodando) {
+                            statusRpa.innerText = "Executando";
+                            statusRpa.style.background = "rgba(255, 152, 0, 0.15)";
+                            statusRpa.style.color = "#ff9800";
+                        } else {
+                            statusRpa.innerText = "Online";
+                            statusRpa.style.background = "rgba(142, 45, 226, 0.15)";
+                            statusRpa.style.color = "#8e2de2";
+                        }
+                    })
+                    .catch(err => console.error("Erro ao consultar logs:", err));
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

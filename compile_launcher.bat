@@ -13,6 +13,12 @@ REM ============================================================================
 
 setlocal enabledelayedexpansion
 
+REM Ativar ambiente virtual se existir
+if not exist .venv\Scripts\activate.bat goto skip_venv
+echo [INFO] Ativando ambiente virtual (.venv)...
+call .venv\Scripts\activate.bat
+:skip_venv
+
 echo.
 echo ============================================================================
 echo    COMPILADOR RPA - Auto-Update Launcher para Executável

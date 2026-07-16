@@ -1,5 +1,12 @@
 @echo off
 REM Limpar diretórios antigos de temp
+
+REM Ativar ambiente virtual se existir
+if not exist .venv\Scripts\activate.bat goto skip_venv
+echo [INFO] Ativando ambiente virtual (.venv)...
+call .venv\Scripts\activate.bat
+:skip_venv
+
 echo =======================================================
 echo     Compilador do RPA Expedicao (Auto-Update Version)
 echo =======================================================
