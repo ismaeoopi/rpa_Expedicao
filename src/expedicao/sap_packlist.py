@@ -153,7 +153,7 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
     try:
         playwright_instance = sync_playwright().start()
         # Inicializa o chromium forçando a leitura da pasta correta
-        browser = playwright_instance.chromium.launch(headless=False)
+        browser = playwright_instance.chromium.launch(headless=True)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
 
