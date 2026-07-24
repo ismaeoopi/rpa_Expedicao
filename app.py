@@ -596,6 +596,7 @@ def baixar_packlist():
     dados = request.json
     remessas_str = dados.get('remessas', '')
     pasta_destino = dados.get('pasta_destino', '')
+    tipo = dados.get('tipo', 'normal')
     
     remessas = [r.strip() for r in remessas_str.split(',') if r.strip()]
     
@@ -615,7 +616,7 @@ def baixar_packlist():
     def worker():
         log_sys.is_running = True
         try:
-            baixar_packlist_sap(remessas, pasta_destino, usuario, senha)
+            baixar_packlist_sap(remessas, pasta_destino, usuario, senha, tipo=tipo)
         except Exception as e:
             log_sys.write(f"❌ Falha fatal no download de Packlist: {e}")
         finally:

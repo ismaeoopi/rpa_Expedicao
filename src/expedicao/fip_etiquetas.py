@@ -128,6 +128,8 @@ def salvarFIP(shipments_input, pasta_destino=None):
     else:
         log_sys.write(f"✅ Usando pasta de destino selecionada: {pasta_destino}")
 
+    pasta_destino = os.path.normpath(pasta_destino)
+    os.makedirs(pasta_destino, exist_ok=True)
     caminho_excel = os.path.join(pasta_destino, "ucs_extraidas.xlsx")
     wb = openpyxl.Workbook()
     ws = wb.active

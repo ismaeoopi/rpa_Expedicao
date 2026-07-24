@@ -761,7 +761,7 @@
                     if (data.pendente && data.lote) {
                         lotePendenteId = data.lote.lote_id;
                         document.getElementById('banner-retomada').style.display = 'flex';
-                        document.getElementById('retomada-detalhe').innerText = `Lote ID: ${lotePendenteId} | Planilha: ${data.lote.caminho_excel.split('\\\\').pop()}`;
+                        document.getElementById('retomada-detalhe').innerText = `Lote ID: ${lotePendenteId} | Planilha: ${data.lote.caminho_excel.split(/[\/\\]/).pop()}`;
                         caminhoExcel = data.lote.caminho_excel;
                         adicionarLog(`⚠️ Lote pendente encontrado: ID ${lotePendenteId}`);
                     } else {
@@ -895,7 +895,7 @@
                     if (data.caminho) {
                         caminhoExcel = data.caminho;
                         const statusElement = document.getElementById('caminho-excel-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.innerText = `✅ ${data.caminho.split(/[\/\\]/).pop()}`;
                         statusElement.classList.remove('empty');
                         
                         document.getElementById('btn-analisar').disabled = false;

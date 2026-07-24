@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPA Logistica - Início V.1.1.8</title>
+    <title>RPA Logistica - Início V.1.1.9</title>
     <style>
         * {
             box-sizing: border-box;
@@ -41,6 +42,7 @@
                 opacity: 0;
                 transform: translateY(-30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -108,6 +110,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -203,7 +206,7 @@
             color: #7f8c8d;
             line-height: 1.5;
         }
-        
+
         .badge {
             position: absolute;
             top: 15px;
@@ -255,7 +258,7 @@
             width: 90%;
             transform: scale(0.9);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
         }
 
         .modal-overlay.active .modal-content {
@@ -302,13 +305,14 @@
             .header h1 {
                 font-size: 32px;
             }
-            
+
             .module-card {
                 padding: 30px 20px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- HEADER -->
@@ -326,7 +330,8 @@
             <a href="/expedicao" class="module-card">
                 <div class="module-icon">🚛</div>
                 <h2 class="module-title">Expedição</h2>
-                <p class="module-desc">Automações para Picking, Seleção de UC, Saída de Mercadorias e geração de etiquetas.</p>
+                <p class="module-desc">Automações para Picking, Seleção de UC, Saída de Mercadorias e geração de
+                    etiquetas.</p>
             </a>
 
             <!-- ESTOQUE -->
@@ -358,17 +363,21 @@
             <div class="modal-icon">📦</div>
             <h3 class="modal-title">Módulo de Estoque</h3>
             <p class="modal-desc">Selecione o tipo de automação que deseja acessar:</p>
-            
+
             <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
-                <a href="/estoque" class="modal-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <a href="/estoque" class="modal-btn"
+                    style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
                     📊 Automações com Planilha
                 </a>
-                <a href="/estoque_sem_planilha" class="modal-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #0066cc, #005bb5); box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);">
+                <a href="/estoque_sem_planilha" class="modal-btn"
+                    style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #0066cc, #005bb5); box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);">
                     ⚡ Automações sem Planilha
                 </a>
             </div>
-            
-            <button class="modal-btn" style="margin-top: 20px; background: transparent; color: #7f8c8d; box-shadow: none; border: 1px solid #bdc3c7; padding: 8px 20px;" onclick="fecharModalSelecaoEstoque()">Cancelar</button>
+
+            <button class="modal-btn"
+                style="margin-top: 20px; background: transparent; color: #7f8c8d; box-shadow: none; border: 1px solid #bdc3c7; padding: 8px 20px;"
+                onclick="fecharModalSelecaoEstoque()">Cancelar</button>
         </div>
     </div>
 
@@ -378,7 +387,9 @@
             <div class="modal-icon">🏢</div>
             <h3 class="modal-title">Módulo de Entreposto</h3>
             <p class="modal-desc">Esta funcionalidade está em fase de planejamento e desenvolvimento.</p>
-            <button class="modal-btn" style="margin-top: 20px; background: linear-gradient(135deg, #4caf50, #45a049); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);" onclick="fecharModalEntreposto()">Entendido</button>
+            <button class="modal-btn"
+                style="margin-top: 20px; background: linear-gradient(135deg, #4caf50, #45a049); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);"
+                onclick="fecharModalEntreposto()">Entendido</button>
         </div>
     </div>
 
@@ -418,13 +429,13 @@
         }
 
         // Fechar modals ao clicar fora
-        document.getElementById('modal-selecao-estoque').addEventListener('click', function(e) {
+        document.getElementById('modal-selecao-estoque').addEventListener('click', function (e) {
             if (e.target === this) {
                 fecharModalSelecaoEstoque();
             }
         });
 
-        document.getElementById('modal-entreposto').addEventListener('click', function(e) {
+        document.getElementById('modal-entreposto').addEventListener('click', function (e) {
             if (e.target === this) {
                 fecharModalEntreposto();
             }
@@ -434,4 +445,5 @@
         window.addEventListener('load', inicializar);
     </script>
 </body>
+
 </html>

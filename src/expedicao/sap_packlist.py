@@ -11,7 +11,8 @@ import subprocess
 from src.utils.common import log_sys
 
 
-SAP_WEB_URL = "https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=PT#zui5packinglist-display"
+SAP_WEB_URL_NORMAL = "https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=PT#zui5packinglist-display"
+SAP_WEB_URL_JBS = "https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=PT#ZUI5_PL_DELIVER-display"
 
 
 def _garantir_playwright_instalado():
@@ -102,7 +103,7 @@ def _garantir_playwright_instalado():
     return True
 
 
-def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha: str):
+def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha: str, tipo: str = 'normal'):
     """
     Baixa os PDFs de Packlist do SAP Web para cada remessa informada.
     
@@ -111,11 +112,16 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
         pasta_destino: Caminho da pasta onde salvar os PDFs.
         usuario: Usuário SAP Web.
         senha: Senha SAP Web.
+        tipo: Tipo de packlist ('normal' ou 'jbs').
     """
     if not remessas:
         log_sys.write("❌ Nenhuma remessa informada para baixar Packlist.")
         return
     
+    if pasta_destino:
+        pasta_destino = os.path.normpath(pasta_destino)
+        os.makedirs(pasta_destino, exist_ok=True)
+
     if not pasta_destino or not os.path.isdir(pasta_destino):
         log_sys.write("❌ Pasta de destino inválida ou não selecionada.")
         return
@@ -142,17 +148,19 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
     browser = None
     playwright_instance = None
 
+    url = SAP_WEB_URL_JBS if tipo == 'jbs' else SAP_WEB_URL_NORMAL
+
     try:
         playwright_instance = sync_playwright().start()
         # Inicializa o chromium forçando a leitura da pasta correta
-        browser = playwright_instance.chromium.launch(headless=True)
+        browser = playwright_instance.chromium.launch(headless=False)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
 
         # ===== LOGIN =====
         log_sys.write("🔐 Acessando SAP Web e fazendo login...")
         try:
-            page.goto(SAP_WEB_URL, timeout=60000)
+            page.goto(url, timeout=60000)
         except Exception:
             log_sys.write("❌ Não foi possível acessar o SAP Web. Verifique sua conexão de rede e VPN.")
             return
@@ -225,24 +233,47 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
                 campo_remessa.click()
                 campo_remessa.fill(remessa)
 
-                # Clica em Início
-                page.get_by_role("button", name="Início").click()
+                if tipo == 'jbs':
+                    campo_remessa.press("Enter")
+                    # Aguarda e clica no checkbox "Linha de cabeçalho para"
+                    try:
+                        time.sleep(2)
+                        page.get_by_role("checkbox", name="Linha de cabeçalho para").wait_for(state="visible", timeout=30000)
+                        page.get_by_role("checkbox", name="Linha de cabeçalho para").click()
+                    except Exception as e:
+                        log_sys.write(f"⚠️ Remessa {remessa}: checkbox 'Linha de cabeçalho para' não apareceu. {e}")
+                        continue
+                else:
+                    # Fluxo normal: Clica em Início
+                    page.get_by_role("button", name="Início").click()
 
                 # Aguarda o botão "Gerar PDF" ficar disponível
                 try:
                     page.get_by_role("button", name="Gerar PDF").wait_for(state="visible", timeout=30000)
                 except Exception:
-                    log_sys.write(f"⚠️ Remessa {remessa}: botão 'Gerar PDF' não apareceu. Verifique se a remessa é válida.")
+                    log_sys.write(f"⚠️ Remessa {remessa}: botão 'Gerar PDF' não apareceu.")
                     continue
 
                 # Pequena espera para a página estabilizar
-                time.sleep(1)
+                time.sleep(2)
 
-                # Clica em Gerar PDF e captura o download
-                with page.expect_download(timeout=60000) as download_info:
-                    page.get_by_role("button", name="Gerar PDF").click()
-                
-                download = download_info.value
+                # Clica em Gerar PDF e captura o download (com tentativa de retry)
+                try:
+                    with page.expect_download(timeout=15000) as download_info:
+                        page.get_by_role("button", name="Gerar PDF").click()
+                    download = download_info.value
+                except Exception as e:
+                    log_sys.write(f"⚠️ Falha no download da remessa {remessa}. Tentando clicar na checkbox e baixar novamente... (Erro: {e})")
+                    if tipo == 'jbs':
+                        try:
+                            # Clica de novo no checkbox
+                            page.get_by_role("checkbox", name="Linha de cabeçalho para").click()
+                            time.sleep(1.5)
+                        except Exception:
+                            pass
+                    with page.expect_download(timeout=30000) as download_info:
+                        page.get_by_role("button", name="Gerar PDF").click()
+                    download = download_info.value
 
                 # Salva o PDF com o nome da remessa
                 nome_arquivo = f"PackingList_{remessa}.pdf"

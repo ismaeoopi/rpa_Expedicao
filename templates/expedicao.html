@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,6 +46,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -81,7 +83,7 @@
             font-size: 14px;
             transition: all 0.3s ease;
         }
-        
+
         .btn-voltar:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
@@ -111,6 +113,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -433,6 +436,7 @@
             border-color: #cbd5e1;
             color: #94a3b8;
         }
+
         .stage-cell.status-pending .stage-value {
             color: #94a3b8;
         }
@@ -443,6 +447,7 @@
             color: #d97706;
             animation: pulseGlow 1.5s infinite;
         }
+
         .stage-cell.status-running .stage-value {
             color: #b45309;
         }
@@ -452,6 +457,7 @@
             border-color: #86efac;
             color: #166534;
         }
+
         .stage-cell.status-success .stage-value {
             color: #15803d;
         }
@@ -461,14 +467,23 @@
             border-color: #fca5a5;
             color: #991b1b;
         }
+
         .stage-cell.status-error .stage-value {
             color: #b91c1c;
         }
 
         @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
         }
 
         /* RESPONSIVIDADE */
@@ -496,8 +511,73 @@
                 align-items: flex-start;
             }
         }
+
+        /* ESTILO DO MODAL DE CREDENCIAIS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 102, 204, 0.15);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-footer .btn {
+            width: auto;
+            padding: 10px 20px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- HEADER COM SAUDAÇÃO DINÂMICA -->
@@ -523,16 +603,18 @@
                 <div id="caminho-excel-txt" class="file-status empty">
                     Nenhum arquivo selecionado
                 </div>
-                
+
                 <div class="input-group" style="margin-top: 15px;">
                     <label for="dados-colados">Ou cole os dados do Excel aqui (Remessa e UC)</label>
                     <textarea id="dados-colados" rows="3" placeholder="Cole aqui os dados copiados do Excel..."
-                              oninput="verificarEstadoBotoes(); carregarDadosKanban();"
-                              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 102, 204, 0.3); background-color: #ffffff; color: #2c3e50; font-size: 13px; resize: vertical;"></textarea>
+                        oninput="verificarEstadoBotoes(); carregarDadosKanban();"
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 102, 204, 0.3); background-color: #ffffff; color: #2c3e50; font-size: 13px; resize: vertical;"></textarea>
                 </div>
 
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn btn-primary" id="btn-rodar-tudo" onclick="executarOpcao(100)" style="background: linear-gradient(135deg, #0066cc 0%, #002e5c 100%); font-size: 14px;" disabled>
+                    <button class="btn btn-primary" id="btn-rodar-tudo" onclick="executarOpcao(100)"
+                        style="background: linear-gradient(135deg, #0066cc 0%, #002e5c 100%); font-size: 14px;"
+                        disabled>
                         ⚡ Rodar Todas Etapas Seguidas
                     </button>
                     <button class="btn btn-primary" id="btn-opcao1" onclick="executarOpcao(1)" disabled>
@@ -550,7 +632,7 @@
             <!-- CARD 2: ETIQUETAS JBS -->
             <div class="card">
                 <h3>Etiquetas & PDFs JBS</h3>
-                
+
                 <!-- Seleção de Pasta de Destino -->
                 <button class="btn btn-secondary" onclick="selecionarPastaJBS()">
                     📁 Selecionar Pasta de Destino
@@ -558,17 +640,13 @@
                 <div id="caminho-pasta-txt" class="file-status empty">
                     Nenhuma pasta selecionada
                 </div>
-                
+
                 <!-- Entrada de Remessas -->
                 <div class="input-group" style="margin-top: 20px;">
                     <label for="remessas-jbs">Números das Remessas</label>
-                    <input
-                        type="text"
-                        id="remessas-jbs"
-                        placeholder="Ex: 80123456, 80123457, 80123458"
-                    />
+                    <input type="text" id="remessas-jbs" placeholder="Ex: 80123456, 80123457, 80123458" />
                 </div>
-                
+
                 <button class="btn btn-primary" onclick="executarOpcao4()">
                     4️⃣ Gerar PDFs para JBS
                 </button>
@@ -577,12 +655,17 @@
             <!-- CARD 3: PACKLIST SAP -->
             <div class="card">
                 <h3>📋 Packlist SAP (Download PDF)</h3>
-                
+
                 <!-- Config Credenciais SAP Web -->
                 <div id="config-sap-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Credenciais SAP Web</span>
-                        <button class="btn" style="width: auto; padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; box-shadow: 0 2px 8px rgba(100,116,139,0.3);" onclick="toggleConfigSAP()" id="btn-toggle-config-sap">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span
+                            style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Credenciais
+                            SAP Web</span>
+                        <button class="btn"
+                            style="width: auto; padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; box-shadow: 0 2px 8px rgba(100,116,139,0.3);"
+                            onclick="toggleConfigSAP()" id="btn-toggle-config-sap">
                             ⚙️ Configurar
                         </button>
                     </div>
@@ -594,11 +677,16 @@
                         <div class="input-group">
                             <label for="sap-web-password">Senha SAP</label>
                             <div style="position: relative;">
-                                <input type="password" id="sap-web-password" placeholder="Sua senha SAP" style="padding-right: 45px;" />
-                                <button type="button" onclick="toggleSenhaVisibilidade()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px;" id="btn-toggle-senha" title="Mostrar/ocultar senha">👁️</button>
+                                <input type="password" id="sap-web-password" placeholder="Sua senha SAP"
+                                    style="padding-right: 45px;" />
+                                <button type="button" onclick="toggleSenhaVisibilidade()"
+                                    style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px;"
+                                    id="btn-toggle-senha" title="Mostrar/ocultar senha">👁️</button>
                             </div>
                         </div>
-                        <button class="btn btn-primary" style="margin-bottom: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3);" onclick="salvarConfigSAP()">
+                        <button class="btn btn-primary"
+                            style="margin-bottom: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3);"
+                            onclick="salvarConfigSAP()">
                             💾 Salvar Credenciais
                         </button>
                     </div>
@@ -606,7 +694,7 @@
                         Verificando credenciais...
                     </div>
                 </div>
-                
+
                 <!-- Seleção de Pasta de Destino -->
                 <button class="btn btn-secondary" onclick="selecionarPastaPacklist()">
                     📁 Selecionar Pasta de Destino
@@ -614,18 +702,36 @@
                 <div id="caminho-pasta-packlist-txt" class="file-status empty">
                     Nenhuma pasta selecionada
                 </div>
-                
+
+                <!-- Tipo de Packlist -->
+                <div class="input-group" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+                    <label
+                        style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Tipo
+                        de Packlist</label>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <label
+                            style="font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #2c3e50;">
+                            <input type="radio" name="tipo-packlist" value="jbs" checked
+                                style="width: auto; cursor: pointer;">
+                            Após a seleção
+                        </label>
+                        <label
+                            style="font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #2c3e50;">
+                            <input type="radio" name="tipo-packlist" value="normal"
+                                style="width: auto; cursor: pointer;">
+                            Após o faturamento
+                        </label>
+                    </div>
+                </div>
                 <!-- Entrada de Remessas -->
                 <div class="input-group" style="margin-top: 20px;">
                     <label for="remessas-packlist">Números das Remessas</label>
-                    <input
-                        type="text"
-                        id="remessas-packlist"
-                        placeholder="Ex: 80718055, 80723774"
-                    />
+                    <input type="text" id="remessas-packlist" placeholder="Ex: 80718055, 80723774" />
                 </div>
-                
-                <button class="btn btn-primary" onclick="executarPacklist()" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); box-shadow: 0 4px 15px rgba(124,58,237,0.3);">
+
+
+                <button class="btn btn-primary" onclick="executarPacklist()"
+                    style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); box-shadow: 0 4px 15px rgba(124,58,237,0.3);">
                     📥 Baixar Packlists
                 </button>
             </div>
@@ -675,7 +781,7 @@
         // ============== LOGS ==============
         function adicionarLog(msg, tipo = '') {
             const box = document.getElementById('console-box');
-            
+
             // Exibe o print no console do navegador (F12)
             console.log(msg);
 
@@ -703,7 +809,7 @@
                     if (data.caminho) {
                         caminhoExcelSelecionado = data.caminho;
                         const statusElement = document.getElementById('caminho-excel-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.innerText = `✅ ${data.caminho.split(/[\/\\]/).pop()}`;
                         statusElement.classList.remove('empty');
 
                         // Ativar botões
@@ -725,7 +831,7 @@
                     if (data.caminho) {
                         caminhoPastaSelecionada = data.caminho;
                         const statusElement = document.getElementById('caminho-pasta-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.innerText = `✅ ${data.caminho.split(/[\/\\]/).pop()}`;
                         statusElement.classList.remove('empty');
 
                         adicionarLog(`📁 Pasta de destino JBS selecionada: ${data.caminho}`);
@@ -745,7 +851,7 @@
                     if (data.caminho) {
                         caminhoPastaPacklist = data.caminho;
                         const statusElement = document.getElementById('caminho-pasta-packlist-txt');
-                        statusElement.innerText = `✅ ${data.caminho.split('\\\\').pop()}`;
+                        statusElement.innerText = `✅ ${data.caminho.split(/[\/\\]/).pop()}`;
                         statusElement.classList.remove('empty');
 
                         adicionarLog(`📁 Pasta de destino Packlist selecionada: ${data.caminho}`);
@@ -804,34 +910,34 @@
         function salvarConfigSAP() {
             const user = document.getElementById('sap-web-user').value.trim();
             const pass = document.getElementById('sap-web-password').value;
-            
+
             if (!user || !pass) {
                 alert('⚠️ Preencha o usuário e a senha SAP Web.');
                 return;
             }
-            
+
             fetch('/api/sap_web/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sap_web_user: user, sap_web_password: pass })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    adicionarLog('✅ Credenciais SAP Web salvas com sucesso!', 'log-success');
-                    const statusEl = document.getElementById('sap-config-status');
-                    statusEl.innerText = `✅ Usuário configurado: ${user}`;
-                    statusEl.classList.remove('empty');
-                    // Fecha o painel de configuração
-                    document.getElementById('config-sap-fields').style.display = 'none';
-                    document.getElementById('btn-toggle-config-sap').innerText = '⚙️ Configurar';
-                } else {
-                    adicionarLog(`❌ Erro ao salvar: ${data.message}`, 'log-error');
-                }
-            })
-            .catch(err => {
-                adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        adicionarLog('✅ Credenciais SAP Web salvas com sucesso!', 'log-success');
+                        const statusEl = document.getElementById('sap-config-status');
+                        statusEl.innerText = `✅ Usuário configurado: ${user}`;
+                        statusEl.classList.remove('empty');
+                        // Fecha o painel de configuração
+                        document.getElementById('config-sap-fields').style.display = 'none';
+                        document.getElementById('btn-toggle-config-sap').innerText = '⚙️ Configurar';
+                    } else {
+                        adicionarLog(`❌ Erro ao salvar: ${data.message}`, 'log-error');
+                    }
+                })
+                .catch(err => {
+                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
+                });
         }
 
         // ============== KANBAN DADOS ==============
@@ -842,29 +948,29 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ caminho: caminhoExcelSelecionado, dados_colados: dadosColados })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('card-kanban').style.display = 'block';
-                    renderizarKanban(data.remessas, {});
-                } else {
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('card-kanban').style.display = 'block';
+                        renderizarKanban(data.remessas, {});
+                    } else {
+                        document.getElementById('card-kanban').style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro ao carregar dados do Kanban:", err);
                     document.getElementById('card-kanban').style.display = 'none';
-                }
-            })
-            .catch(err => {
-                console.error("Erro ao carregar dados do Kanban:", err);
-                document.getElementById('card-kanban').style.display = 'none';
-            });
+                });
         }
 
         function renderizarKanban(remessas, statusEtapas) {
             const container = document.getElementById('tracking-rows-container');
             container.innerHTML = "";
-            
+
             let html = "";
             remessas.forEach(remessa => {
                 const status = statusEtapas[remessa] || { selecao_uc: "pending", picking: "pending", sm: "pending", erro_detalhe: "" };
-                
+
                 let erroHtml = "";
                 if (status.erro_detalhe) {
                     erroHtml = `<div style="color: #dc2626; font-size: 11px; margin-top: 4px; font-weight: 600;">⚠️ ${status.erro_detalhe}</div>`;
@@ -910,7 +1016,7 @@
             const temArquivo = caminhoExcelSelecionado !== "";
             const temDadosColados = document.getElementById('dados-colados').value.trim() !== "";
             const ativo = temArquivo || temDadosColados;
-            
+
             document.getElementById('btn-opcao1').disabled = !ativo;
             document.getElementById('btn-opcao2').disabled = !ativo;
             document.getElementById('btn-opcao3').disabled = !ativo;
@@ -956,6 +1062,11 @@
                             statusEl.innerText = "✅ Finalizado";
                             statusEl.classList.add('finalizado');
                             statusEl.classList.remove('executando');
+
+                            // Se a opção executada foi a 1 (Seleção via UC) ou a 100 (Todas), e terminou tudo
+                            if (window.opcaoAtual === 1 || window.opcaoAtual === 100) {
+                                verificarEBaixarPacklists();
+                            }
                         }
 
                         // Buscar dados do Kanban atualizado
@@ -974,7 +1085,8 @@
         // ============== EXECUÇÃO ==============
         function executarOpcao(opcao) {
             const dadosColados = document.getElementById('dados-colados').value;
-            
+            window.opcaoAtual = opcao; // Salva a opção atual executada
+
             travarBotoes(true);
             const statusEl = document.getElementById('status-rpa');
             statusEl.innerText = "⏳ Executando...";
@@ -1032,7 +1144,9 @@
                 alert("⚠️ Por favor, selecione a pasta de destino para os PDFs.");
                 return;
             }
-            
+
+            const tipo = document.querySelector('input[name="tipo-packlist"]:checked').value;
+
             travarBotoes(true);
             const statusEl = document.getElementById('status-rpa');
             statusEl.innerText = "⏳ Baixando Packlists...";
@@ -1042,23 +1156,167 @@
             fetch('/api/packlist/baixar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ remessas: inputRemessas, pasta_destino: caminhoPastaPacklist })
+                body: JSON.stringify({ remessas: inputRemessas, pasta_destino: caminhoPastaPacklist, tipo: tipo })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'error') {
-                    adicionarLog(`❌ ${data.message}`, 'log-error');
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        adicionarLog(`❌ ${data.message}`, 'log-error');
+                        travarBotoes(false);
+                        statusEl.innerText = "❌ Erro";
+                        statusEl.classList.add('erro');
+                    } else {
+                        iniciarMonitoramentoLogs();
+                    }
+                })
+                .catch(err => {
+                    adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
                     travarBotoes(false);
-                    statusEl.innerText = "❌ Erro";
-                    statusEl.classList.add('erro');
-                } else {
-                    iniciarMonitoramentoLogs();
-                }
+                });
+        }
+
+        // ============== LÓGICA DE PACKLIST PÓS-SELEÇÃO ==============
+        function verificarEBaixarPacklists() {
+            fetch('/api/expedicao/dados_processamento')
+                .then(res => res.json())
+                .then(state => {
+                    if (!state || !state.status_etapas) return;
+                    const remessasSucesso = [];
+                    for (const remessa in state.status_etapas) {
+                        if (state.status_etapas[remessa].selecao_uc === 'success') {
+                            remessasSucesso.push(remessa);
+                        }
+                    }
+
+                    if (remessasSucesso.length > 0) {
+                        setTimeout(() => {
+                            const deAcordo = confirm(`Deseja baixar os packlists das remessas que deram certo na Seleção via UC? (${remessasSucesso.join(', ')})`);
+                            if (deAcordo) {
+                                iniciarFluxoDownloadPacklist(remessasSucesso);
+                            }
+                        }, 500);
+                    }
+                })
+                .catch(err => console.error("Erro ao carregar dados pós-seleção:", err));
+        }
+
+        function iniciarFluxoDownloadPacklist(remessas) {
+            fetch('/api/sap_web/config')
+                .then(res => res.json())
+                .then(data => {
+                    const user = data.sap_web_user || '';
+                    const pass = data.sap_web_password || '';
+
+                    if (!user.trim() || !pass) {
+                        abrirModalSAP(() => {
+                            selecionarPastaEBaixarPacklist(remessas);
+                        });
+                    } else {
+                        selecionarPastaEBaixarPacklist(remessas);
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro ao verificar config SAP:", err);
+                    alert("Erro ao verificar as credenciais SAP. Verifique o console.");
+                });
+        }
+
+        function abrirModalSAP(callbackSucesso) {
+            document.getElementById('modal-sap-web-user').value = '';
+            document.getElementById('modal-sap-web-password').value = '';
+            window.modalSAPCallback = callbackSucesso;
+            document.getElementById('sap-modal-overlay').classList.add('active');
+        }
+
+        function fecharModalSAP() {
+            document.getElementById('sap-modal-overlay').classList.remove('active');
+            window.modalSAPCallback = null;
+        }
+
+        function toggleSenhaVisibilidadeModal() {
+            const input = document.getElementById('modal-sap-web-password');
+            const btn = document.getElementById('btn-toggle-senha-modal');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '🔒';
+            } else {
+                input.type = 'password';
+                btn.innerText = '👁️';
+            }
+        }
+
+        function salvarConfigModalSAP() {
+            const user = document.getElementById('modal-sap-web-user').value.trim();
+            const pass = document.getElementById('modal-sap-web-password').value;
+
+            if (!user || !pass) {
+                alert('⚠️ Preencha o usuário e a senha SAP Web.');
+                return;
+            }
+
+            fetch('/api/sap_web/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sap_web_user: user, sap_web_password: pass })
             })
-            .catch(err => {
-                adicionarLog(`❌ Erro na requisição: ${err}`, 'log-error');
-                travarBotoes(false);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        adicionarLog('✅ Credenciais SAP Web salvas com sucesso!', 'log-success');
+                        carregarConfigSAP(); // Atualiza painel principal
+                        fecharModalSAP();
+                        if (window.modalSAPCallback) {
+                            window.modalSAPCallback();
+                        }
+                    } else {
+                        alert(`❌ Erro ao salvar: ${data.message}`);
+                    }
+                })
+                .catch(err => {
+                    alert(`❌ Erro na requisição: ${err}`);
+                });
+        }
+
+        function selecionarPastaEBaixarPacklist(remessas) {
+            adicionarLog("📁 Selecione a pasta de destino para os PDFs de Packlist...");
+            fetch('/api/selecionar_pasta')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.caminho) {
+                        const pasta = data.caminho;
+                        adicionarLog(`📁 Pasta selecionada para Packlist: ${pasta}`);
+
+                        travarBotoes(true);
+                        const statusEl = document.getElementById('status-rpa');
+                        statusEl.innerText = "⏳ Baixando Packlists...";
+                        statusEl.classList.remove('finalizado', 'erro');
+                        statusEl.classList.add('executando');
+
+                        fetch('/api/packlist/baixar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ remessas: remessas.join(','), pasta_destino: pasta, tipo: 'jbs' })
+                        })
+                            .then(res => res.json())
+                            .then(resData => {
+                                if (resData.status === 'error') {
+                                    adicionarLog(`❌ ${resData.message}`, 'log-error');
+                                    travarBotoes(false);
+                                    statusEl.innerText = "❌ Erro";
+                                    statusEl.classList.add('erro');
+                                } else {
+                                    iniciarMonitoramentoLogs();
+                                }
+                            })
+                            .catch(err => {
+                                adicionarLog(`❌ Erro ao disparar download: ${err}`, 'log-error');
+                                travarBotoes(false);
+                            });
+                    } else {
+                        adicionarLog("⚠️ Download cancelado: nenhuma pasta selecionada.");
+                    }
+                })
+                .catch(err => console.error("Erro ao selecionar pasta:", err));
         }
 
         // Inicializar ao carregar a página
@@ -1067,5 +1325,42 @@
             carregarConfigSAP();
         });
     </script>
+
+    <!-- MODAL DE CONFIGURAÇÃO DE CREDENCIAIS SAP WEB -->
+    <div class="modal-overlay" id="sap-modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                🔑 Configurar Credenciais SAP Web
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 13px; color: #5a6c7d; margin-bottom: 15px;">
+                    Suas credenciais do SAP Web ainda não estão configuradas. Elas são necessárias para efetuar o
+                    download automático do Packlist.
+                </p>
+                <div class="input-group">
+                    <label for="modal-sap-web-user">Usuário SAP</label>
+                    <input type="text" id="modal-sap-web-user" placeholder="Ex: SP3IBNASCIME" />
+                </div>
+                <div class="input-group">
+                    <label for="modal-sap-web-password">Senha SAP</label>
+                    <div style="position: relative;">
+                        <input type="password" id="modal-sap-web-password" placeholder="Sua senha SAP"
+                            style="padding-right: 45px;" />
+                        <button type="button" onclick="toggleSenhaVisibilidadeModal()"
+                            style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px;"
+                            id="btn-toggle-senha-modal" title="Mostrar/ocultar senha">👁️</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background: #e2e8f0; color: #475569;"
+                    onclick="fecharModalSAP()">Cancelar</button>
+                <button class="btn btn-primary"
+                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16,185,129,0.3);"
+                    onclick="salvarConfigModalSAP()">Salvar e Continuar</button>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>
