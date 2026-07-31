@@ -731,6 +731,26 @@ def api_cabotagem_executar():
 
 
 
+@app.route('/api/cabotagem/exportar_excel', methods=['GET'])
+def api_cabotagem_exportar_excel():
+    from src.expedicao.cabotagem_processador import montar_relatorio_cabotagem
+    import pandas as pd
+
+    df = montar_relatorio_cabotagem(cabotagem_estado)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Cabotagem')
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='cabotagem_ofs.xlsx'
+    )
+
+
 if __name__ == '__main__':
     
     import socket

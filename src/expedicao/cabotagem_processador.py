@@ -28,8 +28,90 @@ def converter_para_float_cabotagem(valor):
 cabotagem_estado = {
     "planilha_caminho": "",
     "containers": [], # Lista de containers estruturados
-    "status_etapas": {} # {container_id: {"of": "pending", "of_numero": "", "erro_detalhe": ""}}
+    "status_etapas": {}, # {container_id: {"of": "pending", "of_numero": "", "erro_detalhe": ""}}
+    "selecionados": [] # Chaves selecionadas para processamento
 }
+
+
+def _extrair_numero_of(val) -> str:
+    """Extrai apenas o número da OF, seja string, dict ou repr de dict."""
+    if not val:
+        return ""
+    if isinstance(val, dict):
+        return str(val.get("of_numero", "") or "").strip()
+    val_str = str(val).strip()
+    if val_str.startswith("{") and "of_numero" in val_str:
+        import ast
+        try:
+            parsed = ast.literal_eval(val_str)
+            if isinstance(parsed, dict):
+                return str(parsed.get("of_numero", "") or "").strip()
+        except Exception:
+            pass
+        match = re.search(r"'of_numero':\s*'([^']+)'", val_str)
+        if match:
+            return match.group(1)
+    return val_str
+
+
+def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
+    """Cria um DataFrame com carga, container, remessa, OF e status para exportação Excel."""
+    estado = estado or cabotagem_estado
+    linhas = []
+
+    containers = estado.get("containers", []) or []
+    selecionados = estado.get("selecionados", []) or []
+
+    # Exporta apenas as cargas/containers enviadas para processamento quando houver seleção
+    if selecionados:
+        containers = [
+            c for c in containers
+            if f"{c.get('carga')}_{c.get('container')}" in selecionados
+        ]
+
+    for container in containers:
+        carga = container.get("carga", "")
+        container_id = container.get("container", "")
+        remessas = container.get("remessas", []) or []
+        if not remessas:
+            continue
+
+        c_key = f"{carga}_{container_id}"
+        status_info = estado.get("status_etapas", {}).get(c_key, {})
+        raw_of = status_info.get("of_numero") or container.get("of_numero") or ""
+        of_numero = _extrair_numero_of(raw_of)
+        status_exec = status_info.get("of", "pending")
+
+        if status_exec == "success" and of_numero:
+            status_text = "Gerada"
+        elif status_exec == "running":
+            status_text = "Em processamento"
+        elif status_exec == "error":
+            status_text = "Erro"
+        else:
+            status_text = "Pendente"
+
+        for remessa in remessas:
+            linhas.append({
+                "Carga": carga,
+                "Container": container_id,
+                "Remessa": remessa,
+                "OF": of_numero,
+                "Status": status_text,
+            })
+
+    if not linhas:
+        linhas.append({
+            "Carga": "",
+            "Container": "",
+            "Remessa": "",
+            "OF": "",
+            "Status": "Pendente",
+        })
+
+    return pd.DataFrame(linhas, columns=["Carga", "Container", "Remessa", "OF", "Status"])
+
+
 
 def obter_dados_cabotagem() -> list:
     """
@@ -113,7 +195,7 @@ def obter_dados_cabotagem() -> list:
     if col_transportadora:
         log_sys.write(f"✔️ Transportadora identificada na coluna: '{col_transportadora}'")
     else:
-        log_sys.write("⚠️ Coluna de Transportadora não encontrada. Usará valor vazio por padrão.")
+        log_sys.write("⚠️ Coluna de Transportadora não encontrada. Usará a transportadora padrão configurada.")
         
     if col_valor_frete:
         log_sys.write(f"✔️ Valor de Frete identificado na coluna: '{col_valor_frete}'")
@@ -203,26 +285,11 @@ def obter_dados_cabotagem() -> list:
             if not of_existente:
                 todos_com_of = False
                 
-            # Transportadora
-            transportadora = ""
-            if col_transportadora:
-                for t in df_container[col_transportadora]:
-                    if t and t.lower() not in ["nan", "none", ""]:
-                        transportadora = t.strip()
-                        break
-                        
-            # Se for código com nome
-            transportadora_codigo = ""
-            if transportadora:
-                match = re.search(r'\((\d+)\)', transportadora)
-                if match:
-                    transportadora_codigo = match.group(1)
-                else:
-                    digits = "".join(c for c in transportadora if c.isdigit())
-                    if digits:
-                        transportadora_codigo = str(int(digits))
-                    else:
-                        transportadora_codigo = transportadora
+            # Transportadora fixa configurada no .env
+            transportadora_padrao = os.getenv("CABOTAGEM_TRANSPORTADORA_PADRAO", "9190617").strip()
+            transportadora_codigo = transportadora_padrao or "9190617"
+            transportadora = f"Fixo ({transportadora_codigo})"
+            log_sys.write(f"🚚 Usando transportadora fixa do .env: {transportadora_codigo}")
                         
             # Calcula o valor do frete para o container
             if total_containers > 1:
@@ -277,6 +344,7 @@ def obter_dados_cabotagem() -> list:
             
     cabotagem_estado["containers"] = containers_flat
     cabotagem_estado["planilha_caminho"] = caminho_sp
+    cabotagem_estado["selecionados"] = []
     
     # Inicializa status_etapas para os que estão no estado global
     for c in containers_flat:
@@ -294,6 +362,9 @@ def rodar_criar_of_cabotagem(usuario, senha, containers_selecionados):
     """
     Executa a criação de OF para os containers selecionados usando Playwright no background.
     """
+    global cabotagem_estado
+    cabotagem_estado["selecionados"] = containers_selecionados
+    
     from src.expedicao.sap_cabotagem_playwright import rodar_criacao_of_cabotagem_playwright
     
     log_sys.write("=== [Cabotagem] Iniciando Criação de Ordens de Frete ===")
@@ -321,14 +392,15 @@ def rodar_criar_of_cabotagem(usuario, senha, containers_selecionados):
             log_sys.write(f"⚠️ Alerta: O container {c['container']} (Carga {c['carga']}) não possui valor de frete preenchido na planilha.")
             
         try:
-            of_num = rodar_criacao_of_cabotagem_playwright(
+            res_of = rodar_criacao_of_cabotagem_playwright(
                 remessas=c["remessas"],
                 transportadora=c["transportadora_codigo"],
                 valor_frete=c["valor_container"],
                 usuario=usuario,
                 senha=senha,
-                headless=True
+                headless=False
             )
+            of_num = _extrair_numero_of(res_of)
             
             cabotagem_estado["status_etapas"][c_key]["of"] = "success"
             cabotagem_estado["status_etapas"][c_key]["of_numero"] = of_num

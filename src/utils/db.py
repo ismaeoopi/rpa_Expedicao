@@ -4,11 +4,33 @@ import sys
 from datetime import datetime
 
 def get_db_path():
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
+    # Use standard AppData folder for Windows to guarantee write access
+    appdata = os.environ.get('APPDATA')
+    if appdata:
+        base_dir = os.path.join(appdata, 'RPA_Expedicao')
     else:
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    return os.path.join(base_dir, 'estado_estoque.db')
+        # Fallback to user home directory
+        base_dir = os.path.expanduser('~/.rpa_expedicao')
+    
+    os.makedirs(base_dir, exist_ok=True)
+    new_db_path = os.path.join(base_dir, 'estado_estoque.db')
+    
+    # Check if an old database exists in the project root to migrate it
+    if getattr(sys, 'frozen', False):
+        old_base_dir = os.path.dirname(sys.executable)
+    else:
+        old_base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    old_db_path = os.path.join(old_base_dir, 'estado_estoque.db')
+    
+    if os.path.exists(old_db_path) and not os.path.exists(new_db_path):
+        try:
+            import shutil
+            shutil.copy2(old_db_path, new_db_path)
+        except Exception:
+            pass # Fail silently and create a clean database if we can't copy
+            
+    return new_db_path
+
 
 def get_connection():
     return sqlite3.connect(get_db_path(), isolation_level=None)
