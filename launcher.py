@@ -40,6 +40,7 @@ if False:
     import git
     import sqlite3
     import Entreposto
+    import kill_switch
 
 
 
@@ -131,15 +132,25 @@ def executar_app():
 def main():
     """
     Ponto de entrada principal.
-    1. Atualiza via Git (se disponível)
-    2. Verifica atualizações no GitHub (funciona SEM Git)
-    3. Executa o app.py
+    1. [KILL-SWITCH] Verifica remotamente se o app está habilitado e a versão é válida
+    2. Atualiza via Git (se disponível)
+    3. Verifica atualizações no GitHub (funciona SEM Git)
+    4. Executa o app.py
     """
     try:
         # Muda para o diretório do script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
-        
+
+        # ── PASSO 1: Kill-Switch e Versão Mínima ──────────────────────────
+        # Esta verificação é SEMPRE a primeira a ser executada.
+        # Se o app estiver desabilitado remotamente OU a versão local for
+        # inferior à versão mínima exigida, exibe alerta e encerra (sys.exit).
+        # Se não houver internet ou o GitHub estiver offline, continua normalmente.
+        import kill_switch
+        kill_switch.verificar()
+        # ─────────────────────────────────────────────────────────────────
+
         # Tenta atualizar via Git (silenciosamente)
         atualizar_repositorio()
         
