@@ -1,7 +1,7 @@
 {
   "latest_version": "1.1.9",
   "min_required_version": "1.1.9",
-  "enabled": true,
+  "enabled": false,
   "blocked_message": "⚠️ O RPA foi pausado temporariamente pela equipe de TI para manutenção de emergência. Por favor, tente novamente mais tarde.",
   "outdated_message": "⚠️ Sua versão do RPA está desatualizada e foi bloqueada. Por favor, aguarde o download da versão mais recente ou contate o suporte."
 }
