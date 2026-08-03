@@ -64,6 +64,7 @@ python -m PyInstaller ^
     --add-data "src;src" ^
     --add-data "app.py;." ^
     --add-data "updater.py;." ^
+    --add-data "kill_switch.py;." ^
     --add-data "version.txt;." ^
     --add-data "Entreposto.py;." ^
     --hidden-import=pandas ^

@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('templates', 'templates'), ('src', 'src'), ('app.py', '.'), ('updater.py', '.'), ('version.txt', '.'), ('Entreposto.py', '.')]
+datas = [('templates', 'templates'), ('src', 'src'), ('app.py', '.'), ('updater.py', '.'), ('kill_switch.py', '.'), ('version.txt', '.'), ('Entreposto.py', '.')]
 binaries = []
 hiddenimports = ['pandas', 'openpyxl', 'win32com', 'win32con', 'win32gui', 'flask', 'reportlab', 'tkinter', 'urllib', 'requests', 'dotenv', 'flask_cors', 'customtkinter', 'PIL', 'plyer', 'geopy', 'git', 'sqlite3', 'Entreposto', 'playwright', 'playwright.sync_api', 'playwright._impl._driver', 'greenlet']
 tmp_ret = collect_all('reportlab')

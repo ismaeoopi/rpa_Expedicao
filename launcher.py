@@ -132,32 +132,36 @@ def executar_app():
 def main():
     """
     Ponto de entrada principal.
-    1. [KILL-SWITCH] Verifica remotamente se o app está habilitado e a versão é válida
-    2. Atualiza via Git (se disponível)
-    3. Verifica atualizações no GitHub (funciona SEM Git)
-    4. Executa o app.py
+    1. [KILL-SWITCH] Verifica se o app foi pausado remotamente pela TI (enabled == false)
+    2. [GIT PULL] Atualiza repositório via Git (silenciosamente se for pasta Git)
+    3. [AUTO-UPDATE] Verifica e baixa atualizações do GitHub (se rodando como .exe)
+    4. [VERSÃO MÍNIMA] Verifica se a versão atende o mínimo após as tentativas de atualização
+    5. [EXECUÇÃO] Inicia o app.py
     """
     try:
         # Muda para o diretório do script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
 
-        # ── PASSO 1: Kill-Switch e Versão Mínima ──────────────────────────
-        # Esta verificação é SEMPRE a primeira a ser executada.
-        # Se o app estiver desabilitado remotamente OU a versão local for
-        # inferior à versão mínima exigida, exibe alerta e encerra (sys.exit).
-        # Se não houver internet ou o GitHub estiver offline, continua normalmente.
         import kill_switch
-        kill_switch.verificar()
+
+        # ── PASSO 1: Kill-Switch Emergencial (Desativação pela TI) ─────────
+        # Se enabled == false, bloqueia a execução imediatamente.
+        controle = kill_switch.verificar_kill_switch()
         # ─────────────────────────────────────────────────────────────────
 
-        # Tenta atualizar via Git (silenciosamente)
+        # ── PASSO 2: Tenta atualizar via Git (silenciosamente) ────────────
         atualizar_repositorio()
         
-        # Verifica e aplica atualizações do GitHub
-        # IMPORTANTE: Isso tem que ser ANTES de executar o app.py
-        # Assim um .exe antigo baixa a versão nova e reinicia
+        # ── PASSO 3: Verifica e aplica atualizações do executável (.exe) ──
+        # Se houver versão nova no GitHub, baixa e reinicia o .exe
         verificar_atualizacoes_github()
+
+        # ── PASSO 4: Validação de Versão Mínima Obrigatória ───────────────
+        # Após tentar atualizar (por Git ou .exe), verifica se a versão local
+        # atende à versão mínima. Se a atualização falhou e a versão é obsoleta, bloqueia.
+        kill_switch.verificar_versao_minima(controle)
+        # ─────────────────────────────────────────────────────────────────
         
         # Executa o app
         executar_app()

@@ -53,6 +53,14 @@ def _versao_tuple(versao_str: str) -> tuple:
 def _ler_versao_local() -> str:
     """Lê a versão atual do version.txt embutido no .exe ou na pasta do script."""
     try:
+        # Prioriza o version.txt na pasta atual (caso tenha sido atualizado por git pull)
+        cwd_version_file = os.path.join(os.getcwd(), "version.txt")
+        if os.path.exists(cwd_version_file):
+            with open(cwd_version_file, "r", encoding="utf-8") as f:
+                ver = f.read().strip()
+                if ver:
+                    return ver
+
         base_path = (
             sys._MEIPASS
             if getattr(sys, "frozen", False)
@@ -104,27 +112,20 @@ def _mostrar_alerta_e_sair(titulo: str, mensagem: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────
-#  Função pública
+#  Funções públicas
 # ─────────────────────────────────────────────────────────
 
-def verificar() -> None:
+def verificar_kill_switch(controle: dict | None = None) -> dict | None:
     """
-    Ponto de entrada do módulo.
-    Chame esta função ANTES de iniciar qualquer lógica do app.
-
-    Comportamento:
-      • Sem internet / GitHub indisponível → permite iniciar (fail-open).
-      • enabled == false                    → bloqueia com blocked_message.
-      • versão local < min_required_version → bloqueia com outdated_message.
-      • Tudo ok                             → retorna normalmente (sem efeito).
+    Verifica APENAS se o app está desativado emergencialmente (enabled == false).
+    Deve ser executado ANTES das tentativas de update.
     """
-    controle = _buscar_version_control()
-
-    # Se não conseguiu baixar, continua sem bloquear (fail-open)
     if controle is None:
-        return
+        controle = _buscar_version_control()
 
-    # ── 1. Verifica se o app está globalmente habilitado ──────────────────
+    if controle is None:
+        return None
+
     enabled = controle.get("enabled", True)
     if not enabled:
         mensagem = controle.get(
@@ -132,9 +133,21 @@ def verificar() -> None:
             "⚠️ O RPA está temporariamente desativado. Tente novamente mais tarde.",
         )
         _mostrar_alerta_e_sair("RPA Bloqueado", mensagem)
-        return  # Nunca alcançado — sys.exit(1) já foi chamado
+    
+    return controle
 
-    # ── 2. Verifica versão mínima obrigatória ─────────────────────────────
+
+def verificar_versao_minima(controle: dict | None = None) -> None:
+    """
+    Verifica APENAS se a versão local atende à versão mínima obrigatória.
+    Deve ser executado APÓS as tentativas de update (git pull / updater).
+    """
+    if controle is None:
+        controle = _buscar_version_control()
+
+    if controle is None:
+        return
+
     min_version_str = controle.get("min_required_version", "0.0.0")
     local_version_str = _ler_versao_local()
 
@@ -145,13 +158,19 @@ def verificar() -> None:
         mensagem = controle.get(
             "outdated_message",
             "⚠️ Sua versão do RPA está desatualizada e foi bloqueada. "
-            "Por favor, contate o suporte.",
+            "Por favor, aguarde o download da versão mais recente ou contate o suporte.",
         )
         _mostrar_alerta_e_sair(
             f"Versão Desatualizada (local: {local_version_str} | mínima: {min_version_str})",
             mensagem,
         )
-        return  # Nunca alcançado
 
-    # ── 3. Tudo ok — inicia normalmente ───────────────────────────────────
-    # (retorna sem fazer nada; launcher.py continua o fluxo normal)
+
+def verificar() -> None:
+    """
+    Verifica kill-switch e versão mínima em sequência.
+    Mantido para compatibilidade.
+    """
+    controle = verificar_kill_switch()
+    verificar_versao_minima(controle)
+

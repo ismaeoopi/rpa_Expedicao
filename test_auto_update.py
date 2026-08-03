@@ -205,11 +205,11 @@ def test_pyinstaller():
 def main():
     """Executa todos os testes."""
     print("\n")
-    print("╔" + "═"*68 + "╗")
-    print("║" + " "*68 + "║")
-    print("║" + "  🧪 TESTES DE AUTO-UPDATE DO RPA  ".center(68) + "║")
-    print("║" + " "*68 + "║")
-    print("╚" + "═"*68 + "╝")
+    print("+" + "="*68 + "+")
+    print("|" + " "*68 + "|")
+    print("|" + "  TESTES DE AUTO-UPDATE DO RPA  ".center(68) + "|")
+    print("|" + " "*68 + "|")
+    print("+" + "="*68 + "+")
     print(f"\nData: {__import__('datetime').datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     print(f"Diretório: {os.path.abspath('.')}")
     print(f"Plataforma: {sys.platform}")
