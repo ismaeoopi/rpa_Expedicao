@@ -82,22 +82,32 @@ def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
         of_numero = _extrair_numero_of(raw_of)
         status_exec = status_info.get("of", "pending")
 
-        if status_exec == "success" and of_numero:
-            status_text = "Gerada"
-        elif status_exec == "running":
-            status_text = "Em processamento"
-        elif status_exec == "error":
-            status_text = "Erro"
-        else:
-            status_text = "Pendente"
-
         for remessa in remessas:
+            remessas_ausentes_lista = status_info.get("remessas_ausentes", [])
+
+            # Determinar OF e Status para esta remessa específica
+            if remessa in remessas_ausentes_lista:
+                of_para_remessa = ""
+                status_remessa = "Não Encontrada"
+            elif status_exec == "running":
+                of_para_remessa = ""
+                status_remessa = "Em processamento"
+            elif status_exec == "error":
+                of_para_remessa = ""
+                status_remessa = "Erro"
+            elif of_numero:
+                of_para_remessa = of_numero
+                status_remessa = "Gerada"
+            else:
+                of_para_remessa = ""
+                status_remessa = "Pendente"
+
             linhas.append({
                 "Carga": carga,
                 "Container": container_id,
                 "Remessa": remessa,
-                "OF": of_numero,
-                "Status": status_text,
+                "OF": of_para_remessa,
+                "Status": status_remessa,
             })
 
     if not linhas:
@@ -402,6 +412,11 @@ def rodar_criar_of_cabotagem(usuario, senha, containers_selecionados):
             )
             of_num = _extrair_numero_of(res_of)
             
+            # Guardar quais remessas foram confirmadas e quais ausentes
+            if isinstance(res_of, dict):
+                cabotagem_estado["status_etapas"][c_key]["remessas_confirmadas"] = res_of.get("remessas_confirmadas", [])
+                cabotagem_estado["status_etapas"][c_key]["remessas_ausentes"] = res_of.get("remessas_ausentes", [])
+
             cabotagem_estado["status_etapas"][c_key]["of"] = "success"
             cabotagem_estado["status_etapas"][c_key]["of_numero"] = of_num
             c["of_numero"] = of_num

@@ -289,18 +289,30 @@ def rodar_criacao_of_cabotagem_playwright(
             log_sys.write(f"⚠️ Erro ao verificar remessas após inserção: {e}")
 
         if remessas_ausentes_early:
+            log_sys.write(f"⚠️ Remessas NÃO encontradas no SAP: {', '.join(remessas_ausentes_early)}")
+
+        if not remessas_confirmadas_early:
             raise ValueError(
-                f"As seguintes remessas não foram aceitas pelo SAP após inserção: "
+                f"NENHUMA remessa foi aceita pelo SAP. Todas ausentes: "
                 f"{', '.join(remessas_ausentes_early)}. "
                 f"Verifique se os números estão corretos ou se já estão em outra OF."
             )
 
-        log_sys.write(f"✅ Todas as {len(remessas_confirmadas_early)} remessa(s) confirmadas. Prosseguindo...")
+        log_sys.write(
+            f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s). "
+            f"Prosseguindo com a criação da OF..."
+        )
+        if remessas_ausentes_early:
+            log_sys.write(
+                f"⚠️ {len(remessas_ausentes_early)} remessa(s) ausente(s) serão ignoradas na OF: "
+                f"{', '.join(remessas_ausentes_early)}"
+            )
 
         # Acessar a aba "General Data Assignment Block"
         log_sys.write("⏳ Acessando aba General Data...")
         try:
             time.sleep(1.5)
+            aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
             app_iframe.get_by_role("tab", name=re.compile(r"(General Data|Dados gerais).*Assignment Block", re.IGNORECASE)).click(timeout=10000)
         except Exception:
             pass
@@ -378,8 +390,10 @@ def rodar_criacao_of_cabotagem_playwright(
         time.sleep(2)
         
         # Acessar a aba "Charges Assignment Block"
+
         log_sys.write("⏳ Acessando aba de Despesas (Charges)...")
         app_iframe.get_by_role("tab", name=re.compile(r"(Charges|Despesas).*Assignment Block", re.IGNORECASE)).click()
+        aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
         time.sleep(2)
 
         # Expandir todas as linhas — após Expand All o FB02 já aparece na tabela de Charges

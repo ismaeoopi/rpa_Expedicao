@@ -81,3 +81,41 @@ def test_montar_relatorio_cabotagem_sanitiza_dict_of():
     assert df.iloc[0]["OF"] == "6100320038"
     assert df.iloc[1]["OF"] == "6100320038"
 
+
+def test_montar_relatorio_cabotagem_diferencia_remessas_ausentes():
+    estado = {
+        "containers": [
+            {
+                "carga": "C-100",
+                "container": "CTR-1",
+                "remessas": ["111", "222", "333"],
+                "of_numero": "6100001234",
+            }
+        ],
+        "status_etapas": {
+            "C-100_CTR-1": {
+                "of": "success",
+                "of_numero": "6100001234",
+                "remessas_confirmadas": ["111", "222"],
+                "remessas_ausentes": ["333"],
+            }
+        }
+    }
+
+    df = montar_relatorio_cabotagem(estado)
+
+    assert len(df) == 3
+    
+    r111 = df[df["Remessa"] == "111"].iloc[0]
+    assert r111["OF"] == "6100001234"
+    assert r111["Status"] == "Gerada"
+
+    r222 = df[df["Remessa"] == "222"].iloc[0]
+    assert r222["OF"] == "6100001234"
+    assert r222["Status"] == "Gerada"
+
+    r333 = df[df["Remessa"] == "333"].iloc[0]
+    assert r333["OF"] == ""
+    assert r333["Status"] == "Não Encontrada"
+
+
