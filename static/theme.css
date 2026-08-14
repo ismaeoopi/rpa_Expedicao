@@ -1,0 +1,622 @@
+/* ================================================================
+   THEME.CSS - Sistema de Tema Dark/Light - VALGROUP RPA Logística
+   ================================================================
+   Cores da Marca VALGROUP:
+   - Verde Principal: #1a7733
+   - Azul Principal:  #1d284a
+   - Azul Escuro:     #101b24
+   - Azul Vivo:       #007ab1
+   - Verde Lima:      #85bc44
+   - Laranja:         #f86239
+   - Amarelo:         #ffb600
+   ================================================================ */
+
+/* ==================== CSS VARIABLES ==================== */
+:root,
+[data-theme="light"] {
+    --bg-body: #f5f7fa;
+    --bg-body-end: #e4e8ec;
+    --bg-card: #ffffff;
+    --bg-surface: #f8f9fa;
+    --bg-surface-alt: #f1f5f9;
+    --text-primary: #1d284a;
+    --text-secondary: #5a6c7d;
+    --text-muted: #94a3b8;
+    --text-heading: #2c3e50;
+    --border-color: #e2e8f0;
+    --border-subtle: rgba(0, 0, 0, 0.05);
+    --input-bg: #ffffff;
+    --input-border: #cbd5e1;
+    --input-text: #2c3e50;
+    --input-placeholder: #95a5a6;
+    --console-bg: #f8f9fa;
+    --console-text: #2c3e50;
+    --console-border: rgba(0, 0, 0, 0.08);
+    --shadow-color: rgba(0, 0, 0, 0.08);
+    --shadow-hover: rgba(0, 0, 0, 0.12);
+    --row-bg: #ffffff;
+    --table-header-bg: #f1f5f9;
+    --table-header-text: #475569;
+    --table-border: #cbd5e1;
+    --modal-bg: #ffffff;
+    --modal-overlay: rgba(15, 23, 42, 0.6);
+    --scrollbar-track: #e9ecef;
+    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+    --disabled-bg: linear-gradient(135deg, #cfd8dc 0%, #b0bec5 100%);
+    --disabled-text: #78909c;
+    --banner-bg: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+    --banner-text: #e65100;
+    --banner-sub: #b26a00;
+    --log-success: #1b5e20;
+    --log-error: #ff3333;
+    --stage-pending-bg: #f1f5f9;
+    --stage-pending-border: #cbd5e1;
+    --stage-pending-text: #94a3b8;
+    --dash-card-bg: #f8f9fa;
+    --dash-card-border: #e0e0e0;
+    --dash-card-value: #2c3e50;
+    --select-bg: #ffffff;
+    --badge-text-muted: #64748b;
+    --link-text: #2c3e50;
+    --file-status-empty-bg: rgba(255, 152, 0, 0.1);
+    --file-status-empty-text: #ff9800;
+    --file-status-ok-bg: rgba(76, 175, 80, 0.1);
+    --file-status-ok-text: #4caf50;
+    --detail-header-bg: #e8f5e9;
+    --detail-border: #eceff1;
+    --detail-label: #78909c;
+    --detail-value: #27272a;
+    --topbar-bg: rgba(255, 255, 255, 0.85);
+    --topbar-border: rgba(0, 0, 0, 0.06);
+    --topbar-title: #1d284a;
+    --topbar-greeting: #5a6c7d;
+    --topbar-greeting-strong: #1d284a;
+    --hero-title: #1d284a;
+    --hero-subtitle: #5a6c7d;
+    --section-label-color: #475569;
+    --footer-bg: transparent;
+    --footer-border: rgba(0, 0, 0, 0.06);
+    --footer-text: #94a3b8;
+    --idx-card-bg: rgba(255, 255, 255, 0.9);
+    --idx-card-border: rgba(0, 0, 0, 0.06);
+    --idx-card-hover-bg: #ffffff;
+    --idx-card-hover-border: rgba(0, 0, 0, 0.1);
+    --idx-card-title: #1d284a;
+    --idx-card-desc: #5a6c7d;
+    --idx-card-action: #94a3b8;
+    --idx-icon-wrap-multiplier: 0.12;
+    --idx-modal-bg: #ffffff;
+    --idx-modal-border: rgba(0, 0, 0, 0.08);
+    --version-bg: rgba(29, 40, 74, 0.08);
+    --version-text: #5a6c7d;
+    --avatar-gradient: linear-gradient(135deg, #1a7733, #007ab1);
+}
+
+[data-theme="dark"] {
+    --bg-body: #101b24;
+    --bg-body-end: #0d1520;
+    --bg-card: #1a2535;
+    --bg-surface: #0d1520;
+    --bg-surface-alt: #1d284a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-heading: #e2e8f0;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --input-bg: #1a2535;
+    --input-border: rgba(255, 255, 255, 0.12);
+    --input-text: #e2e8f0;
+    --input-placeholder: #64748b;
+    --console-bg: #0d1520;
+    --console-text: #e2e8f0;
+    --console-border: rgba(255, 255, 255, 0.06);
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.4);
+    --row-bg: #1a2535;
+    --table-header-bg: #1d284a;
+    --table-header-text: #94a3b8;
+    --table-border: rgba(255, 255, 255, 0.08);
+    --modal-bg: #1a2535;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+    --scrollbar-track: #1a2535;
+    --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --disabled-bg: linear-gradient(135deg, #2a3040 0%, #1e2535 100%);
+    --disabled-text: #64748b;
+    --banner-bg: linear-gradient(135deg, #3d2800 0%, #2d1f00 100%);
+    --banner-text: #fbbf24;
+    --banner-sub: #f59e0b;
+    --log-success: #4ade80;
+    --log-error: #f87171;
+    --stage-pending-bg: rgba(29, 40, 74, 0.4);
+    --stage-pending-border: rgba(255, 255, 255, 0.08);
+    --stage-pending-text: #64748b;
+    --dash-card-bg: #1d284a;
+    --dash-card-border: rgba(255, 255, 255, 0.08);
+    --dash-card-value: #e2e8f0;
+    --select-bg: #1a2535;
+    --badge-text-muted: #94a3b8;
+    --link-text: #e2e8f0;
+    --file-status-empty-bg: rgba(255, 152, 0, 0.08);
+    --file-status-empty-text: #fbbf24;
+    --file-status-ok-bg: rgba(76, 175, 80, 0.08);
+    --file-status-ok-text: #4ade80;
+    --detail-header-bg: rgba(26, 119, 51, 0.15);
+    --detail-border: rgba(255, 255, 255, 0.06);
+    --detail-label: #64748b;
+    --detail-value: #e2e8f0;
+    --topbar-bg: rgba(16, 27, 36, 0.85);
+    --topbar-border: rgba(255, 255, 255, 0.06);
+    --topbar-title: #f1f5f9;
+    --topbar-greeting: #94a3b8;
+    --topbar-greeting-strong: #e2e8f0;
+    --hero-title: #f8fafc;
+    --hero-subtitle: #64748b;
+    --section-label-color: #475569;
+    --footer-bg: transparent;
+    --footer-border: rgba(255, 255, 255, 0.04);
+    --footer-text: #334155;
+    --idx-card-bg: rgba(30, 34, 46, 0.6);
+    --idx-card-border: rgba(255, 255, 255, 0.06);
+    --idx-card-hover-bg: rgba(30, 34, 46, 0.9);
+    --idx-card-hover-border: rgba(255, 255, 255, 0.1);
+    --idx-card-title: #f1f5f9;
+    --idx-card-desc: #64748b;
+    --idx-card-action: #475569;
+    --idx-modal-bg: #1e2230;
+    --idx-modal-border: rgba(255, 255, 255, 0.08);
+    --version-bg: rgba(255, 255, 255, 0.08);
+    --version-text: #64748b;
+    --avatar-gradient: linear-gradient(135deg, #1a7733, #007ab1);
+}
+
+/* ==================== SMOOTH TRANSITION ==================== */
+body,
+.card,
+.console-container,
+.console-box,
+.header,
+.container,
+.modal-content,
+.modal-card,
+.tracking-row,
+.stage-cell,
+.file-status,
+.dash-card,
+.banner-pendente,
+input,
+select,
+textarea,
+.topbar,
+.module-card,
+.page-wrapper {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ==================== DARK MODE OVERRIDES ==================== */
+/* These use [data-theme="dark"] for higher specificity than inline <style> */
+
+[data-theme="dark"] body {
+    background: linear-gradient(135deg, var(--bg-body) 0%, var(--bg-body-end) 100%);
+    color: var(--text-primary);
+}
+
+/* CARDS */
+[data-theme="dark"] .card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+[data-theme="dark"] .card:hover {
+    box-shadow: 0 12px 32px var(--shadow-hover) !important;
+}
+
+[data-theme="dark"] .card h3 {
+    color: inherit;
+}
+
+/* CONSOLE */
+[data-theme="dark"] .console-container {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+[data-theme="dark"] .console-header {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .console-box {
+    background: var(--console-bg) !important;
+    color: var(--console-text) !important;
+    border-color: var(--console-border) !important;
+}
+
+[data-theme="dark"] .console-box::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+[data-theme="dark"] .console-box::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+}
+
+[data-theme="dark"] .log-success {
+    color: var(--log-success) !important;
+}
+
+[data-theme="dark"] .log-error {
+    color: var(--log-error) !important;
+}
+
+/* INPUTS / FORMS */
+[data-theme="dark"] .input-group input,
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .input-style,
+[data-theme="dark"] .select-style,
+[data-theme="dark"] textarea {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] .input-group input::placeholder,
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .input-style::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: var(--input-placeholder) !important;
+}
+
+[data-theme="dark"] .input-group input:focus,
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .input-style:focus,
+[data-theme="dark"] .select-style:focus,
+[data-theme="dark"] textarea:focus {
+    border-color: #007ab1 !important;
+    box-shadow: 0 0 12px rgba(0, 122, 177, 0.2) !important;
+}
+
+[data-theme="dark"] .input-group label,
+[data-theme="dark"] .form-group label {
+    color: var(--text-secondary) !important;
+}
+
+/* FILE STATUS */
+[data-theme="dark"] .file-status {
+    background: var(--file-status-ok-bg) !important;
+    color: var(--file-status-ok-text) !important;
+    border-left-color: var(--file-status-ok-text) !important;
+}
+
+[data-theme="dark"] .file-status.empty {
+    background: var(--file-status-empty-bg) !important;
+    color: var(--file-status-empty-text) !important;
+    border-left-color: var(--file-status-empty-text) !important;
+}
+
+/* TRACKING ROWS */
+[data-theme="dark"] .tracking-row {
+    background: var(--row-bg) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .tracking-row:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .row-remessa,
+[data-theme="dark"] .row-material {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .row-weight,
+[data-theme="dark"] .row-subinfo {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .stage-label {
+    color: var(--text-muted) !important;
+}
+
+/* STAGE CELLS */
+[data-theme="dark"] .stage-cell.status-pending {
+    background: var(--stage-pending-bg) !important;
+    border-color: var(--stage-pending-border) !important;
+    color: var(--stage-pending-text) !important;
+}
+
+[data-theme="dark"] .stage-cell.status-pending .stage-value {
+    color: var(--stage-pending-text) !important;
+}
+
+[data-theme="dark"] .stage-cell.status-running {
+    background: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .stage-cell.status-success {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .stage-cell.status-success .stage-value {
+    color: #34d399 !important;
+}
+
+[data-theme="dark"] .stage-cell.status-error {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="dark"] .stage-cell.status-error .stage-value {
+    color: #f87171 !important;
+}
+
+/* MODALS */
+[data-theme="dark"] .modal-overlay {
+    background: var(--modal-overlay) !important;
+}
+
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-card {
+    background: var(--modal-bg) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .modal-header {
+    color: inherit;
+}
+
+/* TABLES */
+[data-theme="dark"] table thead tr {
+    background: var(--table-header-bg) !important;
+    border-color: var(--table-border) !important;
+    color: var(--table-header-text) !important;
+}
+
+[data-theme="dark"] table thead th {
+    color: var(--table-header-text) !important;
+}
+
+[data-theme="dark"] table tbody tr {
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] table tbody td {
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* BUTTONS DISABLED */
+[data-theme="dark"] .btn:disabled {
+    background: var(--disabled-bg) !important;
+    color: var(--disabled-text) !important;
+    box-shadow: none !important;
+}
+
+/* BANNER PENDENTE */
+[data-theme="dark"] .banner-pendente {
+    background: var(--banner-bg) !important;
+    border-left-color: #f59e0b !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .banner-pendente .info {
+    color: var(--banner-text) !important;
+}
+
+/* DASHBOARD CARDS */
+[data-theme="dark"] .dash-card {
+    background: var(--dash-card-bg) !important;
+    border-color: var(--dash-card-border) !important;
+}
+
+[data-theme="dark"] .dash-card .value {
+    color: var(--dash-card-value) !important;
+}
+
+[data-theme="dark"] .dash-card .label {
+    color: var(--text-secondary) !important;
+}
+
+/* DETAIL SECTIONS (Entreposto) */
+[data-theme="dark"] .details-header {
+    background: var(--detail-header-bg) !important;
+}
+
+[data-theme="dark"] .info-item {
+    border-bottom-color: var(--detail-border) !important;
+}
+
+[data-theme="dark"] .info-label {
+    color: var(--detail-label) !important;
+}
+
+[data-theme="dark"] .info-value {
+    color: var(--detail-value) !important;
+}
+
+/* TOP ITEMS (Estoque) */
+[data-theme="dark"] .top-items {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .top-items h4 {
+    color: var(--text-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .item-row {
+    color: var(--text-primary) !important;
+}
+
+/* LOADER */
+[data-theme="dark"] .loader {
+    border-color: var(--border-color) !important;
+}
+
+/* BTN CONFIG (Entreposto) */
+[data-theme="dark"] .btn-config {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-config:hover {
+    background: var(--bg-card) !important;
+}
+
+/* BTN SECONDARY (generic gray/outline) */
+[data-theme="dark"] .btn-secondary {
+    background: var(--bg-surface-alt) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: var(--bg-card) !important;
+}
+
+/* FILTER TABS (Entreposto processamento) */
+[data-theme="dark"] .filter-tab {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .filter-tab:hover {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .btn-mini {
+    background: var(--bg-surface-alt) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* MULTIPLIER TABLE */
+[data-theme="dark"] .multiplier-table th {
+    background: var(--table-header-bg) !important;
+    color: var(--table-header-text) !important;
+    border-bottom-color: var(--table-border) !important;
+}
+
+[data-theme="dark"] .multiplier-table td {
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .input-multiplo {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+}
+
+/* CONFIG GRID areas */
+[data-theme="dark"] .config-grid .form-group label {
+    color: var(--text-secondary) !important;
+}
+
+/* INLINE STYLE OVERRIDES for common patterns */
+/* These use !important to override inline style="" attributes */
+[data-theme="dark"] .card p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] #status-rpa {
+    border-color: var(--border-color);
+}
+
+/* ALERT FRETE */
+[data-theme="dark"] .alert-frete {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Misc placeholder/empty states */
+[data-theme="dark"] #processos-placeholder,
+[data-theme="dark"] #colunas-info {
+    color: var(--text-muted) !important;
+}
+
+/* ==================== THEME TOGGLE BUTTON ==================== */
+.theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.theme-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Show/hide icons based on theme */
+[data-theme="light"] .theme-toggle .icon-sun {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle .icon-moon {
+    display: block;
+}
+
+[data-theme="dark"] .theme-toggle .icon-sun {
+    display: block;
+}
+
+[data-theme="dark"] .theme-toggle .icon-moon {
+    display: none;
+}
+
+/* INDEX.HTML specific: toggle on light topbar */
+.topbar .theme-toggle {
+    border-color: var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.topbar .theme-toggle:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* ==================== RADIO / CHECKBOX DARK MODE ==================== */
+[data-theme="dark"] input[type="radio"],
+[data-theme="dark"] input[type="checkbox"] {
+    accent-color: #007ab1;
+}
+
+/* ==================== SELECT OPTION DARK MODE ==================== */
+[data-theme="dark"] select option,
+[data-theme="dark"] select optgroup {
+    background: var(--input-bg);
+    color: var(--input-text);
+}
+
+/* ==================== INDEX.HTML BODY OVERRIDE ==================== */
+/* index.html uses body::before for mesh gradient */
+[data-theme="light"] body::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(26, 119, 51, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(0, 122, 177, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(133, 188, 68, 0.04) 0%, transparent 50%);
+}

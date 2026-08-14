@@ -408,7 +408,7 @@ def rodar_criar_of_cabotagem(usuario, senha, containers_selecionados):
                 valor_frete=c["valor_container"],
                 usuario=usuario,
                 senha=senha,
-                headless=False
+                headless=True
             )
             of_num = _extrair_numero_of(res_of)
             

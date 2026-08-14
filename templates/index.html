@@ -1,116 +1,243 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPA Logistica - Início V.1.2.2</title>
+    <script>
+        // Prevent flash of wrong theme
+        (function () {
+            var theme = localStorage.getItem('rpa-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-            color: #2c3e50;
-            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-body) 0%, var(--bg-body-end) 100%);
+            color: var(--text-primary);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow-x: hidden;
         }
 
-        .container {
-            max-width: 900px;
+        /* Animated background mesh */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 30px 20px;
+            height: 100%;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(26, 119, 51, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(0, 122, 177, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 60% 80%, rgba(133, 188, 68, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
         }
 
-        /* HEADER */
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            animation: fadeInDown 0.8s ease-out;
+        [data-theme="dark"] body::before {
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(26, 119, 51, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(0, 122, 177, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 60% 80%, rgba(133, 188, 68, 0.05) 0%, transparent 50%);
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 40px;
+            border-bottom: 1px solid var(--topbar-border);
+            backdrop-filter: blur(20px);
+            background: var(--topbar-bg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a7733, #007ab1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .topbar-logo svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--topbar-title);
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-version {
+            font-size: 11px;
+            color: var(--version-text);
+            font-weight: 500;
+            background: var(--version-bg);
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 8px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .topbar-greeting {
+            font-size: 13px;
+            color: var(--topbar-greeting);
+            font-weight: 500;
+        }
+
+        .topbar-greeting strong {
+            color: var(--topbar-greeting-strong);
+            font-weight: 600;
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--avatar-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            padding: 40px 40px 60px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease-out;
         }
 
         @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-30px);
+                transform: translateY(-20px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        .header h1 {
-            font-size: 42px;
-            font-weight: 700;
-            color: #1a3a52;
-            margin-bottom: 15px;
-            letter-spacing: -1px;
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--hero-title);
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
         }
 
-        .header h1 .nome {
-            color: #0066cc;
-            background: -webkit-linear-gradient(45deg, #0066cc, #00d4ff);
+        .hero h1 .accent {
+            background: linear-gradient(135deg, #1a7733, #85bc44);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .header p {
-            font-size: 18px;
-            color: #5a6c7d;
-            font-weight: 500;
+        .hero p {
+            font-size: 15px;
+            color: var(--hero-subtitle);
+            font-weight: 400;
         }
 
-        /* GRID DE MÓDULOS */
+        /* SECTION LABEL */
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--section-label-color);
+            margin-bottom: 20px;
+            padding-left: 2px;
+        }
+
+        /* MODULES GRID */
         .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            padding: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            flex: 1;
         }
 
-        /* CARDS DE MÓDULO */
+        /* MODULE CARD */
         .module-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 40px 30px;
-            text-align: center;
+            background: var(--idx-card-bg);
+            border: 1px solid var(--idx-card-border);
+            border-radius: 16px;
+            padding: 28px 24px;
             text-decoration: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 16px;
             cursor: pointer;
-            animation: fadeInUp 0.8s ease-out both;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out both;
         }
 
-        .module-card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .module-card:nth-child(2) {
-            animation-delay: 0.3s;
-        }
+        .module-card:nth-child(1) { animation-delay: 0.05s; }
+        .module-card:nth-child(2) { animation-delay: 0.1s; }
+        .module-card:nth-child(3) { animation-delay: 0.15s; }
+        .module-card:nth-child(4) { animation-delay: 0.2s; }
+        .module-card:nth-child(5) { animation-delay: 0.25s; }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(24px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -120,120 +247,193 @@
         .module-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, #0066cc, #00d4ff);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.4s ease;
-        }
-
-        .module-card.estoque::before {
-            background: linear-gradient(90deg, #ff9800, #ffc107);
-        }
-
-        .module-card.entreposto::before {
-            background: linear-gradient(90deg, #4caf50, #8bc34a);
-        }
-
-        .module-card.cabotagem::before {
-            background: linear-gradient(90deg, #8e2de2, #4a00e0);
+            inset: 0;
+            border-radius: 16px;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent 30%, rgba(26, 119, 51, 0.3) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         .module-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 102, 204, 0.15);
-        }
-
-        .module-card.estoque:hover {
-            box-shadow: 0 20px 40px rgba(255, 152, 0, 0.15);
-        }
-
-        .module-card.entreposto:hover {
-            box-shadow: 0 20px 40px rgba(76, 175, 80, 0.15);
-        }
-
-        .module-card.cabotagem:hover {
-            box-shadow: 0 20px 40px rgba(142, 45, 226, 0.15);
+            transform: translateY(-4px);
+            background: var(--idx-card-hover-bg);
+            border-color: var(--idx-card-hover-border);
+            box-shadow: 0 16px 48px var(--shadow-hover), 0 0 0 1px rgba(26, 119, 51, 0.1);
         }
 
         .module-card:hover::before {
-            transform: scaleX(1);
+            opacity: 1;
         }
 
-        .module-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            background: -webkit-linear-gradient(45deg, #1a3a52, #0066cc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        /* Card color variants */
+        .module-card.expedicao:hover {
+            box-shadow: 0 16px 48px rgba(0, 122, 177, 0.15), 0 0 0 1px rgba(0, 122, 177, 0.15);
+        }
+        .module-card.expedicao::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(0, 122, 177, 0.4) 100%);
+        }
+
+        .module-card.estoque:hover {
+            box-shadow: 0 16px 48px rgba(248, 98, 57, 0.15), 0 0 0 1px rgba(248, 98, 57, 0.15);
+        }
+        .module-card.estoque::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(248, 98, 57, 0.4) 100%);
+        }
+
+        .module-card.entreposto:hover {
+            box-shadow: 0 16px 48px rgba(26, 119, 51, 0.15), 0 0 0 1px rgba(26, 119, 51, 0.15);
+        }
+        .module-card.entreposto::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(26, 119, 51, 0.4) 100%);
+        }
+
+        .module-card.cabotagem:hover {
+            box-shadow: 0 16px 48px rgba(29, 40, 74, 0.2), 0 0 0 1px rgba(29, 40, 74, 0.2);
+        }
+        .module-card.cabotagem::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(29, 40, 74, 0.4) 100%);
+        }
+
+        .module-card.sto:hover {
+            box-shadow: 0 16px 48px rgba(248, 98, 57, 0.12), 0 0 0 1px rgba(248, 98, 57, 0.12);
+        }
+        .module-card.sto::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(248, 98, 57, 0.35) 100%);
+        }
+
+        /* Card top row */
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .module-icon-wrap {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: transform 0.3s ease;
         }
 
-        .module-card.estoque .module-icon {
-            background: -webkit-linear-gradient(45deg, #e65100, #ff9800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .module-card.entreposto .module-icon {
-            background: -webkit-linear-gradient(45deg, #1b5e20, #4caf50);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .module-card.cabotagem .module-icon {
-            background: -webkit-linear-gradient(45deg, #4a00e0, #8e2de2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .module-card:hover .module-icon {
+        .module-card:hover .module-icon-wrap {
             transform: scale(1.1);
         }
 
-        .module-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 10px;
+        .module-icon-wrap svg {
+            width: 24px;
+            height: 24px;
         }
 
-        .module-desc {
-            font-size: 14px;
-            color: #7f8c8d;
-            line-height: 1.5;
+        /* Icon color variants - VALGROUP colors */
+        .module-card.expedicao .module-icon-wrap {
+            background: rgba(0, 122, 177, 0.12);
+            color: #007ab1;
+        }
+        .module-card.estoque .module-icon-wrap {
+            background: rgba(248, 98, 57, 0.12);
+            color: #f86239;
+        }
+        .module-card.entreposto .module-icon-wrap {
+            background: rgba(26, 119, 51, 0.12);
+            color: #1a7733;
+        }
+        .module-card.cabotagem .module-icon-wrap {
+            background: rgba(29, 40, 74, 0.15);
+            color: #007ab1;
+        }
+        .module-card.sto .module-icon-wrap {
+            background: rgba(255, 182, 0, 0.12);
+            color: #ffb600;
         }
 
+        /* Badge */
         .badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #ffe0b2;
-            color: #e65100;
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 10px;
+            font-weight: 600;
             padding: 4px 10px;
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .badge.ativo {
+            background: rgba(26, 119, 51, 0.12);
+            color: #1a7733;
         }
 
         .badge.em-desenvolvimento {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: rgba(255, 182, 0, 0.12);
+            color: #ffb600;
         }
 
-        /* MODAL */
+        /* Card text */
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .module-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--idx-card-title);
+            letter-spacing: -0.2px;
+        }
+
+        .module-desc {
+            font-size: 13px;
+            color: var(--idx-card-desc);
+            line-height: 1.55;
+            font-weight: 400;
+        }
+
+        /* Card action arrow */
+        .card-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: auto;
+            padding-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--idx-card-action);
+            transition: all 0.3s ease;
+        }
+
+        .card-action svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        .module-card:hover .card-action {
+            color: var(--text-secondary);
+        }
+
+        .module-card:hover .card-action svg {
+            transform: translateX(4px);
+        }
+
+        .module-card.expedicao:hover .card-action { color: #007ab1; }
+        .module-card.estoque:hover .card-action { color: #f86239; }
+        .module-card.entreposto:hover .card-action { color: #1a7733; }
+        .module-card.cabotagem:hover .card-action { color: #007ab1; }
+        .module-card.sto:hover .card-action { color: #ffb600; }
+
+        /* ==================== MODAL ==================== */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            inset: 0;
+            background: var(--modal-overlay);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -241,7 +441,7 @@
             visibility: hidden;
             transition: all 0.3s ease;
             z-index: 1000;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
         .modal-overlay.active {
@@ -250,149 +450,374 @@
         }
 
         .modal-content {
-            background: white;
-            padding: 40px;
+            background: var(--idx-modal-bg);
+            border: 1px solid var(--idx-modal-border);
+            padding: 36px;
             border-radius: 20px;
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
-            transform: scale(0.9);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
         }
 
         .modal-overlay.active .modal-content {
-            transform: scale(1);
+            transform: scale(1) translateY(0);
         }
 
-        .modal-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
+        .modal-icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 98, 57, 0.12);
+            color: #f86239;
+        }
+
+        .modal-icon-wrap svg {
+            width: 28px;
+            height: 28px;
         }
 
         .modal-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 15px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
         }
 
         .modal-desc {
-            color: #7f8c8d;
-            margin-bottom: 25px;
-            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .modal-btn {
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 600;
+            border: none;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+            transition: all 0.25s ease;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
         }
 
-        .modal-btn:hover {
+        .modal-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #f86239, #e04e28);
+            color: white;
+            box-shadow: 0 4px 20px rgba(248, 98, 57, 0.25);
+        }
+
+        .modal-btn.primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+            box-shadow: 0 8px 28px rgba(248, 98, 57, 0.35);
         }
 
-        /* RESPONSIVIDADE */
+        .modal-btn.secondary {
+            background: linear-gradient(135deg, #007ab1, #005f8a);
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 122, 177, 0.25);
+        }
+
+        .modal-btn.secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 122, 177, 0.35);
+        }
+
+        .modal-btn.ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            margin-top: 6px;
+            padding: 10px 20px;
+        }
+
+        .modal-btn.ghost:hover {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+        }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            padding: 20px 40px;
+            border-top: 1px solid var(--footer-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--footer-text);
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #1a7733;
+            box-shadow: 0 0 8px rgba(26, 119, 51, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* RESPONSIVENESS */
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 32px;
+            .topbar {
+                padding: 12px 20px;
+            }
+
+            .main-content {
+                padding: 24px 20px 40px;
+            }
+
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
 
             .module-card {
-                padding: 30px 20px;
+                padding: 22px 20px;
+            }
+
+            .footer {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .modules-grid {
+                grid-template-columns: repeat(5, 1fr);
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <!-- HEADER -->
-        <div class="header">
-            <h1>
-                <span id="saudacao-texto">Carregando...</span>,
-                <span class="nome" id="saudacao-nome"></span> 👋
-            </h1>
-            <p>Selecione o módulo que deseja acessar</p>
-        </div>
+    <div class="page-wrapper">
 
-        <!-- GRID DE MÓDULOS -->
-        <div class="modules-grid">
-            <!-- EXPEDIÇÃO -->
-            <a href="/expedicao" class="module-card">
-                <div class="module-icon">🚛</div>
-                <h2 class="module-title">Expedição</h2>
-                <p class="module-desc">Automações para Picking, Seleção de UC, Saída de Mercadorias e geração de
-                    etiquetas.</p>
-            </a>
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="topbar-brand">
+                <div class="topbar-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                </div>
+                <span class="topbar-title">RPA Logística</span>
+                <span class="topbar-version">v1.2.2</span>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-greeting">
+                    <span id="saudacao-texto">Carregando...</span>, <strong id="saudacao-nome"></strong>
+                </span>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+                    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+                <div class="user-avatar" id="user-avatar">?</div>
+            </div>
+        </header>
 
-            <!-- ESTOQUE -->
-            <div class="module-card estoque" onclick="abrirModalSelecaoEstoque()">
-                <div class="module-icon">📦</div>
-                <h2 class="module-title">Estoque</h2>
-                <p class="module-desc">Automações para Inventário, Packlist, Transferências e gestão de materiais.</p>
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- HERO -->
+            <div class="hero">
+                <h1>Painel de <span class="accent">Automações</span></h1>
+                <p>Selecione o módulo que deseja acessar para iniciar a automação</p>
             </div>
 
-            <!-- ENTREPOSTO -->
-            <a href="/entreposto" class="module-card entreposto">
-                <div class="module-icon">🏢</div>
-                <h2 class="module-title">Entreposto</h2>
-                <p class="module-desc">Automações e controles para processos de Entreposto.</p>
-            </a>
+            <!-- SECTION LABEL -->
+            <div class="section-label">Módulos Disponíveis</div>
 
-            <!-- CABOTAGEM -->
-            <a href="/cabotagem" class="module-card cabotagem">
-                <div class="module-icon">🚢</div>
-                <h2 class="module-title">Cabotagem</h2>
-                <p class="module-desc">Automações e controles para processos de Cabotagem.</p>
-            </a>
-        </div>
+            <!-- MODULES GRID -->
+            <div class="modules-grid">
+
+                <!-- EXPEDIÇÃO -->
+                <a href="/expedicao" class="module-card expedicao">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">Expedição</h2>
+                        <p class="module-desc">Picking, Seleção de UC, Saída de Mercadorias e etiquetas.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </a>
+
+                <!-- ESTOQUE -->
+                <div class="module-card estoque" onclick="abrirModalSelecaoEstoque()">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">Estoque</h2>
+                        <p class="module-desc">Inventário, Packlist, Transferências e gestão de materiais.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </div>
+
+                <!-- ENTREPOSTO -->
+                <a href="/entreposto" class="module-card entreposto">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">Entreposto</h2>
+                        <p class="module-desc">Automações e controles para processos de Entreposto.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </a>
+
+                <!-- CABOTAGEM -->
+                <a href="/cabotagem" class="module-card cabotagem">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">Cabotagem</h2>
+                        <p class="module-desc">Automações e controles para processos de Cabotagem.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </a>
+
+                <!-- STO -->
+                <a href="/sto" class="module-card sto">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">STO - Transferências</h2>
+                        <p class="module-desc">Automações e controles para STO - Transferências de Venda.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </a>
+
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-status">
+                <div class="status-dot"></div>
+                <span>Sistema operacional</span>
+            </div>
+            <span>RPA Logística © 2026</span>
+        </footer>
     </div>
 
     <!-- MODAL SELEÇÃO DE ESTOQUE -->
     <div class="modal-overlay" id="modal-selecao-estoque">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-icon">📦</div>
+        <div class="modal-content">
+            <div class="modal-icon-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                </svg>
+            </div>
             <h3 class="modal-title">Módulo de Estoque</h3>
             <p class="modal-desc">Selecione o tipo de automação que deseja acessar:</p>
 
-            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
-                <a href="/estoque" class="modal-btn"
-                    style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    📊 Automações com Planilha
+            <div class="modal-actions">
+                <a href="/estoque" class="modal-btn primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M11.25 12h.008v.008h-.008V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                    Automações com Planilha
                 </a>
-                <a href="/estoque_sem_planilha" class="modal-btn"
-                    style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #0066cc, #005bb5); box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);">
-                    ⚡ Automações sem Planilha
+                <a href="/estoque_sem_planilha" class="modal-btn secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>
+                    Automações sem Planilha
                 </a>
+                <button class="modal-btn ghost" onclick="fecharModalSelecaoEstoque()">Cancelar</button>
             </div>
-
-            <button class="modal-btn"
-                style="margin-top: 20px; background: transparent; color: #7f8c8d; box-shadow: none; border: 1px solid #bdc3c7; padding: 8px 20px;"
-                onclick="fecharModalSelecaoEstoque()">Cancelar</button>
         </div>
     </div>
 
     <!-- MODAL ENTREPOSTO -->
     <div class="modal-overlay" id="modal-entreposto">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-icon">🏢</div>
+        <div class="modal-content">
+            <div class="modal-icon-wrap" style="background: rgba(26, 119, 51, 0.12); color: #1a7733;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+                </svg>
+            </div>
             <h3 class="modal-title">Módulo de Entreposto</h3>
             <p class="modal-desc">Esta funcionalidade está em fase de planejamento e desenvolvimento.</p>
-            <button class="modal-btn"
-                style="margin-top: 20px; background: linear-gradient(135deg, #4caf50, #45a049); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);"
+            <button class="modal-btn secondary" style="width: 100%; background: linear-gradient(135deg, #1a7733, #146128); box-shadow: 0 4px 20px rgba(26, 119, 51, 0.25);"
                 onclick="fecharModalEntreposto()">Entendido</button>
         </div>
     </div>
 
+    <script src="/static/theme.js"></script>
     <script>
         // ============== INICIALIZAÇÃO ==============
         function inicializar() {
@@ -402,11 +827,18 @@
                     // Saudação dinâmica
                     document.getElementById('saudacao-texto').innerText = data.saudacao;
                     document.getElementById('saudacao-nome').innerText = data.nome;
+
+                    // Avatar com iniciais
+                    if (data.nome) {
+                        const iniciais = data.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                        document.getElementById('user-avatar').innerText = iniciais;
+                    }
                 })
                 .catch(err => {
                     console.error('Erro ao inicializar:', err);
                     document.getElementById('saudacao-texto').innerText = "Bem-vindo";
                     document.getElementById('saudacao-nome').innerText = "Usuário";
+                    document.getElementById('user-avatar').innerText = "U";
                 });
         }
 

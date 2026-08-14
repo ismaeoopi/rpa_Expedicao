@@ -56,7 +56,7 @@ def rodar_criacao_of_cabotagem_playwright(
     valor_frete: float, 
     usuario: str, 
     senha: str,
-    headless: bool = False
+    headless: bool = True
 ) -> str:
     """
     Executa a criação de Ordem de Frete (OF) para Cabotagem no SAP Fiori via Playwright.
@@ -80,7 +80,7 @@ def rodar_criacao_of_cabotagem_playwright(
     
     try:
         playwright_instance = sync_playwright().start()
-        # Executa no modo configurado (headless por padrão, ou headed para debug/visualização)
+        # Executa no modo oculto (headless=True por padrão, ou False para debug/visualização)
         browser = playwright_instance.chromium.launch(headless=headless)
         context = browser.new_context()
         page = context.new_page()
@@ -276,12 +276,12 @@ def rodar_criacao_of_cabotagem_playwright(
                         except Exception as search_err:
                                 log_sys.write(f"⚠️ Erro ao executar busca no SAP para remessa {rem_str}: {search_err}")
 
-                    if encontrada:
-                        remessas_confirmadas_early.append(rem_str)
-                        log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
-                    else:
-                        remessas_ausentes_early.append(rem_str)
-                        log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
+                if encontrada:
+                    remessas_confirmadas_early.append(rem_str)
+                    log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
+                else:
+                    remessas_ausentes_early.append(rem_str)
+                    log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
 
                 aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
 

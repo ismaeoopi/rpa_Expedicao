@@ -40,7 +40,8 @@ else:
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
 template_folder = os.path.join(base_dir, 'templates')
-app = Flask(__name__, template_folder=template_folder)
+static_folder = os.path.join(base_dir, 'static')
+app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 
 # --- ROTAS DA API FLASK PARA INTEGRAÇÃO FRONTEND ---
 @app.route('/')
@@ -74,6 +75,11 @@ def cabotagem():
 @app.route('/cabotagem_processamento')
 def cabotagem_processamento():
     return render_template('cabotagem_processamento.html')
+
+@app.route('/sto')
+def sto():
+    return render_template('sto.html')
+
 
 
 @app.route('/api/inicializar', methods=['GET'])

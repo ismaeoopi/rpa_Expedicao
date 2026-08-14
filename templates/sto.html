@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - STO - Transferências de Venda</title>
+    <script>(function(){var t=localStorage.getItem('rpa-theme')||'light';document.documentElement.setAttribute('data-theme',t);})()</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            color: #2c3e50;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #3a1c38 0%, #1f0c1e 100%);
+            padding: 40px 30px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border-left: 6px solid #e91e63;
+            box-shadow: 0 8px 32px rgba(233, 30, 99, 0.15);
+            animation: slideInDown 0.6s ease-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e91e63;
+        }
+
+        .header h1 .nome {
+            color: #ff4081;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: #d1b2cb;
+            margin: 0;
+        }
+
+        .btn-voltar {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-voltar:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* CARD PRINCIPAL */
+        .card {
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(233, 30, 99, 0.15);
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out;
+            margin-bottom: 30px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+            background: -webkit-linear-gradient(45deg, #c2185b, #e91e63);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            font-size: 15px;
+            color: #7f8c8d;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* CONSOLE */
+        .console-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(233, 30, 99, 0.15);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .console-box {
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 12px;
+            color: #2c3e50;
+            line-height: 1.6;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid rgba(233, 30, 99, 0.15);
+        }
+
+        .console-box p {
+            margin: 4px 0;
+            word-break: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span id="saudacao-texto">Carregando</span>
+                    <span class="nome" id="saudacao-nome">...</span>
+                </h1>
+                <p>🔄 STO - Transferências de Venda</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema"><svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+                <a href="/" class="btn-voltar">← Voltar ao Início</a>
+            </div>
+        </div>
+
+        <!-- CARD PRINCIPAL -->
+        <div class="card">
+            <div class="card-icon">🔄</div>
+            <h2>STO - Transferências de Venda</h2>
+            <p>Módulo de STO adicionado com sucesso. Opção pronta para receber as futuras automações e funcionalidades.</p>
+        </div>
+
+        <!-- CONSOLE DE EXECUÇÃO -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Execução (RPA Logs)</span>
+                <span id="status-rpa" style="background: rgba(76, 175, 80, 0.15); padding: 4px 10px; border-radius: 4px; color: #4caf50; font-weight: 700;">Pronto</span>
+            </div>
+            <div class="console-box" id="console-box"></div>
+        </div>
+    </div>
+
+    <script>
+        function inicializar() {
+            fetch('/api/inicializar')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('saudacao-texto').innerText = data.saudacao;
+                    document.getElementById('saudacao-nome').innerText = data.nome;
+                    adicionarLog("✅ Aba STO - Transferências de Venda pronta.");
+                })
+                .catch(err => {
+                    console.error('Erro ao inicializar:', err);
+                    adicionarLog("❌ Erro ao conectar com o servidor.");
+                });
+        }
+
+        function adicionarLog(msg) {
+            const box = document.getElementById('console-box');
+            const p = document.createElement('p');
+            p.innerText = msg;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        window.addEventListener('load', inicializar);
+    </script>
+    <script src="/static/theme.js"></script>
+</body>
+
+</html>
