@@ -31,12 +31,12 @@
 
         /* HEADER COM SAUDAÇÃO DINÂMICA */
         .header {
-            background: linear-gradient(135deg, #1a3a52 0%, #0d2540 100%);
+            background: linear-gradient(135deg, #1d284a 0%, #101b24 100%);
             padding: 40px 30px;
             border-radius: 12px;
             margin-bottom: 35px;
-            border-left: 6px solid #00d4ff;
-            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+            border-left: 6px solid #007ab1;
+            box-shadow: 0 8px 32px rgba(0, 122, 177, 0.15);
             animation: slideInDown 0.6s ease-out;
             display: flex;
             justify-content: space-between;
@@ -59,18 +59,18 @@
             font-size: 32px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #0066cc;
+            color: #007ab1;
             text-shadow: none;
         }
 
         .header h1 .nome {
-            color: #ff6600;
+            color: #85bc44;
             font-weight: 700;
         }
 
         .header p {
             font-size: 15px;
-            color: #5a6c7d;
+            color: #94a3b8;
             margin: 0;
         }
 
@@ -101,11 +101,11 @@
 
         /* CARDS */
         .card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            background: var(--bg-card);
             padding: 28px;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 102, 204, 0.15);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            border: 1px solid var(--border-color);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             animation: fadeInUp 0.6s ease-out;
         }
@@ -124,15 +124,15 @@
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 32px rgba(0, 102, 204, 0.2);
-            border-color: rgba(0, 102, 204, 0.3);
+            box-shadow: 0 12px 32px var(--shadow-hover);
+            border-color: rgba(0, 122, 177, 0.3);
         }
 
         .card h3 {
             margin-bottom: 20px;
             font-size: 18px;
             font-weight: 600;
-            color: #0066cc;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -142,7 +142,7 @@
             content: '';
             width: 4px;
             height: 20px;
-            background: linear-gradient(180deg, #0066cc, #0052a3);
+            background: linear-gradient(180deg, #1a7733, #187733);
             border-radius: 2px;
         }
 
@@ -179,13 +179,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #0066ff 0%, #0050cc 100%);
+            background: linear-gradient(135deg, #1a7733 0%, #187733 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(26, 119, 51, 0.3);
         }
 
         .btn-primary:not(:disabled):hover {
-            box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
+            box-shadow: 0 6px 20px rgba(26, 119, 51, 0.5);
             transform: translateY(-2px);
         }
 
@@ -194,24 +194,24 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #007ab1 0%, #1d284a 100%);
             color: white;
             margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 122, 177, 0.3);
         }
 
         .btn-secondary:not(:disabled):hover {
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 6px 20px rgba(0, 122, 177, 0.5);
             transform: translateY(-2px);
         }
 
         /* BOTÕES DESATIVADOS */
         .btn:disabled {
-            background: linear-gradient(135deg, #3a3f50 0%, #2a2f40 100%);
-            color: #7a7f90;
+            background: var(--disabled-bg);
+            color: var(--disabled-text);
             cursor: not-allowed;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            opacity: 0.6;
+            box-shadow: none;
+            opacity: 0.65;
         }
 
         .btn:disabled::after {
@@ -226,17 +226,17 @@
             padding: 12px 14px;
             font-size: 13px;
             border-radius: 6px;
-            background: rgba(76, 175, 80, 0.1);
-            color: #4caf50;
-            border-left: 3px solid #4caf50;
+            background: var(--file-status-ok-bg);
+            color: var(--file-status-ok-text);
+            border-left: 3px solid var(--file-status-ok-text);
             word-break: break-all;
             font-weight: 500;
         }
 
         .file-status.empty {
-            background: rgba(255, 152, 0, 0.1);
-            color: #ff9800;
-            border-left-color: #ff9800;
+            background: var(--file-status-empty-bg);
+            color: var(--file-status-empty-text);
+            border-left-color: var(--file-status-empty-text);
         }
 
         /* INPUT GROUPS */
@@ -618,7 +618,7 @@
 
                 <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
                     <button class="btn btn-primary" id="btn-rodar-tudo" onclick="executarOpcao(100)"
-                        style="background: linear-gradient(135deg, #0066cc 0%, #002e5c 100%); font-size: 14px;"
+                        style="background: linear-gradient(135deg, #1a7733 0%, #1d284a 100%); font-size: 14px;"
                         disabled>
                         ⚡ Rodar Todas Etapas Seguidas
                     </button>

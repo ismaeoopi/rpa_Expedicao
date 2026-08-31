@@ -132,6 +132,34 @@ Use ferramentas como **NSIS** ou **Inno Setup** para criar um instalador .exe pr
 
 ---
 
+### Erro: "O Smart App Control bloqueou este aplicativo" (Windows 11)
+**Causa:** O Smart App Control (SAC) do Windows 11 bloqueia executáveis não assinados ou gerados localmente via PyInstaller que não possuem certificado de reputação na nuvem da Microsoft.
+
+**Soluções:**
+1. **Executar via Python diretamente (Sem usar .exe):**
+   Execute através do ambiente virtual:
+   ```cmd
+   .venv\Scripts\python.exe app.py
+   ```
+   *O `python.exe` oficial possui assinatura digital válida e nunca é bloqueado pelo Smart App Control.*
+
+2. **Desbloquear o arquivo .exe manualmente:**
+   - Clique com o botão direito no arquivo `app.exe` (ou `RPA_Expedicao.exe`) -> **Propriedades**.
+   - Na aba **Geral**, marque a opção **Desbloquear** (Unblock) no rodapé e clique em **Aplicar**.
+
+3. **Assinar o executável com SignTool (Ambiente Corporativo / Produção):**
+   Se você tiver um certificado digital de código (Code Signing Certificate) da empresa (PKI/Active Directory da Valgroup ou AC comercial):
+   ```cmd
+   signtool sign /f "seu_certificado.pfx" /p "senha" /tr http://timestamp.digicert.com /td sha256 "dist\app\app.exe"
+   ```
+
+4. **Ajustar / Desativar o Smart App Control no Windows:**
+   - Abra a **Segurança do Windows** -> **Controle de aplicativos e do navegador** -> **Configurações do Smart App Control**.
+   - Altere para modo de **Avaliação** ou **Desativado**.
+   *(Nota: Se desativar o SAC, o Windows só permite reativá-lo com uma reinstalação limpa do sistema).*
+
+---
+
 ## 🐛 Resolução de Problemas
 
 ### Erro: "Python não encontrado"

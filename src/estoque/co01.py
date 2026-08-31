@@ -5,7 +5,7 @@ from src.utils.excel_utils import valorFloatexcel
 centroP = "P716"
 depOrigem = "INT"
 
-def executar_co01_processo(session, acabado, semi, peso):
+def executar_co01_processo(session, acabado, semi, peso, tipo_ordem="zPIN"):
     """Lógica isolada da CO01 para não poluir o processoCompleto"""
     try:
         session.findById("wnd[0]").maximize()
@@ -13,7 +13,7 @@ def executar_co01_processo(session, acabado, semi, peso):
         session.findById("wnd[0]").sendVKey(0)
         session.findById("wnd[0]/usr/ctxtCAUFVD-MATNR").text = acabado
         session.findById("wnd[0]/usr/ctxtCAUFVD-WERKS").text = centroP
-        session.findById("wnd[0]/usr/ctxtAUFPAR-PP_AUFART").text = "zPIN"
+        session.findById("wnd[0]/usr/ctxtAUFPAR-PP_AUFART").text = str(tipo_ordem)
         session.findById("wnd[0]").sendVKey(0)
         if session.findById("wnd[0]/sbar").text != "":
             msgSbar = session.findById("wnd[0]/sbar").text

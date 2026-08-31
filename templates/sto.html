@@ -31,12 +31,12 @@
 
         /* HEADER */
         .header {
-            background: linear-gradient(135deg, #3a1c38 0%, #1f0c1e 100%);
+            background: linear-gradient(135deg, #1d284a 0%, #101b24 100%);
             padding: 40px 30px;
             border-radius: 12px;
             margin-bottom: 35px;
-            border-left: 6px solid #e91e63;
-            box-shadow: 0 8px 32px rgba(233, 30, 99, 0.15);
+            border-left: 6px solid #ffb600;
+            box-shadow: 0 8px 32px rgba(255, 182, 0, 0.15);
             animation: slideInDown 0.6s ease-out;
             display: flex;
             justify-content: space-between;
@@ -59,17 +59,17 @@
             font-size: 32px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #e91e63;
+            color: #ffb600;
         }
 
         .header h1 .nome {
-            color: #ff4081;
+            color: #f86239;
             font-weight: 700;
         }
 
         .header p {
             font-size: 15px;
-            color: #d1b2cb;
+            color: #94a3b8;
             margin: 0;
         }
 
@@ -92,11 +92,11 @@
 
         /* CARD PRINCIPAL */
         .card {
-            background: #ffffff;
+            background: var(--bg-card);
             padding: 40px 30px;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(233, 30, 99, 0.15);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            border: 1px solid var(--border-color);
             text-align: center;
             animation: fadeInUp 0.6s ease-out;
             margin-bottom: 30px;
@@ -117,7 +117,7 @@
         .card-icon {
             font-size: 56px;
             margin-bottom: 20px;
-            background: -webkit-linear-gradient(45deg, #c2185b, #e91e63);
+            background: -webkit-linear-gradient(45deg, #f86239, #ffb600);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -125,13 +125,13 @@
         .card h2 {
             font-size: 24px;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--text-primary);
             margin-bottom: 12px;
         }
 
         .card p {
             font-size: 15px;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
             line-height: 1.6;

@@ -80,6 +80,11 @@ def cabotagem_processamento():
 def sto():
     return render_template('sto.html')
 
+@app.route('/lancamento_frete')
+def lancamento_frete():
+    return render_template('lancamento_frete.html')
+
+
 
 
 @app.route('/api/inicializar', methods=['GET'])
@@ -757,7 +762,163 @@ def api_cabotagem_exportar_excel():
     )
 
 
+# --- ROTAS DA API DE LANÇAMENTO DE FRETES (P716) ---
+
+@app.route('/api/lancamento_frete/config', methods=['GET', 'POST'])
+def api_lancamento_frete_config():
+    if request.method == 'POST':
+        dados = request.json
+        salvar_configuracoes_env({
+            "PLANILHA_AUDITORIA_FRETE_P716": dados.get("auditoria"),
+            "PLANILHA_LANCAMENTO_FRETE_CORP_P716": dados.get("corporativo"),
+        })
+        return jsonify({"status": "success", "message": "Configurações de Frete P716 salvas com sucesso!"})
+    
+    # GET
+    load_dotenv(ENV_PATH)
+    return jsonify({
+        "auditoria": os.getenv("PLANILHA_AUDITORIA_FRETE_P716") or "",
+        "corporativo": os.getenv("PLANILHA_LANCAMENTO_FRETE_CORP_P716") or "",
+    })
+
+@app.route('/api/lancamento_frete/selecionar_anexo', methods=['GET'])
+def api_lancamento_frete_selecionar_anexo():
+    """
+    Abre a caixa de diálogo nativa do Windows para selecionar o arquivo Excel de anexo.
+    Retorna caminho_pasta (diretório) e arquivo (nome do arquivo).
+    """
+    caminho_completo = abrir_seletor_ficheiro_excel()
+    if caminho_completo:
+        pasta = os.path.dirname(caminho_completo) + os.sep
+        arquivo = os.path.basename(caminho_completo)
+        log_sys.write(f"📥 Arquivo de anexo selecionado: {arquivo}")
+        return jsonify({"caminho": pasta, "arquivo": arquivo, "caminho_completo": caminho_completo})
+    else:
+        log_sys.write("⚠️ Nenhum arquivo de anexo foi selecionado.")
+        return jsonify({"caminho": "", "arquivo": "", "caminho_completo": ""})
+
+@app.route('/api/lancamento_frete/carregar', methods=['POST'])
+def api_lancamento_frete_carregar():
+    try:
+        from src.expedicao.lancamento_frete_processador import obter_dados_lancamento_frete
+        fretes = obter_dados_lancamento_frete()
+        return jsonify({"status": "success", "fretes": fretes})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/lancamento_frete/dados_processamento', methods=['GET'])
+def api_lancamento_frete_dados_processamento():
+    from src.expedicao.lancamento_frete_processador import lancamento_frete_estado
+    return jsonify(lancamento_frete_estado)
+
+@app.route('/api/lancamento_frete/executar', methods=['POST'])
+def api_lancamento_frete_executar():
+    dados = request.json
+    ctes_selecionados = dados.get("ctes", [])
+    centro_custo = dados.get("centro_custo", "").strip()
+    caminho_anexo = dados.get("caminho_anexo", "")
+    arquivo_anexo = dados.get("arquivo_anexo", "")
+    
+    if not ctes_selecionados:
+        return jsonify({"status": "error", "message": "Nenhum CT-e selecionado."}), 400
+
+    if not centro_custo:
+        return jsonify({"status": "error", "message": "Centro de Custo é obrigatório."}), 400
+        
+    if log_sys.is_running:
+        return jsonify({"status": "error", "message": "Já existe uma automação em andamento."}), 400
+        
+    def worker():
+        log_sys.is_running = True
+        try:
+            from src.expedicao.lancamento_frete_processador import rodar_processamento_lancamento_frete
+            rodar_processamento_lancamento_frete(
+                ctes_selecionados=ctes_selecionados,
+                centro_custo=centro_custo,
+                caminho_anexo=caminho_anexo,
+                arquivo_anexo=arquivo_anexo,
+            )
+        except Exception as e:
+            log_sys.write(f"❌ Falha fatal no Lançamento de Fretes: {e}")
+        finally:
+            log_sys.is_running = False
+            
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
+    
+    return jsonify({"status": "started", "message": "Processamento de fretes iniciado!"})
+
+@app.route('/api/lancamento_frete/exportar_excel', methods=['GET'])
+def api_lancamento_frete_exportar_excel():
+    from src.expedicao.lancamento_frete_processador import montar_relatorio_lancamento_frete, lancamento_frete_estado
+    import pandas as pd
+
+    df = montar_relatorio_lancamento_frete(lancamento_frete_estado)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Fretes P716')
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='relatorio_fretes_p716.xlsx'
+    )
+
+@app.route('/api/lancamento_frete/status_rcs', methods=['GET'])
+def api_lancamento_frete_status_rcs():
+    """
+    Endpoint de polling para o Kanban de RCs.
+    Retorna o status de cada CT-e no processamento atual e novos logs.
+
+    Status mapeamento (interno → Kanban):
+        pending  → aguardando
+        running  → processando
+        success  → criada
+        error    → erro
+    """
+    from src.expedicao.lancamento_frete_processador import lancamento_frete_estado
+
+    _mapa_status = {
+        "pending":  "aguardando",
+        "running":  "processando",
+        "success":  "criada",
+        "error":    "erro",
+    }
+
+    selecionados = lancamento_frete_estado.get("selecionados", [])
+    status_etapas = lancamento_frete_estado.get("status_etapas", {})
+
+    resultados = []
+    for cte_key in selecionados:
+        etapa = status_etapas.get(cte_key, {})
+        status_interno = etapa.get("status", "pending")
+        kanban_status  = _mapa_status.get(status_interno, "aguardando")
+        rc_numero      = etapa.get("rc", "") or ""
+        erro_msg       = etapa.get("detalhe", "") if kanban_status == "erro" else ""
+
+        resultados.append({
+            "cte_key":   cte_key,
+            "status":    kanban_status,
+            "rc_numero": rc_numero,
+            "erro_msg":  erro_msg,
+        })
+
+    # Entrega novos logs acumulados (mesmo pipe usado pelo console principal)
+    novos_logs = log_sys.fetch_new()
+
+    return jsonify({
+        "resultados": resultados,
+        "rodando":    log_sys.is_running,
+        "logs":       novos_logs,
+    })
+
+
 if __name__ == '__main__':
+
     
     import socket
     import webbrowser

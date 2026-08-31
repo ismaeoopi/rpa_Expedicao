@@ -1,15 +1,14 @@
-/* ================================================================
-   THEME.CSS - Sistema de Tema Dark/Light - VALGROUP RPA Logística
-   ================================================================
-   Cores da Marca VALGROUP:
-   - Verde Principal: #1a7733
-   - Azul Principal:  #1d284a
-   - Azul Escuro:     #101b24
-   - Azul Vivo:       #007ab1
-   - Verde Lima:      #85bc44
-   - Laranja:         #f86239
-   - Amarelo:         #ffb600
-   ================================================================ */
+/* ==================== CORE BRAND TOKENS ==================== */
+:root {
+    --brand-verde-principal: #1a7733;
+    --brand-azul-principal:  #1d284a;
+    --brand-azul-escuro:     #101b24;
+    --brand-azul-vivo:       #007ab1;
+    --brand-verde-secundario:#187733;
+    --brand-verde-lima:      #85bc44;
+    --brand-laranja:         #f86239;
+    --brand-amarelo:         #ffb600;
+}
 
 /* ==================== CSS VARIABLES ==================== */
 :root,
@@ -22,15 +21,15 @@
     --text-primary: #1d284a;
     --text-secondary: #5a6c7d;
     --text-muted: #94a3b8;
-    --text-heading: #2c3e50;
+    --text-heading: #1d284a;
     --border-color: #e2e8f0;
     --border-subtle: rgba(0, 0, 0, 0.05);
     --input-bg: #ffffff;
     --input-border: #cbd5e1;
-    --input-text: #2c3e50;
+    --input-text: #1d284a;
     --input-placeholder: #95a5a6;
     --console-bg: #f8f9fa;
-    --console-text: #2c3e50;
+    --console-text: #1d284a;
     --console-border: rgba(0, 0, 0, 0.08);
     --shadow-color: rgba(0, 0, 0, 0.08);
     --shadow-hover: rgba(0, 0, 0, 0.12);
@@ -39,33 +38,33 @@
     --table-header-text: #475569;
     --table-border: #cbd5e1;
     --modal-bg: #ffffff;
-    --modal-overlay: rgba(15, 23, 42, 0.6);
+    --modal-overlay: rgba(16, 27, 36, 0.6);
     --scrollbar-track: #e9ecef;
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
     --disabled-bg: linear-gradient(135deg, #cfd8dc 0%, #b0bec5 100%);
     --disabled-text: #78909c;
-    --banner-bg: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
-    --banner-text: #e65100;
-    --banner-sub: #b26a00;
-    --log-success: #1b5e20;
-    --log-error: #ff3333;
+    --banner-bg: linear-gradient(135deg, rgba(255, 182, 0, 0.15) 0%, rgba(248, 98, 57, 0.15) 100%);
+    --banner-text: #f86239;
+    --banner-sub: #1d284a;
+    --log-success: #1a7733;
+    --log-error: #f86239;
     --stage-pending-bg: #f1f5f9;
     --stage-pending-border: #cbd5e1;
     --stage-pending-text: #94a3b8;
     --dash-card-bg: #f8f9fa;
     --dash-card-border: #e0e0e0;
-    --dash-card-value: #2c3e50;
+    --dash-card-value: #1d284a;
     --select-bg: #ffffff;
     --badge-text-muted: #64748b;
-    --link-text: #2c3e50;
-    --file-status-empty-bg: rgba(255, 152, 0, 0.1);
-    --file-status-empty-text: #ff9800;
-    --file-status-ok-bg: rgba(76, 175, 80, 0.1);
-    --file-status-ok-text: #4caf50;
-    --detail-header-bg: #e8f5e9;
+    --link-text: #1d284a;
+    --file-status-empty-bg: rgba(248, 98, 57, 0.1);
+    --file-status-empty-text: #f86239;
+    --file-status-ok-bg: rgba(26, 119, 51, 0.1);
+    --file-status-ok-text: #1a7733;
+    --detail-header-bg: rgba(26, 119, 51, 0.08);
     --detail-border: #eceff1;
     --detail-label: #78909c;
-    --detail-value: #27272a;
+    --detail-value: #1d284a;
     --topbar-bg: rgba(255, 255, 255, 0.85);
     --topbar-border: rgba(0, 0, 0, 0.06);
     --topbar-title: #1d284a;
@@ -94,9 +93,9 @@
 
 [data-theme="dark"] {
     --bg-body: #101b24;
-    --bg-body-end: #0d1520;
+    --bg-body-end: #0b1219;
     --bg-card: #1a2535;
-    --bg-surface: #0d1520;
+    --bg-surface: #0b1219;
     --bg-surface-alt: #1d284a;
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
@@ -108,7 +107,7 @@
     --input-border: rgba(255, 255, 255, 0.12);
     --input-text: #e2e8f0;
     --input-placeholder: #64748b;
-    --console-bg: #0d1520;
+    --console-bg: #0b1219;
     --console-text: #e2e8f0;
     --console-border: rgba(255, 255, 255, 0.06);
     --shadow-color: rgba(0, 0, 0, 0.3);
@@ -123,11 +122,11 @@
     --scrollbar-thumb: rgba(255, 255, 255, 0.15);
     --disabled-bg: linear-gradient(135deg, #2a3040 0%, #1e2535 100%);
     --disabled-text: #64748b;
-    --banner-bg: linear-gradient(135deg, #3d2800 0%, #2d1f00 100%);
-    --banner-text: #fbbf24;
-    --banner-sub: #f59e0b;
-    --log-success: #4ade80;
-    --log-error: #f87171;
+    --banner-bg: linear-gradient(135deg, rgba(255, 182, 0, 0.15) 0%, rgba(248, 98, 57, 0.15) 100%);
+    --banner-text: #ffb600;
+    --banner-sub: #f86239;
+    --log-success: #85bc44;
+    --log-error: #f86239;
     --stage-pending-bg: rgba(29, 40, 74, 0.4);
     --stage-pending-border: rgba(255, 255, 255, 0.08);
     --stage-pending-text: #64748b;
@@ -137,11 +136,11 @@
     --select-bg: #1a2535;
     --badge-text-muted: #94a3b8;
     --link-text: #e2e8f0;
-    --file-status-empty-bg: rgba(255, 152, 0, 0.08);
-    --file-status-empty-text: #fbbf24;
-    --file-status-ok-bg: rgba(76, 175, 80, 0.08);
-    --file-status-ok-text: #4ade80;
-    --detail-header-bg: rgba(26, 119, 51, 0.15);
+    --file-status-empty-bg: rgba(248, 98, 57, 0.12);
+    --file-status-empty-text: #f86239;
+    --file-status-ok-bg: rgba(26, 119, 51, 0.15);
+    --file-status-ok-text: #85bc44;
+    --detail-header-bg: rgba(26, 119, 51, 0.18);
     --detail-border: rgba(255, 255, 255, 0.06);
     --detail-label: #64748b;
     --detail-value: #e2e8f0;

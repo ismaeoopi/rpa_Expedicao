@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - Lançamento de Fretes (P716)</title>
+    <script>(function(){var t=localStorage.getItem('rpa-theme')||'light';document.documentElement.setAttribute('data-theme',t);})()</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-body, #f5f7fa) 0%, var(--bg-body-end, #e4e8ec) 100%);
+            color: var(--text-primary, #2c3e50);
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER PREMIUM */
+        .header {
+            background: linear-gradient(135deg, #101b24 0%, #1d284a 100%);
+            padding: 30px 35px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border-left: 6px solid #1a7733;
+            box-shadow: 0 8px 32px rgba(26, 119, 51, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+
+        .header h1 .accent {
+            color: #85bc44;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+
+        .btn-header {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+        }
+
+        /* CARDS DE MÉTRICAS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.05));
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .metric-icon.blue { background: rgba(0, 122, 177, 0.12); color: #007ab1; }
+        .metric-icon.green { background: rgba(26, 119, 51, 0.12); color: #1a7733; }
+        .metric-icon.orange { background: rgba(248, 98, 57, 0.12); color: #f86239; }
+        .metric-icon.purple { background: rgba(142, 45, 226, 0.12); color: #8e2de2; }
+
+        .metric-info h4 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .metric-info p {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary, #1e293b);
+        }
+
+        /* CARD PRINCIPAL */
+        .main-card {
+            background: var(--bg-card, #ffffff);
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 8px 24px var(--shadow-color, rgba(0,0,0,0.06));
+            border: 1px solid var(--border-color, #e2e8f0);
+            margin-bottom: 25px;
+        }
+
+        .card-header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary, #1e293b);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #1a7733, #007ab1);
+            border-radius: 2px;
+        }
+
+        /* BARRA DE FILTROS */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 240px;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-surface, #ffffff);
+            color: var(--text-primary, #1e293b);
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #1a7733;
+            box-shadow: 0 0 0 2px rgba(26, 119, 51, 0.15);
+        }
+
+        .select-filter {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-surface, #ffffff);
+            color: var(--text-primary, #1e293b);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1a7733 0%, #146128 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(26, 119, 51, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(26, 119, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #007ab1 0%, #005f8a 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 122, 177, 0.25);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary, #475569);
+            border: 1px solid var(--border-color, #cbd5e1);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline:hover {
+            background: rgba(0,0,0,0.04);
+        }
+
+        /* TABELA */
+        .table-responsive {
+            max-height: 480px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        thead tr {
+            background: var(--topbar-bg, #f1f5f9);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--border-color, #cbd5e1);
+        }
+
+        th {
+            padding: 12px 14px;
+            font-weight: 700;
+            color: var(--text-primary, #475569);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            color: var(--text-primary, #334155);
+        }
+
+        tbody tr:hover {
+            background: rgba(26, 119, 51, 0.03);
+        }
+
+        .badge-status {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .badge-status.ok { background: rgba(26, 119, 51, 0.12); color: #1a7733; }
+        .badge-status.pending { background: rgba(0, 122, 177, 0.12); color: #007ab1; }
+        .badge-status.error { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+
+        /* CONSOLE LOG */
+        .console-container {
+            background: var(--bg-card, #ffffff);
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            box-shadow: 0 8px 24px var(--shadow-color, rgba(0,0,0,0.05));
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .console-box {
+            height: 160px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: var(--text-primary, #1e293b);
+            line-height: 1.6;
+            padding: 12px;
+            background: var(--bg-body, #f8f9fa);
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        /* MODAL CONFIG */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: var(--bg-card, #ffffff);
+            border-radius: 14px;
+            padding: 30px;
+            width: 90%;
+            max-width: 650px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color, #cbd5e1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* MODAL PROCESSAR */
+        .modal-cc-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border-color, #cbd5e1);
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: var(--bg-surface, #f8fafc);
+            color: var(--text-primary, #1e293b);
+            outline: none;
+            transition: border-color 0.2s;
+            text-transform: uppercase;
+        }
+        .modal-cc-input:focus {
+            border-color: #1a7733;
+            box-shadow: 0 0 0 3px rgba(26,119,51,0.12);
+        }
+        .anexo-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(26,119,51,0.06);
+            border: 1px dashed #1a7733;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #1a7733;
+            font-weight: 600;
+            min-height: 42px;
+        }
+        .anexo-preview.vazio {
+            background: var(--bg-surface, #f8fafc);
+            border-color: var(--border-color, #cbd5e1);
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        /* ===== KANBAN VIEW ===== */
+        #kanban-view {
+            display: none;
+            animation: fadeInUp 0.45s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .kanban-header {
+            background: linear-gradient(135deg, #0f1f2e 0%, #1a2f50 100%);
+            border-radius: 16px;
+            padding: 24px 30px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 6px solid #8e2de2;
+            box-shadow: 0 8px 32px rgba(142, 45, 226, 0.18);
+        }
+
+        .kanban-header h2 {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .kanban-header p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .kanban-board { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .kanban-board { grid-template-columns: 1fr; }
+        }
+
+        .kanban-col {
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 14px;
+            padding: 0;
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.05));
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kanban-col-header {
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+
+        .kanban-col-header .col-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .kanban-col-header .col-count {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .kanban-col.col-aguardando .kanban-col-header {
+            background: rgba(100, 116, 139, 0.08);
+            color: #475569;
+        }
+        .kanban-col.col-aguardando .col-count { background: rgba(100,116,139,0.15); color: #475569; }
+
+        .kanban-col.col-processando .kanban-col-header {
+            background: rgba(245, 158, 11, 0.08);
+            color: #d97706;
+        }
+        .kanban-col.col-processando .col-count { background: rgba(245,158,11,0.15); color: #d97706; }
+
+        .kanban-col.col-criada .kanban-col-header {
+            background: rgba(26, 119, 51, 0.08);
+            color: #1a7733;
+        }
+        .kanban-col.col-criada .col-count { background: rgba(26,119,51,0.15); color: #1a7733; }
+
+        .kanban-col.col-erro .kanban-col-header {
+            background: rgba(239, 68, 68, 0.08);
+            color: #dc2626;
+        }
+        .kanban-col.col-erro .col-count { background: rgba(239,68,68,0.15); color: #dc2626; }
+
+        .kanban-cards {
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 80px;
+        }
+
+        .kanban-card {
+            background: var(--bg-surface, #f8fafc);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kanban-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .kanban-card.status-aguardando::before { background: #94a3b8; }
+        .kanban-card.status-processando::before {
+            background: linear-gradient(180deg, #f59e0b, #ef4444);
+            animation: pulseSide 1.2s ease-in-out infinite;
+        }
+        .kanban-card.status-criada::before { background: linear-gradient(180deg, #1a7733, #85bc44); }
+        .kanban-card.status-erro::before { background: #ef4444; }
+
+        @keyframes pulseSide {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        .card-cte {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-primary, #1e293b);
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .card-emissor {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-rc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(26, 119, 51, 0.1);
+            border: 1px solid rgba(26, 119, 51, 0.25);
+            color: #1a7733;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-top: 2px;
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.7); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .card-erro-msg {
+            font-size: 10px;
+            color: #dc2626;
+            background: rgba(239,68,68,0.07);
+            border-radius: 5px;
+            padding: 4px 6px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .card-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #f59e0b;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .kanban-progress-bar {
+            height: 6px;
+            background: var(--border-color, #e2e8f0);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .kanban-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a7733, #85bc44);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .kanban-summary {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            padding: 14px 20px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .kanban-summary .ksm-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .ksm-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== MAIN VIEW ===== -->
+    <div class="container" id="main-view">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div>
+                <h1>🚚 Lançamento de Fretes <span class="accent">(P716)</span></h1>
+                <p>Gestão e auditoria de CTes com dados complementares do Corporativo</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn-header" onclick="toggleTheme()" title="Alternar tema">🌗 Tema</button>
+                <button class="btn-header" onclick="abrirModalConfig()">⚙️ Configurações</button>
+                <a href="/" class="btn-header">← Início</a>
+            </div>
+        </header>
+
+        <!-- CARDS DE MÉTRICAS -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon blue">📦</div>
+                <div class="metric-info">
+                    <h4>Total de CTes</h4>
+                    <p id="metrica-total">0</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon green">💵</div>
+                <div class="metric-info">
+                    <h4>Valor Total Fretes</h4>
+                    <p id="metrica-valor">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon purple">✅</div>
+                <div class="metric-info">
+                    <h4>Escriturados / Ok</h4>
+                    <p id="metrica-ok">0</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon orange">⏳</div>
+                <div class="metric-info">
+                    <h4>Pendentes</h4>
+                    <p id="metrica-pendentes">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CARD -->
+        <div class="main-card">
+            <h3 class="card-header-title">Registros de Frete P716</h3>
+
+            <!-- PLACEHOLDER INICIAL -->
+            <div id="fretes-placeholder" style="text-align: center; color: #94a3b8; padding: 60px 0;">
+                <span style="font-size: 56px; display: block; margin-bottom: 15px;">📊</span>
+                <p style="font-size: 15px; color: #64748b; margin-bottom: 20px;">
+                    Clique no botão abaixo para carregar e cruzar as planilhas de frete do SharePoint.
+                </p>
+                <button class="btn-primary" onclick="carregarDadosFrete()">
+                    🔄 Carregar Dados do SharePoint
+                </button>
+            </div>
+
+            <!-- CONTEÚDO PRINCIPAL -->
+            <div id="fretes-conteudo" style="display: none;">
+                <!-- FILTROS -->
+                <div class="filter-bar">
+                    <input type="text" id="filtro-busca" class="search-input" placeholder="🔍 Buscar por CT-e, Chave, Emissor ou Cliente..." oninput="filtrarTabela()">
+                    
+                    <select id="filtro-planta" class="select-filter" onchange="filtrarTabela()">
+                        <option value="todas">Todas as Plantas</option>
+                    </select>
+
+                    <select id="filtro-status" class="select-filter" onchange="filtrarTabela()">
+                        <option value="todos">Todos os Status</option>
+                        <option value="pendente">Apenas Pendentes</option>
+                        <option value="ok">Apenas Escriturado / Ok</option>
+                    </select>
+
+                    <button class="btn-outline" onclick="marcarTodos(true)">☑️ Selecionar Todos</button>
+                    <button class="btn-outline" onclick="marcarTodos(false)">⬜ Desmarcar</button>
+                </div>
+
+                <!-- TABELA -->
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">✓</th>
+                                <th>Planta</th>
+                                <th>Tipo</th>
+                                <th>CT-e</th>
+                                <th>Emissor (Transportadora)</th>
+                                <th>Remetente</th>
+                                <th>Destinatário (Cliente)</th>
+                                <th>Orig / Dest</th>
+                                <th>Valor S/ ICMS</th>
+                                <th>OF</th>
+                                <th>RC</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-fretes-corpo">
+                            <!-- Preenchido via Javascript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- AÇÕES -->
+                <div style="display: flex; justify-content: space-between; align-items: center; pt: 10px;">
+                    <span id="info-selecionados" style="font-size: 13px; color: #64748b;">Nenhum frete selecionado</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="exportarExcel()">📥 Exportar Excel</button>
+                        <button class="btn-primary" id="btn-processar" onclick="executarProcessamento()" disabled>⚡ Processar Selecionados</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOG TERMINAL -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Logs (RPA Logs)</span>
+                <span id="status-rpa" style="background: rgba(26, 119, 51, 0.12); padding: 4px 10px; border-radius: 4px; color: #1a7733; font-weight: 700;">Pronto</span>
+            </div>
+            <div class="console-box" id="console-box">
+                <p>⚙️ Módulo de Lançamento de Fretes (P716) inicializado.</p>
+            </div>
+        </div>
+
+    </div>
+    <!-- END #main-view -->
+
+    <!-- ===== KANBAN VIEW ===== -->
+    <div class="container" id="kanban-view">
+
+        <!-- Kanban Header -->
+        <div class="kanban-header">
+            <div>
+                <h2>📋 Kanban de Requisições de Compra</h2>
+                <p id="kanban-subtitle">Acompanhe em tempo real a criação das RCs no SAP</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button class="btn-header" onclick="toggleTheme()" title="Alternar tema">🌗 Tema</button>
+                <button class="btn-header" id="btn-voltar-lista" onclick="voltarParaLista()">← Voltar para Lista</button>
+            </div>
+        </div>
+
+        <!-- Resumo Rápido -->
+        <div class="kanban-summary">
+            <span class="ksm-item"><span class="ksm-dot" style="background:#94a3b8"></span> Aguardando: <strong id="k-count-aguardando">0</strong></span>
+            <span style="color: var(--border-color,#cbd5e1);">|</span>
+            <span class="ksm-item"><span class="ksm-dot" style="background:#f59e0b"></span> Processando: <strong id="k-count-processando">0</strong></span>
+            <span style="color: var(--border-color,#cbd5e1);">|</span>
+            <span class="ksm-item"><span class="ksm-dot" style="background:#1a7733"></span> RC Criada: <strong id="k-count-criada">0</strong></span>
+            <span style="color: var(--border-color,#cbd5e1);">|</span>
+            <span class="ksm-item"><span class="ksm-dot" style="background:#ef4444"></span> Erro: <strong id="k-count-erro">0</strong></span>
+            <span style="flex:1;"></span>
+            <span id="kanban-status-badge" style="font-size:12px; font-weight:700; padding: 4px 12px; border-radius: 8px; background: rgba(245,158,11,0.12); color:#d97706;">⏳ Em processamento...</span>
+        </div>
+
+        <!-- Barra de Progresso -->
+        <div class="kanban-progress-bar">
+            <div class="kanban-progress-fill" id="kanban-progress-fill"></div>
+        </div>
+
+        <!-- Board Kanban -->
+        <div class="kanban-board">
+            <!-- Coluna: Aguardando -->
+            <div class="kanban-col col-aguardando">
+                <div class="kanban-col-header">
+                    <div class="col-title">⏸ Aguardando</div>
+                    <span class="col-count" id="col-count-aguardando">0</span>
+                </div>
+                <div class="kanban-cards" id="col-cards-aguardando"></div>
+            </div>
+
+            <!-- Coluna: Processando -->
+            <div class="kanban-col col-processando">
+                <div class="kanban-col-header">
+                    <div class="col-title">⚙️ Processando</div>
+                    <span class="col-count" id="col-count-processando">0</span>
+                </div>
+                <div class="kanban-cards" id="col-cards-processando"></div>
+            </div>
+
+            <!-- Coluna: RC Criada -->
+            <div class="kanban-col col-criada">
+                <div class="kanban-col-header">
+                    <div class="col-title">✅ RC Criada</div>
+                    <span class="col-count" id="col-count-criada">0</span>
+                </div>
+                <div class="kanban-cards" id="col-cards-criada"></div>
+            </div>
+
+            <!-- Coluna: Erro -->
+            <div class="kanban-col col-erro">
+                <div class="kanban-col-header">
+                    <div class="col-title">❌ Erro</div>
+                    <span class="col-count" id="col-count-erro">0</span>
+                </div>
+                <div class="kanban-cards" id="col-cards-erro"></div>
+            </div>
+        </div>
+
+        <!-- Console de Logs no Kanban -->
+        <div class="console-container">
+            <div class="console-header">
+                <span>📋 Console de Logs (RPA)</span>
+                <span id="kanban-status-rpa" style="background: rgba(245,158,11,0.12); padding: 4px 10px; border-radius: 4px; color: #d97706; font-weight: 700;">Executando</span>
+            </div>
+            <div class="console-box" id="kanban-console-box">
+                <p>⚙️ Aguardando início do processamento SAP...</p>
+            </div>
+        </div>
+
+    </div>
+    <!-- END #kanban-view -->
+
+    <!-- MODAL DE CONFIGURAÇÃO -->
+    <div id="modal-config" class="modal-overlay" onclick="fecharModalConfigViaFundo(event)">
+        <div class="modal-card">
+            <h3 style="color:#1a7733; margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Configurações do SharePoint (Frete P716)</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom:20px;">
+                Caminho ou GUID das duas planilhas utilizadas no cruzamento dos fretes P716:
+            </p>
+
+            <div class="form-group">
+                <label>Planilha Base (Auditoria Lançamento de Frete P716)</label>
+                <input type="text" id="cfg-auditoria" class="search-input" style="width: 100%;" placeholder="GUID ou Caminho no SharePoint">
+            </div>
+            <div class="form-group">
+                <label>Planilha Complementar (Lançamento de Frete Corporativo P716)</label>
+                <input type="text" id="cfg-corp" class="search-input" style="width: 100%;" placeholder="GUID ou Caminho no SharePoint">
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 12px; border-top:1px solid var(--border-color); padding-top:15px;">
+                <button class="btn-outline" onclick="testarConexaoSharePoint()">🔌 Testar Conexão</button>
+                <button class="btn-outline" onclick="fecharModalConfig()">Cancelar</button>
+                <button class="btn-primary" onclick="salvarConfiguracao()">💾 Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PROCESSAMENTO (Centro de Custo + Anexo) -->
+    <div id="modal-processar" class="modal-overlay" onclick="fecharModalProcessarViaFundo(event)">
+        <div class="modal-card" style="max-width: 520px;">
+            <h3 style="color:#1a7733; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                ⚡ Confirmar Processamento
+            </h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 22px; padding-bottom:15px; border-bottom:1px solid var(--border-color);">
+                Preencha os dados abaixo para criar as RCs no SAP.
+            </p>
+
+            <!-- Resumo dos selecionados -->
+            <div id="modal-resumo-ctes" style="font-size:13px; color:#475569; margin-bottom:20px; background:rgba(0,122,177,0.06); padding:10px 14px; border-radius:8px; border:1px solid rgba(0,122,177,0.15);">
+            </div>
+
+            <!-- Centro de Custo -->
+            <div class="form-group">
+                <label>🏢 Centro de Custo <span style="color:#dc2626;">*</span></label>
+                <input
+                    type="text"
+                    id="input-centro-custo"
+                    class="modal-cc-input"
+                    placeholder="Ex: AQ203"
+                    maxlength="10"
+                    autocomplete="off"
+                    oninput="this.value = this.value.toUpperCase()"
+                >
+            </div>
+
+            <!-- Arquivo de Anexo -->
+            <div class="form-group">
+                <label>📎 Arquivo de Anexo (opcional)</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div id="anexo-preview" class="anexo-preview vazio" style="flex:1;">
+                        📄 Nenhum arquivo selecionado
+                    </div>
+                    <button
+                        class="btn-outline"
+                        id="btn-sel-anexo"
+                        onclick="selecionarAnexoFrete()"
+                        style="white-space:nowrap; padding:10px 14px; font-size:13px;"
+                    >📂 Selecionar</button>
+                </div>
+            </div>
+
+            <div style="margin-top:25px; display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border-color); padding-top:15px;">
+                <button class="btn-outline" onclick="fecharModalProcessar()">Cancelar</button>
+                <button class="btn-primary" id="btn-confirmar-processar" onclick="confirmarProcessamento()">
+                    🚀 Iniciar RC no SAP
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fretesList = [];
+        let selecionados = new Set();
+        let pollingInterval = null;
+        let _anexoCaminho = '';
+        let _anexoArquivo = '';
+
+        window.addEventListener('load', () => {
+            carregarConfiguracoes();
+            iniciarLogs();
+        });
+
+        function abrirModalConfig() { document.getElementById('modal-config').style.display = 'flex'; }
+        function fecharModalConfig() { document.getElementById('modal-config').style.display = 'none'; }
+        function fecharModalConfigViaFundo(e) { if (e.target.id === 'modal-config') fecharModalConfig(); }
+
+        function carregarConfiguracoes() {
+            fetch('/api/lancamento_frete/config')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('cfg-auditoria').value = data.auditoria || '';
+                    document.getElementById('cfg-corp').value = data.corporativo || '';
+                });
+        }
+
+        function salvarConfiguracao() {
+            const payload = {
+                auditoria: document.getElementById('cfg-auditoria').value,
+                corporativo: document.getElementById('cfg-corp').value
+            };
+            fetch('/api/lancamento_frete/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                fecharModalConfig();
+            });
+        }
+
+        function testarConexaoSharePoint() {
+            logNoConsole("🔌 Testando acesso aos arquivos do SharePoint...");
+            fetch('/api/sharepoint/testar_conexao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    planilha_auditoria: document.getElementById('cfg-auditoria').value,
+                    planilha_corporativo: document.getElementById('cfg-corp').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.autenticado) {
+                    alert("✅ Autenticação com SharePoint efetuada com sucesso!");
+                    logNoConsole("✅ Autenticação SharePoint OK.");
+                } else {
+                    alert("❌ Erro na autenticação: " + (data.erro_autenticacao || "Falha"));
+                }
+            });
+        }
+
+        function carregarDadosFrete() {
+            logNoConsole("📥 Baixando e cruzando planilhas de Frete P716 do SharePoint...");
+            fetch('/api/lancamento_frete/carregar', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fretesList = data.fretes;
+                        logNoConsole(`✅ ${fretesList.length} registros de frete carregados com sucesso!`);
+                        document.getElementById('fretes-placeholder').style.display = 'none';
+                        document.getElementById('fretes-conteudo').style.display = 'block';
+                        popularFiltroPlantas(fretesList);
+                        atualizarMetricas(fretesList);
+                        renderizarTabela(fretesList);
+                    } else {
+                        logNoConsole(`❌ Falha: ${data.message}`);
+                        alert(data.message);
+                    }
+                })
+                .catch(err => logNoConsole(`❌ Erro: ${err}`));
+        }
+
+        function popularFiltroPlantas(lista) {
+            const selectPlanta = document.getElementById('filtro-planta');
+            const plantas = Array.from(new Set(lista.map(f => f.planta || f.estab).filter(Boolean))).sort();
+            selectPlanta.innerHTML = '<option value="todas">Todas as Plantas</option>';
+            plantas.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.innerText = `Planta: ${p}`;
+                selectPlanta.appendChild(opt);
+            });
+        }
+
+        function atualizarMetricas(lista) {
+            const targetList = lista || fretesList;
+            let totalVal = 0, countOk = 0, countPendente = 0;
+            targetList.forEach(f => {
+                totalVal += (f.valor_sem_icms > 0 ? f.valor_sem_icms : f.valor_final) || 0;
+                if ((f.status || '').toLowerCase().includes('ok') || (f.status || '').toLowerCase().includes('escriturado')) {
+                    countOk++;
+                } else {
+                    countPendente++;
+                }
+            });
+            document.getElementById('metrica-total').innerText = targetList.length;
+            document.getElementById('metrica-valor').innerText = `R$ ${totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metrica-ok').innerText = countOk;
+            document.getElementById('metrica-pendentes').innerText = countPendente;
+        }
+
+        function renderizarTabela(lista) {
+            const tbody = document.getElementById('tabela-fretes-corpo');
+            tbody.innerHTML = '';
+
+            lista.forEach(f => {
+                const tr = document.createElement('tr');
+                const isChecked = selecionados.has(f.cte_key);
+                const st = (f.status || 'Pendente').toLowerCase();
+                let badgeClass = 'pending';
+                if (st.includes('ok') || st.includes('escriturado')) badgeClass = 'ok';
+
+                const valLiquido = f.valor_sem_icms > 0 ? f.valor_sem_icms : f.valor_final;
+                const valBruto = f.valor_bruto || f.valor_final;
+                let valorHtml = `<strong style="color: #1a7733;">R$ ${valLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>`;
+                if (valBruto > 0 && valBruto !== valLiquido) {
+                    valorHtml += `<br><span style="font-size: 10px; color: #64748b;">(Bruto: R$ ${valBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td style="text-align: center;">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelecao('${f.cte_key}')">
+                    </td>
+                    <td><span style="font-weight: 700; color: #007ab1; background: rgba(0,122,177,0.08); padding: 3px 8px; border-radius: 6px;">${f.planta || f.estab || 'P716'}</span></td>
+                    <td><strong>${f.tipo || 'RC'}</strong></td>
+                    <td><strong>${f.cte_numero}</strong></td>
+                    <td>${f.emissor || '-'}</td>
+                    <td>${f.remetente || '-'}</td>
+                    <td>${f.destinatario || '-'}</td>
+                    <td>${f.uf_origem}/${f.uf_destino}</td>
+                    <td>${valorHtml}</td>
+                    <td>${f.of_numero ? `<span style="color:#007ab1; font-weight:bold; font-size:12px;">${f.of_numero}</span>` : '<span style="color:#dc2626; font-size:11px;">Sem OF</span>'}</td>
+                    <td>${f.rc_numero ? `<span style="color:#8e2de2; font-weight:bold; font-size:12px;">${f.rc_numero}</span>` : '-'}</td>
+                    <td><span class="badge-status ${badgeClass}">${f.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            atualizarInfoSelecionados();
+        }
+
+        function toggleSelecao(key) {
+            if (selecionados.has(key)) selecionados.delete(key);
+            else selecionados.add(key);
+            atualizarInfoSelecionados();
+        }
+
+        function marcarTodos(marcar) {
+            if (marcar) {
+                fretesList.forEach(f => selecionados.add(f.cte_key));
+            } else {
+                selecionados.clear();
+            }
+            renderizarTabela(fretesList);
+        }
+
+        function atualizarInfoSelecionados() {
+            const count = selecionados.size;
+            document.getElementById('info-selecionados').innerText = count === 0 ? "Nenhum frete selecionado" : `${count} frete(s) selecionado(s)`;
+            document.getElementById('btn-processar').disabled = count === 0;
+        }
+
+        function filtrarTabela() {
+            const busca = document.getElementById('filtro-busca').value.toLowerCase();
+            const statusSel = document.getElementById('filtro-status').value;
+            const plantaSel = document.getElementById('filtro-planta').value;
+
+            const filtrados = fretesList.filter(f => {
+                const textMatch = !busca || 
+                    (f.cte_numero || '').toLowerCase().includes(busca) ||
+                    (f.chave_acesso || '').toLowerCase().includes(busca) ||
+                    (f.emissor || '').toLowerCase().includes(busca) ||
+                    (f.destinatario || '').toLowerCase().includes(busca);
+
+                let statusMatch = true;
+                const st = (f.status || '').toLowerCase();
+                if (statusSel === 'pendente') statusMatch = !st.includes('ok') && !st.includes('escriturado');
+                if (statusSel === 'ok') statusMatch = st.includes('ok') || st.includes('escriturado');
+
+                let plantaMatch = (plantaSel === 'todas') || ((f.planta || f.estab) === plantaSel);
+
+                return textMatch && statusMatch && plantaMatch;
+            });
+
+            atualizarMetricas(filtrados);
+            renderizarTabela(filtrados);
+        }
+
+        function executarProcessamento() {
+            const keys = Array.from(selecionados);
+            if (keys.length === 0) return;
+
+            // Preenche resumo no modal
+            const resumo = document.getElementById('modal-resumo-ctes');
+            const valTotal = fretesList
+                .filter(f => keys.includes(f.cte_key))
+                .reduce((sum, f) => sum + (f.valor_sem_icms > 0 ? f.valor_sem_icms : f.valor_final), 0);
+
+            resumo.innerHTML = `
+                <strong>${keys.length} CT-e(s) selecionado(s)</strong>
+                &nbsp;|&nbsp; Valor total S/ ICMS: <strong style="color:#1a7733;">R$ ${valTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>
+            `;
+
+            // Limpa campos
+            document.getElementById('input-centro-custo').value = '';
+            _anexoCaminho = '';
+            _anexoArquivo = '';
+            document.getElementById('anexo-preview').className = 'anexo-preview vazio';
+            document.getElementById('anexo-preview').innerHTML = '📄 Nenhum arquivo selecionado';
+
+            // Abre o modal
+            document.getElementById('modal-processar').style.display = 'flex';
+            setTimeout(() => document.getElementById('input-centro-custo').focus(), 100);
+        }
+
+        function fecharModalProcessar() {
+            document.getElementById('modal-processar').style.display = 'none';
+        }
+
+        function fecharModalProcessarViaFundo(e) {
+            if (e.target.id === 'modal-processar') fecharModalProcessar();
+        }
+
+        function selecionarAnexoFrete() {
+            const btn = document.getElementById('btn-sel-anexo');
+            btn.disabled = true;
+            btn.innerText = '⏳ Aguardando...';
+            logNoConsole('📂 Abrindo seletor de arquivo...');
+
+            fetch('/api/lancamento_frete/selecionar_anexo')
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerText = '📂 Selecionar';
+                    if (data.arquivo) {
+                        _anexoCaminho = data.caminho;
+                        _anexoArquivo = data.arquivo;
+                        const prev = document.getElementById('anexo-preview');
+                        prev.className = 'anexo-preview';
+                        prev.innerHTML = `📎 <span title="${data.caminho_completo}">${data.arquivo}</span>`;
+                        logNoConsole(`✅ Anexo: ${data.arquivo}`);
+                    } else {
+                        logNoConsole('⚠️ Nenhum arquivo selecionado.');
+                    }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    btn.innerText = '📂 Selecionar';
+                });
+        }
+
+        function confirmarProcessamento() {
+            const centroCusto = document.getElementById('input-centro-custo').value.trim().toUpperCase();
+            if (!centroCusto) {
+                document.getElementById('input-centro-custo').style.borderColor = '#dc2626';
+                document.getElementById('input-centro-custo').focus();
+                logNoConsole('❌ Centro de Custo é obrigatório!');
+                return;
+            }
+            document.getElementById('input-centro-custo').style.borderColor = '';
+
+            const keys = Array.from(selecionados);
+            const btnConfirmar = document.getElementById('btn-confirmar-processar');
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerText = '⏳ Processando...';
+
+            logNoConsole(`⚡ Criando RCs no SAP | CC: ${centroCusto} | ${keys.length} CT-e(s) | Anexo: ${_anexoArquivo || 'nenhum'}`);
+
+            fetch('/api/lancamento_frete/executar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ctes: keys,
+                    centro_custo: centroCusto,
+                    caminho_anexo: _anexoCaminho,
+                    arquivo_anexo: _anexoArquivo,
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerText = '🚀 Iniciar RC no SAP';
+                if (data.status === 'started') {
+                    fecharModalProcessar();
+                    logNoConsole('✅ Automação SAP iniciada! Acompanhe o Kanban.');
+                    // Monta o Kanban com os CTes selecionados
+                    const ctesParaKanban = fretesList.filter(f => keys.includes(f.cte_key));
+                    abrirKanban(ctesParaKanban);
+                } else {
+                    alert('❌ ' + (data.message || 'Erro ao iniciar processamento.'));
+                }
+            })
+            .catch(err => {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerText = '🚀 Iniciar RC no SAP';
+                logNoConsole(`❌ Erro: ${err}`);
+            });
+        }
+
+        /* ========================================
+           KANBAN
+        ======================================== */
+        let kanbanCards = {};         // cte_key -> { data, status, rc_numero, erro_msg }
+        let kanbanPolling = null;
+
+        function abrirKanban(ctesList) {
+            // Esconde view principal e mostra Kanban
+            document.getElementById('main-view').style.display = 'none';
+            const kv = document.getElementById('kanban-view');
+            kv.style.display = 'block';
+
+            // Inicializa estado dos cards
+            kanbanCards = {};
+            ctesList.forEach(f => {
+                kanbanCards[f.cte_key] = {
+                    cte_numero: f.cte_numero,
+                    emissor: f.emissor || '-',
+                    planta: f.planta || f.estab || 'P716',
+                    status: 'aguardando',
+                    rc_numero: null,
+                    erro_msg: null
+                };
+            });
+
+            renderizarKanban();
+
+            // Subtítulo
+            document.getElementById('kanban-subtitle').innerText =
+                `${ctesList.length} CT-e(s) em processamento — Centro de Custo: ${document.getElementById('input-centro-custo').value || '—'}`;
+
+            // Inicia polling de status
+            iniciarKanbanPolling();
+        }
+
+        function voltarParaLista() {
+            pararKanbanPolling();
+            document.getElementById('kanban-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+            // Recarrega dados para refletir RCs criadas
+            carregarDadosFrete();
+        }
+
+        function renderizarKanban() {
+            const cols = { aguardando: [], processando: [], criada: [], erro: [] };
+
+            Object.entries(kanbanCards).forEach(([key, card]) => {
+                (cols[card.status] || cols.aguardando).push({ key, ...card });
+            });
+
+            // Limpa e renderiza cada coluna
+            ['aguardando', 'processando', 'criada', 'erro'].forEach(col => {
+                const container = document.getElementById(`col-cards-${col}`);
+                container.innerHTML = '';
+                cols[col].forEach(card => {
+                    container.appendChild(criarCardEl(card));
+                });
+                // Atualiza contadores
+                document.getElementById(`col-count-${col}`).innerText = cols[col].length;
+                document.getElementById(`k-count-${col}`).innerText = cols[col].length;
+            });
+
+            // Progresso
+            const total = Object.keys(kanbanCards).length;
+            const done = cols.criada.length + cols.erro.length;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('kanban-progress-fill').style.width = pct + '%';
+
+            // Status geral
+            const badge = document.getElementById('kanban-status-badge');
+            const rpaLabel = document.getElementById('kanban-status-rpa');
+            if (done >= total && total > 0) {
+                badge.innerText = '✅ Concluído';
+                badge.style.background = 'rgba(26,119,51,0.12)';
+                badge.style.color = '#1a7733';
+                rpaLabel.innerText = 'Pronto';
+                rpaLabel.style.background = 'rgba(26,119,51,0.12)';
+                rpaLabel.style.color = '#1a7733';
+                pararKanbanPolling();
+            } else {
+                badge.innerText = `⏳ Processando... (${done}/${total})`;
+                badge.style.background = 'rgba(245,158,11,0.12)';
+                badge.style.color = '#d97706';
+            }
+        }
+
+        function criarCardEl(card) {
+            const el = document.createElement('div');
+            el.className = `kanban-card status-${card.status}`;
+            el.id = `kcard-${card.key}`;
+
+            let extra = '';
+            if (card.status === 'processando') {
+                extra = `<div style="margin-top:6px; font-size:11px; color:#d97706;"><span class="card-spinner"></span> Criando RC no SAP...</div>`;
+            } else if (card.status === 'criada' && card.rc_numero) {
+                extra = `<div class="card-rc-badge">🧾 RC nº ${card.rc_numero}</div>`;
+            } else if (card.status === 'erro') {
+                extra = `<div class="card-erro-msg">⚠️ ${card.erro_msg || 'Erro no processamento'}</div>`;
+            }
+
+            el.innerHTML = `
+                <div class="card-cte">${card.cte_numero}</div>
+                <div class="card-emissor" title="${card.emissor}">${card.emissor}</div>
+                <div style="font-size:10px; color:#94a3b8; margin-bottom:4px;">Planta: <strong>${card.planta}</strong></div>
+                ${extra}
+            `;
+            return el;
+        }
+
+        function iniciarKanbanPolling() {
+            pararKanbanPolling();
+            // Primeira verificação imediata após 1s
+            setTimeout(verificarStatusKanban, 1000);
+            kanbanPolling = setInterval(verificarStatusKanban, 3000);
+        }
+
+        function pararKanbanPolling() {
+            if (kanbanPolling) { clearInterval(kanbanPolling); kanbanPolling = null; }
+        }
+
+        function verificarStatusKanban() {
+            fetch('/api/lancamento_frete/status_rcs')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.resultados) return;
+
+                    let houveMudanca = false;
+                    data.resultados.forEach(r => {
+                        const card = kanbanCards[r.cte_key];
+                        if (!card) return;
+
+                        let novoStatus = card.status;
+                        if (r.status === 'aguardando') novoStatus = 'aguardando';
+                        else if (r.status === 'processando') novoStatus = 'processando';
+                        else if (r.status === 'criada') novoStatus = 'criada';
+                        else if (r.status === 'erro') novoStatus = 'erro';
+
+                        if (novoStatus !== card.status ||
+                            r.rc_numero !== card.rc_numero ||
+                            r.erro_msg !== card.erro_msg) {
+                            houveMudanca = true;
+                            card.status = novoStatus;
+                            card.rc_numero = r.rc_numero || null;
+                            card.erro_msg = r.erro_msg || null;
+                        }
+                    });
+
+                    if (data.logs && data.logs.length > 0) {
+                        const box = document.getElementById('kanban-console-box');
+                        data.logs.forEach(msg => {
+                            const p = document.createElement('p');
+                            p.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                            box.appendChild(p);
+                        });
+                        box.scrollTop = box.scrollHeight;
+                    }
+
+                    if (houveMudanca) renderizarKanban();
+                })
+                .catch(() => {}); // Silencia erros de rede temporários
+        }
+
+        function exportarExcel() {
+            window.location.href = '/api/lancamento_frete/exportar_excel';
+        }
+
+        function logNoConsole(msg) {
+            const box = document.getElementById('console-box');
+            const p = document.createElement('p');
+            p.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function iniciarLogs() {
+            if (pollingInterval) return;
+            const statusRpa = document.getElementById('status-rpa');
+            pollingInterval = setInterval(() => {
+                fetch('/api/logs')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.rodando) {
+                            statusRpa.innerText = "Executando";
+                            statusRpa.style.background = "rgba(248, 98, 57, 0.15)";
+                            statusRpa.style.color = "#f86239";
+                        } else {
+                            statusRpa.innerText = "Pronto";
+                            statusRpa.style.background = "rgba(26, 119, 51, 0.12)";
+                            statusRpa.style.color = "#1a7733";
+                        }
+                    });
+            }, 2500);
+        }
+    </script>
+    <script src="/static/theme.js"></script>
+</body>
+</html>

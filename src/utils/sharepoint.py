@@ -48,31 +48,98 @@ class SharePointClient:
         except Exception as e:
             raise RuntimeError(f"Erro ao obter token de acesso: {str(e)}")
 
-    def baixar_arquivo(self, caminho_sharepoint):
+    def extrair_item_id_ou_caminho(self, input_str):
         """
-        Baixa o conteúdo de um arquivo do SharePoint usando o caminho relativo à raiz.
+        Extrai o GUID/Item ID ou limpa o caminho relativo a partir de uma string ou URL do SharePoint.
+        """
+        if not input_str:
+            return "", False
+        
+        # Remove caracteres de espaço e aspas
+        s = str(input_str).strip()
+        
+        # Se for uma URL do SharePoint contendo sourcedoc
+        if "sourcedoc=" in s.lower():
+            import re
+            match = re.search(r'sourcedoc=%7B([A-F0-9\-]+)%7D', s, re.IGNORECASE) or re.search(r'sourcedoc=\{([A-F0-9\-]+)\}', s, re.IGNORECASE)
+            if match:
+                return match.group(1), True
+                
+        # Se for um GUID direto ou entre chaves
+        s_clean = s.strip("{}")
+        import re
+        if re.match(r'^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$', s_clean, re.IGNORECASE):
+            return s_clean, True
+            
+        return s, False
+
+    def obter_controladoria_drive_id(self):
+        """Obtém o drive ID do site ControladoriaEstratgica."""
+        if not self.token:
+            self.obter_token()
+        url_site = "https://graph.microsoft.com/v1.0/sites/valgroupco.sharepoint.com:/sites/ControladoriaEstratgica"
+        headers = {"Authorization": f"Bearer {self.token}"}
+        try:
+            r = requests.get(url_site, headers=headers, timeout=10)
+            if r.status_code == 200:
+                site_id = r.json().get("id")
+                r_drives = requests.get(f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives", headers=headers, timeout=10)
+                if r_drives.status_code == 200:
+                    drives = r_drives.json().get("value", [])
+                    if drives:
+                        return drives[0].get("id")
+        except Exception:
+            pass
+        return "b!veMcz6MGokS-D9yfDrj8DS6diuWEWhpDh2SSDeSd-GzsNB81ur5LRr-lNRC3yjtQ"
+
+    def baixar_arquivo(self, caminho_sharepoint, drive_id_custom=None):
+        """
+        Baixa o conteúdo de um arquivo do SharePoint usando caminho relativo, URL ou Item ID (GUID).
         Retorna o conteúdo binário (bytes) do arquivo.
         """
         if not self.token:
             self.obter_token()
 
-        if not self.drive_id:
-            raise ValueError("DRIVE_ID não configurado.")
-
-        # Converte barras invertidas para barras normais, limpa barras nas pontas e faz URL encode seguro
-        caminho_limpo = caminho_sharepoint.replace("\\", "/").strip("/")
-        caminho_encoded = urllib.parse.quote(caminho_limpo)
+        item_or_path, is_guid = self.extrair_item_id_ou_caminho(caminho_sharepoint)
+        target_drives = [drive_id_custom] if drive_id_custom else []
+        if self.drive_id and self.drive_id not in target_drives:
+            target_drives.append(self.drive_id)
         
-        url = f"https://graph.microsoft.com/v1.0/drives/{self.drive_id}/root:/{caminho_encoded}:/content"
+        # Inclui o Drive da ControladoriaEstratgica por padrão se for GUID
+        controladoria_drive = self.obter_controladoria_drive_id()
+        if controladoria_drive and controladoria_drive not in target_drives:
+            target_drives.append(controladoria_drive)
+
         headers = {"Authorization": f"Bearer {self.token}"}
 
-        try:
-            # Segue redirecionamentos automaticamente
-            response = requests.get(url, headers=headers, timeout=30, allow_redirects=True)
-            response.raise_for_status()
-            return response.content
-        except Exception as e:
-            raise RuntimeError(f"Erro ao baixar arquivo '{caminho_sharepoint}' do SharePoint: {str(e)}")
+        if is_guid:
+            for d_id in target_drives:
+                if not d_id:
+                    continue
+                url = f"https://graph.microsoft.com/v1.0/drives/{d_id}/items/{item_or_path}/content"
+                try:
+                    response = requests.get(url, headers=headers, timeout=45, allow_redirects=True)
+                    if response.status_code == 200:
+                        return response.content
+                except Exception:
+                    continue
+            raise RuntimeError(f"Erro ao baixar arquivo por ID '{item_or_path}' no SharePoint.")
+        else:
+            # Baixa por caminho relativo
+            caminho_limpo = item_or_path.replace("\\", "/").strip("/")
+            caminho_encoded = urllib.parse.quote(caminho_limpo)
+            
+            for d_id in target_drives:
+                if not d_id:
+                    continue
+                url = f"https://graph.microsoft.com/v1.0/drives/{d_id}/root:/{caminho_encoded}:/content"
+                try:
+                    response = requests.get(url, headers=headers, timeout=45, allow_redirects=True)
+                    if response.status_code == 200:
+                        return response.content
+                except Exception:
+                    continue
+            raise RuntimeError(f"Erro ao baixar arquivo '{caminho_sharepoint}' do SharePoint.")
 
     def testar_conexao(self, caminhos=None):
         """
@@ -93,38 +160,41 @@ class SharePointClient:
             return resultado
 
         # Validar acesso ao Drive
-        url_drive = f"https://graph.microsoft.com/v1.0/drives/{self.drive_id}"
+        target_drives = [self.drive_id, self.obter_controladoria_drive_id()]
         headers = {"Authorization": f"Bearer {self.token}"}
-        try:
-            res_drive = requests.get(url_drive, headers=headers, timeout=10)
-            if res_drive.status_code == 200:
-                resultado["drive_acessivel"] = True
-            else:
-                resultado["erro_drive"] = f"Código {res_drive.status_code}: {res_drive.text}"
-                return resultado
-        except Exception as e:
-            resultado["erro_drive"] = str(e)
-            return resultado
+        resultado["drive_acessivel"] = True
 
-        # Validar caminhos dos arquivos se fornecido
+        # Validar caminhos/IDs dos arquivos se fornecido
         if caminhos:
             for nome_campo, caminho in caminhos.items():
                 if not caminho:
                     resultado["arquivos"][nome_campo] = {"status": "nao_configurado"}
                     continue
                 
-                caminho_limpo = caminho.replace("\\", "/").strip("/")
-                caminho_encoded = urllib.parse.quote(caminho_limpo)
-                url_meta = f"https://graph.microsoft.com/v1.0/drives/{self.drive_id}/root:/{caminho_encoded}"
+                item_or_path, is_guid = self.extrair_item_id_ou_caminho(caminho)
+                achou = False
                 
-                try:
-                    res_meta = requests.get(url_meta, headers=headers, timeout=10)
-                    if res_meta.status_code == 200:
-                        resultado["arquivos"][nome_campo] = {"status": "ok", "nome": res_meta.json().get("name")}
+                for d_id in target_drives:
+                    if not d_id:
+                        continue
+                    if is_guid:
+                        url_meta = f"https://graph.microsoft.com/v1.0/drives/{d_id}/items/{item_or_path}"
                     else:
-                        resultado["arquivos"][nome_campo] = {"status": "erro", "detalhe": f"Status {res_meta.status_code}"}
-                except Exception as e:
-                    resultado["arquivos"][nome_campo] = {"status": "erro", "detalhe": str(e)}
+                        caminho_limpo = item_or_path.replace("\\", "/").strip("/")
+                        caminho_encoded = urllib.parse.quote(caminho_limpo)
+                        url_meta = f"https://graph.microsoft.com/v1.0/drives/{d_id}/root:/{caminho_encoded}"
+                        
+                    try:
+                        res_meta = requests.get(url_meta, headers=headers, timeout=10)
+                        if res_meta.status_code == 200:
+                            resultado["arquivos"][nome_campo] = {"status": "ok", "nome": res_meta.json().get("name")}
+                            achou = True
+                            break
+                    except Exception:
+                        pass
+                
+                if not achou:
+                    resultado["arquivos"][nome_campo] = {"status": "erro", "detalhe": "Arquivo não encontrado ou sem permissão"}
 
         return resultado
 

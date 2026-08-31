@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPA Logistica - Início V.1.2.3</title>
+    <title>RPA Logistica - Início V.1.2.4</title>
     <script>
         // Prevent flash of wrong theme
         (function () {
@@ -305,6 +305,19 @@
         .module-card.sto::before {
             background: linear-gradient(135deg, transparent 30%, rgba(248, 98, 57, 0.35) 100%);
         }
+
+        .module-card.frete:hover {
+            box-shadow: 0 16px 48px rgba(26, 119, 51, 0.15), 0 0 0 1px rgba(26, 119, 51, 0.15);
+        }
+        .module-card.frete::before {
+            background: linear-gradient(135deg, transparent 30%, rgba(26, 119, 51, 0.4) 100%);
+        }
+        .module-card.frete .module-icon-wrap {
+            background: rgba(26, 119, 51, 0.12);
+            color: #1a7733;
+        }
+        .module-card.frete:hover .card-action { color: #1a7733; }
+
 
         /* Card top row */
         .card-top {
@@ -763,6 +776,26 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
                     </div>
                 </a>
+
+                <!-- LANÇAMENTO DE FRETES (P716) -->
+                <a href="/lancamento_frete" class="module-card frete">
+                    <div class="card-top">
+                        <div class="module-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="module-title">Lançamento de Fretes</h2>
+                        <p class="module-desc">Auditoria, conciliação e lançamento de fretes P716 via SharePoint.</p>
+                    </div>
+                    <div class="card-action">
+                        Acessar módulo
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                    </div>
+                </a>
+
 
             </div>
         </main>
