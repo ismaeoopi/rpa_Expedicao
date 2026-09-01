@@ -249,6 +249,128 @@ def obter_dados_lancamento_frete() -> list:
         }
         fretes_list.append(item_cte)
 
+    # ── Incluir CT-es da planilha Corporativa que NÃO estão na Auditoria ──────
+    keys_ja_incluidas = set(f["cte_key"] for f in fretes_list)
+
+    if df_corp is not None:
+        log_sys.write("🔄 Verificando CT-es exclusivos da planilha Corporativa...")
+
+        # Mapear TODAS as colunas relevantes da Corporativa
+        cc_cte = encontrar_coluna(df_corp, ["CT-E", "CTE", "NUMERO CTE", "NUM CTE"], "Corp")
+        cc_chave = encontrar_coluna(df_corp, ["CHAVE DE ACESSO", "CHAVE", "CHAVE ACESSO"], "Corp")
+        cc_empresa = encontrar_coluna(df_corp, ["EMPRESA", "EMP"], "Corp")
+        cc_estab = encontrar_coluna(df_corp, ["ESTAB.", "ESTABELECIMENTO", "ESTAB"], "Corp")
+        cc_planta = encontrar_coluna(df_corp, ["PLANTA", "UNIDADE"], "Corp")
+        cc_tipo = encontrar_coluna(df_corp, ["TIPO", "TIPO FRETE", "TIPO CTE"], "Corp")
+        cc_cod_emissor = encontrar_coluna(df_corp, ["CÓD EMISSOR", "COD EMISSOR", "CÓD. EMISSOR", "CODIGO EMISSOR", "COD. EMISSOR"], "Corp")
+        cc_emissor = encontrar_coluna(df_corp, ["EMISSOR", "NOME EMISSOR", "TRANSPORTADORA"], "Corp")
+        cc_remetente = encontrar_coluna(df_corp, ["REMETENTE", "NOME REMETENTE"], "Corp")
+        cc_destinatario = encontrar_coluna(df_corp, ["DESTINATÁRIO", "DESTINATARIO", "CLIENTE"], "Corp")
+        cc_valor_final = encontrar_coluna(df_corp, ["VALOR FINAL", "VALOR FRETE", "VALOR", "VALOR TOTAL"], "Corp")
+        cc_valor_sem_icms = encontrar_coluna(df_corp, ["VALOR S/ ICMS", "VALOR SEM ICMS"], "Corp")
+        cc_icms = encontrar_coluna(df_corp, ["ICMS", "VALOR ICMS"], "Corp")
+        cc_of = encontrar_coluna(df_corp, ["OF", "ORDEM DE FRETE", "Nº OF"], "Corp")
+        cc_rc = encontrar_coluna(df_corp, ["RC", "REQUISICAO", "REQUISIÇÃO"], "Corp")
+        cc_fatura = encontrar_coluna(df_corp, ["FATURA", "NUM FATURA"], "Corp")
+        cc_vencimento = encontrar_coluna(df_corp, ["VENCIMENTO", "DT VENCIMENTO"], "Corp")
+        cc_status = encontrar_coluna(df_corp, ["STATUS", "SITUACAO", "SITUAÇÃO"], "Corp")
+        cc_uf_origem = encontrar_coluna(df_corp, ["UF ORIGEM", "UF ORIG"], "Corp")
+        cc_uf_destino = encontrar_coluna(df_corp, ["UF DESTINO", "UF DEST"], "Corp")
+
+        count_novos_corp = 0
+        for idx, row in df_corp.iterrows():
+            cte_num = str(row[cc_cte]).strip() if cc_cte and pd.notna(row[cc_cte]) else ""
+            chave_acesso = str(row[cc_chave]).strip() if cc_chave and pd.notna(row[cc_chave]) else ""
+
+            if not cte_num and not chave_acesso:
+                continue
+            if cte_num.lower() in ["nan", "none", "ct-e", "cte"] or chave_acesso.lower() in ["nan", "none"]:
+                continue
+
+            key_primary = chave_acesso if chave_acesso else cte_num
+
+            # Pular se já existe na lista (veio da Auditoria)
+            if key_primary in keys_ja_incluidas:
+                continue
+
+            info_fiscal = fiscal_map.get(key_primary, fiscal_map.get(cte_num, {}))
+
+            destinatario = str(row[cc_destinatario]).strip() if cc_destinatario and pd.notna(row[cc_destinatario]) else ""
+            if destinatario.lower() in ["nan", "none"]: destinatario = ""
+
+            remetente = str(row[cc_remetente]).strip() if cc_remetente and pd.notna(row[cc_remetente]) else ""
+            if remetente.lower() in ["nan", "none"]: remetente = ""
+
+            valor_final = converter_para_float_frete(row[cc_valor_final]) if cc_valor_final and pd.notna(row[cc_valor_final]) else 0.0
+            valor_sem_icms = converter_para_float_frete(row[cc_valor_sem_icms]) if cc_valor_sem_icms and pd.notna(row[cc_valor_sem_icms]) else 0.0
+            icms = converter_para_float_frete(row[cc_icms]) if cc_icms and pd.notna(row[cc_icms]) else 0.0
+
+            valor_exibicao = valor_sem_icms if valor_sem_icms > 0 else valor_final
+
+            # Extrai OF
+            of_num = ""
+            for possible_of_col in [cc_of, "Ordem de frete", "OF", "OF ORIGINAL"]:
+                if possible_of_col:
+                    col_found = encontrar_coluna(df_corp, [possible_of_col], "Corp") if isinstance(possible_of_col, str) else possible_of_col
+                    if col_found and col_found in df_corp.columns and pd.notna(row[col_found]):
+                        val_o = str(row[col_found]).strip()
+                        if val_o and val_o.lower() not in ["nan", "none", "", "-"]:
+                            of_num = val_o
+                            break
+
+            rc_num = str(row[cc_rc]).strip() if cc_rc and pd.notna(row[cc_rc]) else ""
+            if rc_num.lower() in ["nan", "none"]: rc_num = ""
+
+            status_text = str(row[cc_status]).strip() if cc_status and pd.notna(row[cc_status]) else "Pendente"
+            if status_text.lower() in ["nan", "none", ""]: status_text = "Pendente"
+
+            fatura = str(row[cc_fatura]).strip() if cc_fatura and pd.notna(row[cc_fatura]) else ""
+            if fatura.lower() in ["nan", "none"]: fatura = ""
+
+            vencimento = str(row[cc_vencimento]).strip() if cc_vencimento and pd.notna(row[cc_vencimento]) else ""
+            if vencimento.lower() in ["nan", "none"]: vencimento = ""
+
+            planta_val = str(row[cc_planta]).strip() if cc_planta and pd.notna(row[cc_planta]) else ""
+            estab_val = str(row[cc_estab]).strip() if cc_estab and pd.notna(row[cc_estab]) else "P716"
+            if not planta_val or planta_val.lower() in ["nan", "none"]:
+                planta_val = estab_val
+
+            cod_emissor_val = str(row[cc_cod_emissor]).strip() if cc_cod_emissor and pd.notna(row[cc_cod_emissor]) else ""
+            if cod_emissor_val.lower() in ["nan", "none"]: cod_emissor_val = ""
+            if cod_emissor_val.endswith(".0"):
+                cod_emissor_val = cod_emissor_val[:-2]
+
+            item_cte = {
+                "cte_key": key_primary,
+                "cte_numero": cte_num,
+                "chave_acesso": chave_acesso,
+                "empresa": str(row[cc_empresa]).strip() if cc_empresa and pd.notna(row[cc_empresa]) else "VMG1",
+                "estab": estab_val,
+                "planta": planta_val,
+                "tipo": str(row[cc_tipo]).strip() if cc_tipo and pd.notna(row[cc_tipo]) else "RC",
+                "cod_emissor": cod_emissor_val,
+                "emissor": str(row[cc_emissor]).strip() if cc_emissor and pd.notna(row[cc_emissor]) else "N/A",
+                "remetente": remetente,
+                "destinatario": destinatario,
+                "uf_origem": str(row[cc_uf_origem]).strip() if cc_uf_origem and pd.notna(row[cc_uf_origem]) else "",
+                "uf_destino": str(row[cc_uf_destino]).strip() if cc_uf_destino and pd.notna(row[cc_uf_destino]) else "",
+                "valor_final": round(valor_exibicao, 2),
+                "valor_bruto": round(valor_final, 2),
+                "valor_sem_icms": round(valor_sem_icms, 2),
+                "icms": round(icms, 2),
+                "of_numero": of_num,
+                "rc_numero": rc_num,
+                "fatura": fatura,
+                "vencimento": vencimento,
+                "status": status_text,
+                "status_financeiro": info_fiscal.get("status_financeiro", "")
+            }
+            fretes_list.append(item_cte)
+            keys_ja_incluidas.add(key_primary)
+            count_novos_corp += 1
+
+        log_sys.write(f"📋 {count_novos_corp} CT-e(s) adicionados exclusivamente da planilha Corporativa.")
+
     lancamento_frete_estado["fretes"] = fretes_list
     lancamento_frete_estado["auditoria_caminho"] = auditoria_id
     lancamento_frete_estado["corporativo_caminho"] = corporativo_id
