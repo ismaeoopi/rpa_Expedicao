@@ -305,6 +305,267 @@
         .badge-status.pending { background: rgba(0, 122, 177, 0.12); color: #007ab1; }
         .badge-status.error { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
 
+        /* EXCEL COLUMN FILTERS & CHIPS */
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .col-filter-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 3px 5px;
+            border-radius: 4px;
+            color: var(--text-primary, #64748b);
+            opacity: 0.6;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .col-filter-btn:hover {
+            opacity: 1;
+            background: rgba(26, 119, 51, 0.15);
+            color: #1a7733;
+        }
+
+        .col-filter-btn.active {
+            opacity: 1;
+            background: rgba(26, 119, 51, 0.2);
+            color: #1a7733;
+            font-weight: bold;
+            box-shadow: 0 0 0 2px rgba(26, 119, 51, 0.3);
+        }
+
+        .col-filter-btn.active::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #1a7733;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            right: 1px;
+        }
+
+        .excel-filter-popup {
+            position: absolute;
+            z-index: 3000;
+            width: 290px;
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+            font-size: 12px;
+            color: var(--text-primary, #1e293b);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeInDown 0.15s ease-out;
+        }
+
+        .excel-popup-header {
+            background: var(--topbar-bg, #f1f5f9);
+            padding: 10px 14px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            color: var(--text-primary, #1e293b);
+        }
+
+        .excel-popup-close {
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .excel-popup-close:hover { color: #dc2626; }
+
+        .excel-popup-actions {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: var(--bg-surface, #f8fafc);
+        }
+
+        .excel-action-btn {
+            background: transparent;
+            border: none;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-primary, #334155);
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .excel-action-btn:hover {
+            background: rgba(26, 119, 51, 0.1);
+            color: #1a7733;
+        }
+
+        .excel-action-btn.clear-all-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .excel-popup-search {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .excel-popup-search input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--bg-card, #fff);
+            color: var(--text-primary, #1e293b);
+            outline: none;
+        }
+
+        .excel-popup-search input:focus {
+            border-color: #1a7733;
+        }
+
+        .excel-popup-select-all {
+            padding: 6px 12px;
+            border-bottom: 1px dashed var(--border-color, #e2e8f0);
+            background: var(--bg-surface, #f8fafc);
+        }
+
+        .excel-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            user-select: none;
+            padding: 3px 0;
+            color: var(--text-primary, #334155);
+        }
+
+        .excel-checkbox-label span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .excel-popup-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 6px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .excel-popup-footer {
+            padding: 10px 12px;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            background: var(--topbar-bg, #f1f5f9);
+        }
+
+        .active-filters-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 8px 14px;
+            background: rgba(26, 119, 51, 0.06);
+            border: 1px solid rgba(26, 119, 51, 0.2);
+            border-radius: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .active-filters-label {
+            font-weight: 700;
+            color: #1a7733;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .filter-chip {
+            background: #1a7733;
+            color: white;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-chip-remove {
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.3);
+            transition: background 0.15s;
+        }
+
+        .filter-chip-remove:hover {
+            background: rgba(255, 255, 255, 0.7);
+            color: #000;
+        }
+
+        .btn-clear-all-chips {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #dc2626;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-clear-all-chips:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #dc2626;
+        }
+
         /* CONSOLE LOG */
         .console-container {
             background: var(--bg-card, #ffffff);
@@ -731,11 +992,21 @@
             <h3 class="card-header-title">Registros de Frete P716</h3>
 
             <!-- PLACEHOLDER INICIAL -->
-            <div id="fretes-placeholder" style="text-align: center; color: #94a3b8; padding: 60px 0;">
+            <div id="fretes-placeholder" style="text-align: center; color: #94a3b8; padding: 50px 0;">
                 <span style="font-size: 56px; display: block; margin-bottom: 15px;">📊</span>
                 <p style="font-size: 15px; color: #64748b; margin-bottom: 20px;">
-                    Clique no botão abaixo para carregar e cruzar as planilhas de frete do SharePoint.
+                    Selecione o período de emissão desejado e clique no botão abaixo para carregar os dados.
                 </p>
+                <div style="display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+                    <label for="filtro-periodo-inicial" style="font-size: 13px; font-weight: 700; color: var(--text-primary, #475569);">📅 Período de Emissão:</label>
+                    <select id="filtro-periodo-inicial" class="select-filter" style="font-weight: 700; padding: 10px 14px;" onchange="sincronizarFiltroPeriodo(this.value)">
+                        <option value="30" selected>🗓️ Últimos 30 dias (Padrão)</option>
+                        <option value="60">🗓️ Últimos 60 dias</option>
+                        <option value="90">🗓️ Últimos 90 dias</option>
+                        <option value="180">🗓️ Últimos 6 meses</option>
+                        <option value="0">🌐 Todos os Períodos (Sem Filtro)</option>
+                    </select>
+                </div>
                 <button class="btn-primary" onclick="carregarDadosFrete()">
                     🔄 Carregar Dados do SharePoint
                 </button>
@@ -757,8 +1028,27 @@
                         <option value="ok">Apenas Escriturado / Ok</option>
                     </select>
 
+                    <select id="filtro-periodo" class="select-filter" style="font-weight: 700; border-color: #1a7733; color: #1a7733;" onchange="sincronizarFiltroPeriodo(this.value)">
+                        <option value="30" selected>🗓️ Últimos 30 dias</option>
+                        <option value="60">🗓️ Últimos 60 dias</option>
+                        <option value="90">🗓️ Últimos 90 dias</option>
+                        <option value="180">🗓️ Últimos 6 meses</option>
+                        <option value="0">🌐 Todos os Períodos</option>
+                    </select>
+
+                    <button class="btn-secondary" style="padding: 10px 16px; font-size: 13px;" onclick="carregarDadosFrete()" title="Executar nova consulta no SharePoint com o período selecionado">
+                        🔄 Nova Consulta
+                    </button>
+
                     <button class="btn-outline" onclick="marcarTodos(true)">☑️ Selecionar Todos</button>
                     <button class="btn-outline" onclick="marcarTodos(false)">⬜ Desmarcar</button>
+                </div>
+
+                <!-- BARRA DE FILTROS ATIVOS -->
+                <div id="active-filters-bar" class="active-filters-bar" style="display: none;">
+                    <span class="active-filters-label">⚡ Filtros Ativos:</span>
+                    <div id="active-filter-chips" class="filter-chips"></div>
+                    <button class="btn-clear-all-chips" onclick="limparTodosFiltros()">🗑️ Limpar Todos os Filtros</button>
                 </div>
 
                 <!-- TABELA -->
@@ -767,17 +1057,78 @@
                         <thead>
                             <tr>
                                 <th style="width: 40px; text-align: center;">✓</th>
-                                <th>Planta</th>
-                                <th>Tipo</th>
-                                <th>CT-e</th>
-                                <th>Emissor (Transportadora)</th>
-                                <th>Remetente</th>
-                                <th>Destinatário (Cliente)</th>
-                                <th>Orig / Dest</th>
-                                <th>Valor S/ ICMS</th>
-                                <th>OF</th>
-                                <th>RC</th>
-                                <th>Status</th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Planta</span>
+                                        <button class="col-filter-btn" id="btn-filter-planta" title="Filtrar por Planta" onclick="abrirFiltroColuna(event, 'planta')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Tipo</span>
+                                        <button class="col-filter-btn" id="btn-filter-tipo" title="Filtrar por Tipo" onclick="abrirFiltroColuna(event, 'tipo')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>CT-e</span>
+                                        <button class="col-filter-btn" id="btn-filter-cte_numero" title="Filtrar por CT-e" onclick="abrirFiltroColuna(event, 'cte_numero')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>DT Emissão</span>
+                                        <button class="col-filter-btn" id="btn-filter-dt_emissao" title="Filtrar por DT Emissão" onclick="abrirFiltroColuna(event, 'dt_emissao')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Emissor (Transportadora)</span>
+                                        <button class="col-filter-btn" id="btn-filter-emissor" title="Filtrar por Emissor" onclick="abrirFiltroColuna(event, 'emissor')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Remetente</span>
+                                        <button class="col-filter-btn" id="btn-filter-remetente" title="Filtrar por Remetente" onclick="abrirFiltroColuna(event, 'remetente')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Destinatário (Cliente)</span>
+                                        <button class="col-filter-btn" id="btn-filter-destinatario" title="Filtrar por Destinatário" onclick="abrirFiltroColuna(event, 'destinatario')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Orig / Dest</span>
+                                        <button class="col-filter-btn" id="btn-filter-orig_dest" title="Filtrar por Origem/Destino" onclick="abrirFiltroColuna(event, 'orig_dest')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Valor S/ ICMS</span>
+                                        <button class="col-filter-btn" id="btn-filter-valor" title="Filtrar por Valor" onclick="abrirFiltroColuna(event, 'valor')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>OF</span>
+                                        <button class="col-filter-btn" id="btn-filter-of_numero" title="Filtrar por OF" onclick="abrirFiltroColuna(event, 'of_numero')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>RC</span>
+                                        <button class="col-filter-btn" id="btn-filter-rc_numero" title="Filtrar por RC" onclick="abrirFiltroColuna(event, 'rc_numero')">▼</button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Status</span>
+                                        <button class="col-filter-btn" id="btn-filter-status" title="Filtrar por Status" onclick="abrirFiltroColuna(event, 'status')">▼</button>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tabela-fretes-corpo">
@@ -972,6 +1323,40 @@
                     🚀 Iniciar RC no SAP
                 </button>
             </div>
+    <!-- POPUP FILTRO ESTILO EXCEL -->
+    <div id="excel-filter-popup" class="excel-filter-popup" style="display: none;" onclick="event.stopPropagation()">
+        <div class="excel-popup-header">
+            <span id="excel-popup-title">Filtrar Coluna</span>
+            <button class="excel-popup-close" onclick="fecharFiltroColuna()">✕</button>
+        </div>
+        
+        <div class="excel-popup-actions">
+            <button class="excel-action-btn" onclick="limparFiltroColunaAtual()">
+                🧹 Limpar filtro desta coluna
+            </button>
+            <button class="excel-action-btn clear-all-btn" onclick="limparTodosFiltros()">
+                ❌ Limpar todos os filtros
+            </button>
+        </div>
+        
+        <div class="excel-popup-search">
+            <input type="text" id="excel-search-input" placeholder="🔍 Pesquisar valores..." oninput="filtrarListaOpcoesExcel(this.value)">
+        </div>
+        
+        <div class="excel-popup-select-all">
+            <label class="excel-checkbox-label">
+                <input type="checkbox" id="excel-chk-select-all" onchange="toggleSelectAllExcel(this.checked)">
+                <span><strong>(Selecionar Tudo)</strong></span>
+            </label>
+        </div>
+        
+        <div class="excel-popup-list" id="excel-options-list">
+            <!-- Preenchido via Javascript -->
+        </div>
+        
+        <div class="excel-popup-footer">
+            <button class="btn-outline" style="padding: 5px 12px; font-size: 12px;" onclick="fecharFiltroColuna()">Cancelar</button>
+            <button class="btn-primary" style="padding: 5px 14px; font-size: 12px;" onclick="aplicarFiltroColunaAtual()">Aplicar</button>
         </div>
     </div>
 
@@ -1038,14 +1423,29 @@
             });
         }
 
+        function sincronizarFiltroPeriodo(val) {
+            const p1 = document.getElementById('filtro-periodo');
+            const p2 = document.getElementById('filtro-periodo-inicial');
+            if (p1) p1.value = val;
+            if (p2) p2.value = val;
+        }
+
         function carregarDadosFrete() {
-            logNoConsole("📥 Baixando e cruzando planilhas de Frete P716 do SharePoint...");
-            fetch('/api/lancamento_frete/carregar', { method: 'POST' })
+            const pElem = document.getElementById('filtro-periodo') || document.getElementById('filtro-periodo-inicial');
+            const diasFiltro = pElem ? parseInt(pElem.value, 10) : 30;
+            const labelTexto = diasFiltro > 0 ? `últimos ${diasFiltro} dias` : 'todos os períodos';
+
+            logNoConsole(`📥 Baixando e cruzando planilhas de Frete P716 do SharePoint (${labelTexto})...`);
+            fetch('/api/lancamento_frete/carregar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dias_filtro: diasFiltro })
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         fretesList = data.fretes;
-                        logNoConsole(`✅ ${fretesList.length} registros de frete carregados com sucesso!`);
+                        logNoConsole(`✅ ${fretesList.length} registros de frete carregados com sucesso! (${labelTexto})`);
                         document.getElementById('fretes-placeholder').style.display = 'none';
                         document.getElementById('fretes-conteudo').style.display = 'block';
                         popularFiltroPlantas(fretesList);
@@ -1113,6 +1513,7 @@
                     <td><span style="font-weight: 700; color: #007ab1; background: rgba(0,122,177,0.08); padding: 3px 8px; border-radius: 6px;">${f.planta || f.estab || 'P716'}</span></td>
                     <td><strong>${f.tipo || 'RC'}</strong></td>
                     <td><strong>${f.cte_numero}</strong></td>
+                    <td><span style="font-weight: 600; color: #475569;">${f.dt_emissao || '-'}</span></td>
                     <td>${f.emissor || '-'}</td>
                     <td>${f.remetente || '-'}</td>
                     <td>${f.destinatario || '-'}</td>
@@ -1148,6 +1549,323 @@
             document.getElementById('btn-processar').disabled = count === 0;
         }
 
+        /* ========================================
+           EXCEL COLUMN FILTERS & CHIPS LOGIC
+        ======================================== */
+        const COLUMN_CONFIG = {
+            'planta': {
+                title: 'Planta',
+                getValue: f => f.planta || f.estab || 'P716'
+            },
+            'tipo': {
+                title: 'Tipo',
+                getValue: f => f.tipo || 'RC'
+            },
+            'cte_numero': {
+                title: 'CT-e',
+                getValue: f => String(f.cte_numero || '-')
+            },
+            'dt_emissao': {
+                title: 'DT Emissão',
+                getValue: f => f.dt_emissao || '-'
+            },
+            'emissor': {
+                title: 'Emissor (Transportadora)',
+                getValue: f => f.emissor || '-'
+            },
+            'remetente': {
+                title: 'Remetente',
+                getValue: f => f.remetente || '-'
+            },
+            'destinatario': {
+                title: 'Destinatário (Cliente)',
+                getValue: f => f.destinatario || '-'
+            },
+            'orig_dest': {
+                title: 'Origem / Destino',
+                getValue: f => `${f.uf_origem || ''}/${f.uf_destino || ''}`
+            },
+            'valor': {
+                title: 'Valor S/ ICMS',
+                getValue: f => {
+                    const v = f.valor_sem_icms > 0 ? f.valor_sem_icms : f.valor_final;
+                    return v ? `R$ ${Number(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'R$ 0,00';
+                }
+            },
+            'of_numero': {
+                title: 'OF',
+                getValue: f => f.of_numero ? String(f.of_numero) : 'Sem OF'
+            },
+            'rc_numero': {
+                title: 'RC',
+                getValue: f => f.rc_numero ? String(f.rc_numero) : '-'
+            },
+            'status': {
+                title: 'Status',
+                getValue: f => f.status || 'Pendente'
+            }
+        };
+
+        let colFilters = {}; // { colKey: Set of selected values }
+        let currentColKey = null;
+        let currentTempSelection = new Set();
+        let currentColumnAllValues = [];
+
+        // Auto-close popup when clicking outside
+        document.addEventListener('click', (e) => {
+            const popup = document.getElementById('excel-filter-popup');
+            if (popup && popup.style.display !== 'none') {
+                if (!popup.contains(e.target) && !e.target.closest('.col-filter-btn')) {
+                    fecharFiltroColuna();
+                }
+            }
+        });
+
+        function abrirFiltroColuna(e, colKey) {
+            if (e) e.stopPropagation();
+            const config = COLUMN_CONFIG[colKey];
+            if (!config) return;
+
+            currentColKey = colKey;
+            document.getElementById('excel-popup-title').innerText = `Filtrar: ${config.title}`;
+            document.getElementById('excel-search-input').value = '';
+
+            // Compute unique values and their counts from fretesList
+            const valCounts = {};
+            fretesList.forEach(f => {
+                const val = config.getValue(f) || '-';
+                valCounts[val] = (valCounts[val] || 0) + 1;
+            });
+
+            currentColumnAllValues = Object.keys(valCounts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+            // Initial selection set
+            if (colFilters[colKey] && colFilters[colKey].size > 0) {
+                currentTempSelection = new Set(colFilters[colKey]);
+            } else {
+                currentTempSelection = new Set(currentColumnAllValues);
+            }
+
+            renderizarOpcoesExcel(currentColumnAllValues, valCounts);
+
+            // Position popup
+            const btn = e ? e.currentTarget : document.getElementById(`btn-filter-${colKey}`);
+            const rect = btn.getBoundingClientRect();
+            const popup = document.getElementById('excel-filter-popup');
+            
+            popup.style.display = 'flex';
+            
+            // Adjust position relative to viewport and scroll
+            const topPos = rect.bottom + window.scrollY + 6;
+            let leftPos = rect.left + window.scrollX - 10;
+            const popupWidth = 290;
+            if (leftPos + popupWidth > window.innerWidth - 20) {
+                leftPos = window.innerWidth - popupWidth - 20;
+            }
+            if (leftPos < 10) leftPos = 10;
+
+            popup.style.top = topPos + 'px';
+            popup.style.left = leftPos + 'px';
+
+            setTimeout(() => document.getElementById('excel-search-input').focus(), 50);
+        }
+
+        function renderizarOpcoesExcel(valuesList, valCounts) {
+            const container = document.getElementById('excel-options-list');
+            container.innerHTML = '';
+
+            if (valuesList.length === 0) {
+                container.innerHTML = '<span style="color:#94a3b8; font-style:italic;">Nenhum valor encontrado</span>';
+                document.getElementById('excel-chk-select-all').checked = false;
+                return;
+            }
+
+            valuesList.forEach(val => {
+                const isChecked = currentTempSelection.has(val);
+                const count = valCounts ? valCounts[val] : 0;
+                
+                const label = document.createElement('label');
+                label.className = 'excel-checkbox-label';
+                label.innerHTML = `
+                    <input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleOpcaoExcel(this)">
+                    <span title="${val}">${val} ${count ? `<span style="color:#94a3b8; font-size:11px;">(${count})</span>` : ''}</span>
+                `;
+                container.appendChild(label);
+            });
+
+            atualizarSelectAllState();
+        }
+
+        function toggleOpcaoExcel(chk) {
+            const val = chk.value;
+            if (chk.checked) {
+                currentTempSelection.add(val);
+            } else {
+                currentTempSelection.delete(val);
+            }
+            atualizarSelectAllState();
+        }
+
+        function toggleSelectAllExcel(checked) {
+            const visibleCheckboxes = document.querySelectorAll('#excel-options-list input[type="checkbox"]');
+            visibleCheckboxes.forEach(chk => {
+                chk.checked = checked;
+                if (checked) {
+                    currentTempSelection.add(chk.value);
+                } else {
+                    currentTempSelection.delete(chk.value);
+                }
+            });
+        }
+
+        function atualizarSelectAllState() {
+            const chkAll = document.getElementById('excel-chk-select-all');
+            const visibleCheckboxes = Array.from(document.querySelectorAll('#excel-options-list input[type="checkbox"]'));
+            if (visibleCheckboxes.length === 0) {
+                chkAll.checked = false;
+                return;
+            }
+            const allChecked = visibleCheckboxes.every(c => c.checked);
+            chkAll.checked = allChecked;
+        }
+
+        function filtrarListaOpcoesExcel(query) {
+            const q = (query || '').toLowerCase();
+            const labels = document.querySelectorAll('#excel-options-list .excel-checkbox-label');
+            labels.forEach(lbl => {
+                const text = lbl.innerText.toLowerCase();
+                if (text.includes(q)) {
+                    lbl.style.display = 'flex';
+                } else {
+                    lbl.style.display = 'none';
+                }
+            });
+            atualizarSelectAllState();
+        }
+
+        function fecharFiltroColuna() {
+            document.getElementById('excel-filter-popup').style.display = 'none';
+            currentColKey = null;
+        }
+
+        function aplicarFiltroColunaAtual() {
+            if (!currentColKey) return;
+            const btn = document.getElementById(`btn-filter-${currentColKey}`);
+
+            // If all values checked or selection equals all values, clear filter for this column
+            if (currentTempSelection.size === currentColumnAllValues.length) {
+                delete colFilters[currentColKey];
+                if (btn) btn.classList.remove('active');
+            } else {
+                colFilters[currentColKey] = new Set(currentTempSelection);
+                if (btn) btn.classList.add('active');
+            }
+
+            fecharFiltroColuna();
+            filtrarTabela();
+        }
+
+        function limparFiltroColunaAtual() {
+            if (!currentColKey) return;
+            limparFiltroColuna(currentColKey);
+            fecharFiltroColuna();
+        }
+
+        function limparFiltroColuna(colKey) {
+            delete colFilters[colKey];
+            const btn = document.getElementById(`btn-filter-${colKey}`);
+            if (btn) btn.classList.remove('active');
+            filtrarTabela();
+        }
+
+        function limparTodosFiltros() {
+            colFilters = {};
+            document.getElementById('filtro-busca').value = '';
+            document.getElementById('filtro-planta').value = 'todas';
+            document.getElementById('filtro-status').value = 'todos';
+
+            Object.keys(COLUMN_CONFIG).forEach(colKey => {
+                const btn = document.getElementById(`btn-filter-${colKey}`);
+                if (btn) btn.classList.remove('active');
+            });
+
+            fecharFiltroColuna();
+            filtrarTabela();
+        }
+
+        function atualizarChipsFiltrosAtivos() {
+            const bar = document.getElementById('active-filters-bar');
+            const chipsContainer = document.getElementById('active-filter-chips');
+            chipsContainer.innerHTML = '';
+
+            let hasActiveFilters = false;
+
+            // Column filters chips
+            Object.entries(colFilters).forEach(([colKey, selectedSet]) => {
+                if (selectedSet && selectedSet.size > 0) {
+                    hasActiveFilters = true;
+                    const config = COLUMN_CONFIG[colKey];
+                    const title = config ? config.title : colKey;
+                    
+                    let textVal = '';
+                    if (selectedSet.size === 1) {
+                        textVal = Array.from(selectedSet)[0];
+                    } else {
+                        textVal = `${selectedSet.size} selecionados`;
+                    }
+
+                    const chip = document.createElement('div');
+                    chip.className = 'filter-chip';
+                    chip.innerHTML = `
+                        <span><strong>${title}:</strong> ${textVal}</span>
+                        <span class="filter-chip-remove" onclick="limparFiltroColuna('${colKey}')" title="Remover filtro">✕</span>
+                    `;
+                    chipsContainer.appendChild(chip);
+                }
+            });
+
+            // Global search chip
+            const busca = document.getElementById('filtro-busca').value;
+            if (busca) {
+                hasActiveFilters = true;
+                const chip = document.createElement('div');
+                chip.className = 'filter-chip';
+                chip.innerHTML = `
+                    <span><strong>Busca:</strong> ${busca}</span>
+                    <span class="filter-chip-remove" onclick="document.getElementById('filtro-busca').value=''; filtrarTabela();" title="Remover busca">✕</span>
+                `;
+                chipsContainer.appendChild(chip);
+            }
+
+            // Global plant chip
+            const planta = document.getElementById('filtro-planta').value;
+            if (planta && planta !== 'todas') {
+                hasActiveFilters = true;
+                const chip = document.createElement('div');
+                chip.className = 'filter-chip';
+                chip.innerHTML = `
+                    <span><strong>Planta:</strong> ${planta}</span>
+                    <span class="filter-chip-remove" onclick="document.getElementById('filtro-planta').value='todas'; filtrarTabela();" title="Remover filtro de planta">✕</span>
+                `;
+                chipsContainer.appendChild(chip);
+            }
+
+            // Global status chip
+            const status = document.getElementById('filtro-status').value;
+            if (status && status !== 'todos') {
+                hasActiveFilters = true;
+                const chip = document.createElement('div');
+                chip.className = 'filter-chip';
+                chip.innerHTML = `
+                    <span><strong>Status:</strong> ${status}</span>
+                    <span class="filter-chip-remove" onclick="document.getElementById('filtro-status').value='todos'; filtrarTabela();" title="Remover filtro de status">✕</span>
+                `;
+                chipsContainer.appendChild(chip);
+            }
+
+            bar.style.display = hasActiveFilters ? 'flex' : 'none';
+        }
+
         function filtrarTabela() {
             const busca = document.getElementById('filtro-busca').value.toLowerCase();
             const statusSel = document.getElementById('filtro-status').value;
@@ -1167,9 +1885,25 @@
 
                 let plantaMatch = (plantaSel === 'todas') || ((f.planta || f.estab) === plantaSel);
 
-                return textMatch && statusMatch && plantaMatch;
+                // Multi-column excel filters
+                let colMatch = true;
+                for (const [colKey, selectedSet] of Object.entries(colFilters)) {
+                    if (selectedSet && selectedSet.size > 0) {
+                        const config = COLUMN_CONFIG[colKey];
+                        if (config) {
+                            const val = config.getValue(f) || '-';
+                            if (!selectedSet.has(val)) {
+                                colMatch = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return textMatch && statusMatch && plantaMatch && colMatch;
             });
 
+            atualizarChipsFiltrosAtivos();
             atualizarMetricas(filtrados);
             renderizarTabela(filtrados);
         }

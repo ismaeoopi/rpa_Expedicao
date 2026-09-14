@@ -535,6 +535,19 @@ def _salvar_rc(session) -> str:
         return ""
 
 
+def obter_material_por_tipo_frete(tipo_frete: str) -> str:
+    """
+    Retorna o código do material SAP de acordo com o Tipo de Frete:
+      - Outbound -> "CTE.16.05"
+      - Inbound (ou outros/padrão) -> "CTE.16.04"
+    """
+    if tipo_frete:
+        t_low = str(tipo_frete).lower().strip()
+        if "outbound" in t_low or t_low == "out" or t_low.startswith("outbound") or t_low.startswith("out_"):
+            return "CTE.16.05"
+    return "CTE.16.04"
+
+
 # ---------------------------------------------------------------------------
 # Função pública principal
 # ---------------------------------------------------------------------------
@@ -545,6 +558,7 @@ def criar_rc_cte(
     centro_custo: str,
     fornecedor: str,
     material: str = "CTE.16.04",
+    tipo_frete: str = "",
     planta: str = "p716",
     data_hoje: str | None = None,
     caminho_anexo: str = "",
@@ -565,6 +579,7 @@ def criar_rc_cte(
     centro_custo     : código do centro de custo (ex: "AQ203")
     fornecedor       : código do fornecedor preferencial (ex: "9190617")
     material         : código do material (padrão "CTE.16.04")
+    tipo_frete       : tipo de frete ("Outbound" -> "CTE.16.05", "Inbound" -> "CTE.16.04")
     planta           : código da planta/centro (padrão "p716")
     data_hoje        : data no formato DDMMYYYY; se None usa data atual
     caminho_anexo    : caminho do diretório do arquivo de anexo
@@ -581,12 +596,16 @@ def criar_rc_cte(
     if not ctes:
         raise ValueError("Lista de CTEs não pode ser vazia.")
 
+    # Se tipo_frete for informado, determina o material apropriado
+    if tipo_frete:
+        material = obter_material_por_tipo_frete(tipo_frete)
+
     # Data padrão = hoje
     if not data_hoje:
         data_hoje = datetime.date.today().strftime("%d%m%Y")
 
     quantidade = len(ctes)
-    _log(f"🚀 Iniciando criação de RC para {quantidade} CTE(s): {[c['numero'] for c in ctes]}")
+    _log(f"🚀 Iniciando criação de RC para {quantidade} CTE(s): {[c['numero'] for c in ctes]} | Material: {material} (Tipo Frete: {tipo_frete or 'N/A'})")
 
     # ----- Passo 1: Abrir ME51N -----
     _abrir_me51n(session, tipo_doc)

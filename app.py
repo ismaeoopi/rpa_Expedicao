@@ -800,9 +800,11 @@ def api_lancamento_frete_selecionar_anexo():
 @app.route('/api/lancamento_frete/carregar', methods=['POST'])
 def api_lancamento_frete_carregar():
     try:
+        dados = request.get_json(silent=True) or {}
+        dias_filtro = int(dados.get("dias_filtro", 30))
         from src.expedicao.lancamento_frete_processador import obter_dados_lancamento_frete
-        fretes = obter_dados_lancamento_frete()
-        return jsonify({"status": "success", "fretes": fretes})
+        fretes = obter_dados_lancamento_frete(dias_filtro=dias_filtro)
+        return jsonify({"status": "success", "fretes": fretes, "dias_filtro": dias_filtro})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

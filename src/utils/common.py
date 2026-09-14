@@ -1,4 +1,5 @@
 import sys
+import re
 from datetime import datetime
 
 # Guarda o stdout original
@@ -14,8 +15,11 @@ class LogBuffer:
     def write(self, msg):
         clean_msg = str(msg).strip()
         if clean_msg:
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            log_line = f"[{timestamp}] {clean_msg}"
+            if re.match(r"^\[\d{2}:\d{2}:\d{2}\]", clean_msg):
+                log_line = clean_msg
+            else:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                log_line = f"[{timestamp}] {clean_msg}"
             self.logs.append(log_line)
             # Escreve no stdout original de forma segura
             try:
@@ -111,8 +115,11 @@ class StdoutRedirector:
         clean = line.replace('\r', '').strip()
         if clean:
             prefix = "\r" if is_overwrite else ""
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            self.log_buffer.logs.append(f"{prefix}[{timestamp}] {clean}")
+            if re.match(r"^\[\d{2}:\d{2}:\d{2}\]", clean):
+                self.log_buffer.logs.append(f"{prefix}{clean}")
+            else:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                self.log_buffer.logs.append(f"{prefix}[{timestamp}] {clean}")
 
     def flush(self):
         try:

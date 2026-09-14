@@ -147,7 +147,7 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
     
                 # Pega ID da HU gerada
                 session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2").Select()
-                uc = session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0335/txt/SCWM/S_PACK_VIEW_HUHDR-HUIDENT").Text
+                uc = session.findById("wnd[0]/usr/subSUB_HUDETAIL:/SCWM/SAPLUI_PACKING:0300/tabsTS_HU/tabpHUDETAIL2/ssubSUB_DETAIL:/SCWM/SAPLUI_PACKING:0335/txt/SCWM/S_PACK_VIEW_HUHDR-HUIDENT").Text  
                 time.sleep(0.5)
 
                 # Salva no cache
@@ -155,7 +155,7 @@ def executar_prdi(caminho, auto=False, inbound="", filtro="", tamanho=None, nUcs
                     ucs_processadas[identificador_uc_excel] = uc
 
             # Finaliza Packing do item (Sempre executa, com o ID da UC lido ou salvo)
-            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-DHUNO").Text = uc
+            session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/txt/SCWM/S_SCAN_PLAN-DHUNO_UI").text = uc
             session.findById("wnd[0]/usr/subSUB_SCANNER:/SCWM/SAPLUI_PACKING:0200/tabsTS_SCANNER/tabpMAT_PACK/ssubSS_SCANNER:/SCWM/SAPLUI_PACKING:0209/btnPB_PACK").press()
             df.at[i,"UC"] = uc
         

@@ -16,14 +16,14 @@ from src.estoque.processo_sap import processo_estoque_sem_planilha
 
 # 1. Lista de Inbounds / VL32N para processamento
 # Pode ser uma lista de strings ex: ["18001234"] ou dicionários [{"val": "18001234"}]
-VL32_LIST = ["181230301"]
+VL32_LIST = ["181250630"]
 
 # 2. Ponto de Partida do Processo:
 # 1 -> Início Completo (VL32N -> CS15 -> CO01 -> MIGO ZP1/261 -> MIGO 411 -> PRDI)
 # 2 -> A partir da MIGO ZP1 / 261 (Requer OP_GLOBAL informada abaixo) -> MIGO 411 -> PRDI
 # 3 -> A partir da MIGO 411 (Transferência) -> PRDI
 # 4 -> A partir do PRDI
-PONTO_PARTIDA = 3
+PONTO_PARTIDA = 4
 
 # 3. Ordem de Produção (OP)
 # Necessária se PONTO_PARTIDA = 2 (Apontamento/Consumo MIGO ZP1)
@@ -31,7 +31,7 @@ OP_GLOBAL = "10001234"
 
 # 4. Inbound / MIGO de Transferência Gerada (Opcional)
 # Usada principalmente se for direto para a etapa 4 (PRDI)
-MIGO_GLOBAL = None
+MIGO_GLOBAL = "181266347"
 
 # 5. ID do Lote no Banco de Dados SQLite (Opcional)
 # Caso queira retomar um lote existente, informe o ID numérico ex: 5. Caso contrário, deixe None.
@@ -91,11 +91,7 @@ def main():
         print("x" * 70)
 
     finally:
-        print("\n📋 LOGS DE EXECUÇÃO DETALHADOS:")
-        print("-" * 70)
-        for log in log_sys.logs:
-            print(log)
-        print("-" * 70)
+        pass
 
 
 if __name__ == "__main__":

@@ -28,25 +28,33 @@ def normalizar_termo(texto):
 def encontrar_coluna(df, nomes_possiveis, descricao_planilha="Planilha"):
     """
     Busca no DataFrame uma coluna correspondente de forma tolerante a acentos,
-    espaços e caracteres especiais.
+    espaços e caracteres especiais, respeitando rigorosamente a ordem de prioridade
+    de nomes_possiveis.
     """
+    if df is None or df.empty:
+        return None
+
     colunas_encontradas = list(df.columns)
     log_sys.write(f"📊 Colunas da {descricao_planilha}: {[str(c) for c in colunas_encontradas[:20]]}")
-    
-    nomes_norm = [normalizar_termo(n) for n in nomes_possiveis]
-    
-    # 1. Busca por correspondência exata após normalização
-    for col in df.columns:
-        col_norm = normalizar_termo(col)
-        if col_norm in nomes_norm:
-            return col
-            
-    # 2. Busca por correspondência parcial contida
-    for col in df.columns:
-        col_norm = normalizar_termo(col)
-        for nome_n in nomes_norm:
-            if nome_n and (nome_n in col_norm or col_norm in nome_n):
-                return col
+
+    colunas_norm = {normalizar_termo(c): c for c in df.columns}
+
+    # 1. Busca por correspondência exata na ordem de prioridade de nomes_possiveis
+    for nome in nomes_possiveis:
+        nome_norm = normalizar_termo(nome)
+        if nome_norm and nome_norm in colunas_norm:
+            return colunas_norm[nome_norm]
+
+    # 2. Busca por correspondência parcial contida na ordem de prioridade
+    for nome in nomes_possiveis:
+        nome_norm = normalizar_termo(nome)
+        if not nome_norm:
+            continue
+        for col_norm, col_orig in colunas_norm.items():
+            if nome_norm in col_norm or col_norm in nome_norm:
+                return col_orig
+
+    return None
                 
 def converter_para_float(valor):
     if pd.isna(valor):

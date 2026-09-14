@@ -1,6 +1,7 @@
 import os
 import re
 import io
+from datetime import datetime, timedelta
 import pandas as pd
 from collections import defaultdict
 from dotenv import load_dotenv
@@ -16,6 +17,28 @@ lancamento_frete_estado = {
     "status_etapas": {}, # {cte_key: {"status": "pending", "detalhe": "", "of": "", "rc": ""}}
     "selecionados": [] # Keys selecionadas para processamento
 }
+
+def converter_para_datetime(valor):
+    if pd.isna(valor) or valor is None:
+        return None
+    val_str = str(valor).strip()
+    if not val_str or val_str.lower() in ["nan", "none", "", "-"]:
+        return None
+    try:
+        dt = pd.to_datetime(val_str, dayfirst=True, errors='coerce')
+        if pd.isna(dt):
+            return None
+        return dt.to_pydatetime()
+    except Exception:
+        return None
+
+def formatar_data_str(dt_obj) -> str:
+    if dt_obj is None:
+        return ""
+    try:
+        return dt_obj.strftime("%d/%m/%Y")
+    except Exception:
+        return ""
 
 def converter_para_float_frete(valor):
     if pd.isna(valor):
@@ -57,10 +80,11 @@ def _promover_cabecalho_se_necessario(df: pd.DataFrame) -> pd.DataFrame:
             df = df.iloc[linha_cabecalho_idx + 1:].reset_index(drop=True)
     return df
 
-def obter_dados_lancamento_frete() -> list:
+def obter_dados_lancamento_frete(dias_filtro: int = 30) -> list:
     """
     Baixa as planilhas de Auditoria e Corporativo do SharePoint,
     promove cabeçalhos, consolida e cruza as informações usando a chave CT-e / Chave de Acesso.
+    Filtra por data de emissão dos últimos N dias se dias_filtro > 0.
     """
     global lancamento_frete_estado
     load_dotenv(ENV_PATH)
@@ -68,7 +92,14 @@ def obter_dados_lancamento_frete() -> list:
     auditoria_id = os.getenv("PLANILHA_AUDITORIA_FRETE_P716", "39BE56B3-0D60-4207-BFC3-2A16DE2C4DB6")
     corporativo_id = os.getenv("PLANILHA_LANCAMENTO_FRETE_CORP_P716", "94ABF29E-08F2-4E5E-BD7F-B94D71AC3E0C")
 
-    log_sys.write("🔄 Conectando ao SharePoint para carregar planilhas de Frete P716...")
+    # Calcula data limite de corte se dias_filtro > 0
+    data_corte = None
+    if dias_filtro and dias_filtro > 0:
+        data_corte = (datetime.now() - timedelta(days=dias_filtro)).replace(hour=0, minute=0, second=0, microsecond=0)
+        log_sys.write(f"🔄 Conectando ao SharePoint para carregar planilhas de Frete P716 (Filtro: últimos {dias_filtro} dias desde {data_corte.strftime('%d/%m/%Y')})...")
+    else:
+        log_sys.write("🔄 Conectando ao SharePoint para carregar planilhas de Frete P716 (Sem filtro de período - Todos os registros)...")
+
     client = SharePointClient()
 
     # 1. Carregar Planilha de Auditoria
@@ -103,7 +134,8 @@ def obter_dados_lancamento_frete() -> list:
     col_empresa = encontrar_coluna(df_auditoria, ["EMPRESA", "EMP"], "Auditoria")
     col_estab = encontrar_coluna(df_auditoria, ["ESTAB.", "ESTABELECIMENTO", "ESTAB"], "Auditoria")
     col_planta = encontrar_coluna(df_auditoria, ["PLANTA", "UNIDADE"], "Auditoria")
-    col_tipo = encontrar_coluna(df_auditoria, ["TIPO", "TIPO FRETE", "TIPO CTE"], "Auditoria")
+    col_tipo = encontrar_coluna(df_auditoria, ["TIPO FRETE", "TIPO DE FRETE", "FRETE TIPO", "TIPO CTE", "TIPO"], "Auditoria")
+    col_dt_emissao = encontrar_coluna(df_auditoria, ["DT EMISSÃO", "DT EMISSAO", "DT. EMISSÃO", "DT. EMISSAO", "DATA EMISSÃO", "DATA EMISSAO", "DATA DE EMISSÃO", "EMISSÃO", "EMISSAO"], "Auditoria")
     col_cod_emissor = encontrar_coluna(df_auditoria, ["CÓD EMISSOR", "COD EMISSOR", "CÓD. EMISSOR", "CODIGO EMISSOR", "COD. EMISSOR"], "Auditoria")
     col_emissor = encontrar_coluna(df_auditoria, ["EMISSOR", "NOME EMISSOR", "TRANSPORTADORA"], "Auditoria")
     col_remetente = encontrar_coluna(df_auditoria, ["REMETENTE", "NOME REMETENTE"], "Auditoria")
@@ -126,15 +158,20 @@ def obter_dados_lancamento_frete() -> list:
         c_chave = encontrar_coluna(df_corp, ["CHAVE DE ACESSO", "CHAVE"], "Corp")
         c_dest = encontrar_coluna(df_corp, ["DESTINATÁRIO", "DESTINATARIO", "CLIENTE"], "Corp")
         c_remet = encontrar_coluna(df_corp, ["REMETENTE"], "Corp")
+        c_tipo = encontrar_coluna(df_corp, ["TIPO FRETE", "TIPO DE FRETE", "FRETE TIPO", "TIPO CTE", "TIPO"], "Corp")
+        c_dt_emissao = encontrar_coluna(df_corp, ["DT EMISSÃO", "DT EMISSAO", "DT. EMISSÃO", "DT. EMISSAO", "DATA EMISSÃO", "DATA EMISSAO", "DATA DE EMISSÃO", "EMISSÃO", "EMISSAO"], "Corp")
         
         for idx, row in df_corp.iterrows():
             k_cte = str(row[c_cte]).strip() if c_cte and pd.notna(row[c_cte]) else ""
             k_chave = str(row[c_chave]).strip() if c_chave and pd.notna(row[c_chave]) else ""
             key = k_chave if k_chave else k_cte
             if key and key.lower() not in ["nan", "none"]:
+                raw_dt = row[c_dt_emissao] if c_dt_emissao and pd.notna(row[c_dt_emissao]) else None
                 corp_map[key] = {
                     "destinatario": str(row[c_dest]).strip() if c_dest and pd.notna(row[c_dest]) else "",
-                    "remetente": str(row[c_remet]).strip() if c_remet and pd.notna(row[c_remet]) else ""
+                    "remetente": str(row[c_remet]).strip() if c_remet and pd.notna(row[c_remet]) else "",
+                    "tipo": str(row[c_tipo]).strip() if c_tipo and pd.notna(row[c_tipo]) else "",
+                    "dt_emissao": converter_para_datetime(raw_dt)
                 }
 
     # Mapeamento do Fiscal (se houver)
@@ -171,6 +208,16 @@ def obter_dados_lancamento_frete() -> list:
         # Complementa com informações corporativas/fiscais
         info_corp = corp_map.get(key_primary, corp_map.get(cte_num, {}))
         info_fiscal = fiscal_map.get(key_primary, fiscal_map.get(cte_num, {}))
+
+        # Data de emissão
+        raw_dt_emissao = row[col_dt_emissao] if col_dt_emissao and pd.notna(row[col_dt_emissao]) else None
+        dt_emissao_obj = converter_para_datetime(raw_dt_emissao)
+        if dt_emissao_obj is None:
+            dt_emissao_obj = info_corp.get("dt_emissao")
+
+        # Filtro de corte por data
+        if data_corte and dt_emissao_obj and dt_emissao_obj < data_corte:
+            continue
 
         destinatario = str(row[col_destinatario]).strip() if col_destinatario and pd.notna(row[col_destinatario]) else ""
         if not destinatario or destinatario.lower() in ["nan", "none"]:
@@ -222,6 +269,14 @@ def obter_dados_lancamento_frete() -> list:
         if cod_emissor_val.endswith(".0"):
             cod_emissor_val = cod_emissor_val[:-2]
 
+        tipo_frete_val = str(row[col_tipo]).strip() if col_tipo and pd.notna(row[col_tipo]) else ""
+        if not tipo_frete_val or tipo_frete_val.upper() in ["NAN", "NONE", "RC", "CTE"]:
+            tipo_corp = info_corp.get("tipo", "")
+            if tipo_corp and tipo_corp.upper() not in ["NAN", "NONE", "RC", "CTE"]:
+                tipo_frete_val = tipo_corp
+        if not tipo_frete_val:
+            tipo_frete_val = "RC"
+
         item_cte = {
             "cte_key": key_primary,
             "cte_numero": cte_num,
@@ -229,7 +284,8 @@ def obter_dados_lancamento_frete() -> list:
             "empresa": str(row[col_empresa]).strip() if col_empresa and pd.notna(row[col_empresa]) else "VMG1",
             "estab": estab_val,
             "planta": planta_val,
-            "tipo": str(row[col_tipo]).strip() if col_tipo and pd.notna(row[col_tipo]) else "RC",
+            "tipo": tipo_frete_val,
+            "dt_emissao": formatar_data_str(dt_emissao_obj),
             "cod_emissor": cod_emissor_val,
             "emissor": str(row[col_emissor]).strip() if col_emissor and pd.notna(row[col_emissor]) else "N/A",
             "remetente": remetente,
@@ -261,7 +317,8 @@ def obter_dados_lancamento_frete() -> list:
         cc_empresa = encontrar_coluna(df_corp, ["EMPRESA", "EMP"], "Corp")
         cc_estab = encontrar_coluna(df_corp, ["ESTAB.", "ESTABELECIMENTO", "ESTAB"], "Corp")
         cc_planta = encontrar_coluna(df_corp, ["PLANTA", "UNIDADE"], "Corp")
-        cc_tipo = encontrar_coluna(df_corp, ["TIPO", "TIPO FRETE", "TIPO CTE"], "Corp")
+        cc_tipo = encontrar_coluna(df_corp, ["TIPO FRETE", "TIPO DE FRETE", "FRETE TIPO", "TIPO CTE", "TIPO"], "Corp")
+        cc_dt_emissao = encontrar_coluna(df_corp, ["DT EMISSÃO", "DT EMISSAO", "DT. EMISSÃO", "DT. EMISSAO", "DATA EMISSÃO", "DATA EMISSAO", "DATA DE EMISSÃO", "EMISSÃO", "EMISSAO"], "Corp")
         cc_cod_emissor = encontrar_coluna(df_corp, ["CÓD EMISSOR", "COD EMISSOR", "CÓD. EMISSOR", "CODIGO EMISSOR", "COD. EMISSOR"], "Corp")
         cc_emissor = encontrar_coluna(df_corp, ["EMISSOR", "NOME EMISSOR", "TRANSPORTADORA"], "Corp")
         cc_remetente = encontrar_coluna(df_corp, ["REMETENTE", "NOME REMETENTE"], "Corp")
@@ -291,6 +348,12 @@ def obter_dados_lancamento_frete() -> list:
 
             # Pular se já existe na lista (veio da Auditoria)
             if key_primary in keys_ja_incluidas:
+                continue
+
+            raw_dt_emissao = row[cc_dt_emissao] if cc_dt_emissao and pd.notna(row[cc_dt_emissao]) else None
+            dt_emissao_obj = converter_para_datetime(raw_dt_emissao)
+
+            if data_corte and dt_emissao_obj and dt_emissao_obj < data_corte:
                 continue
 
             info_fiscal = fiscal_map.get(key_primary, fiscal_map.get(cte_num, {}))
@@ -348,6 +411,7 @@ def obter_dados_lancamento_frete() -> list:
                 "estab": estab_val,
                 "planta": planta_val,
                 "tipo": str(row[cc_tipo]).strip() if cc_tipo and pd.notna(row[cc_tipo]) else "RC",
+                "dt_emissao": formatar_data_str(dt_emissao_obj),
                 "cod_emissor": cod_emissor_val,
                 "emissor": str(row[cc_emissor]).strip() if cc_emissor and pd.notna(row[cc_emissor]) else "N/A",
                 "remetente": remetente,
@@ -445,13 +509,14 @@ def rodar_processamento_lancamento_frete(
         log_sys.write("⚠️ Nenhum registro encontrado para as keys selecionadas.")
         return
 
-    # Agrupa por Cód Emissor (um grupo = uma RC no SAP)
+    # Agrupa por Cód Emissor e Tipo Frete (um grupo = uma RC no SAP)
     grupos: dict = defaultdict(list)
     sem_codigo: list = []
     for f in fretes_sel:
         cod = f.get("cod_emissor", "").strip()
+        tipo_frete = f.get("tipo", "").strip()
         if cod:
-            grupos[cod].append(f)
+            grupos[(cod, tipo_frete)].append(f)
         else:
             sem_codigo.append(f)
             log_sys.write(f"⚠️ CT-e {f['cte_numero']} sem Cód Emissor – será ignorado.")
@@ -477,12 +542,13 @@ def rodar_processamento_lancamento_frete(
         return
 
     # Importa a automação de RC
-    from src.expedicao.sap_rc_cte import criar_rc_cte
+    from src.expedicao.sap_rc_cte import criar_rc_cte, obter_material_por_tipo_frete
 
-    # Processa cada grupo de fornecedor
-    for cod_emissor, itens in grupos.items():
+    # Processa cada grupo de fornecedor e tipo de frete
+    for (cod_emissor, tipo_frete), itens in grupos.items():
         nome_emissor = itens[0].get("emissor", cod_emissor)
-        log_sys.write(f"\n🚚 Grupo: Fornecedor {cod_emissor} ({nome_emissor}) – {len(itens)} CT-e(s)")
+        material_sap = obter_material_por_tipo_frete(tipo_frete)
+        log_sys.write(f"\n🚚 Grupo: Fornecedor {cod_emissor} ({nome_emissor}) | Tipo: {tipo_frete or 'Inbound'} (Material: {material_sap}) – {len(itens)} CT-e(s)")
 
         # Monta a lista de CTes para criar_rc_cte()
         # Valor principal: Valor S/ ICMS (col_valor_sem_icms); fallback: valor_final
@@ -501,13 +567,15 @@ def rodar_processamento_lancamento_frete(
                 ctes=ctes_payload,
                 centro_custo=centro_custo,
                 fornecedor=cod_emissor,
+                material=material_sap,
+                tipo_frete=tipo_frete,
                 caminho_anexo=caminho_anexo,
                 arquivo_anexo=arquivo_anexo,
                 prefixo_cabecalho=f"Fretes {nome_emissor}",
                 salvar=True,
             )
 
-            log_sys.write(f"✅ RC gerada para fornecedor {cod_emissor}: {rc_gerada}")
+            log_sys.write(f"✅ RC gerada para fornecedor {cod_emissor} ({material_sap}): {rc_gerada}")
 
             # Atualiza status de cada CT-e do grupo
             for f in itens:
@@ -547,6 +615,7 @@ def montar_relatorio_lancamento_frete(estado=None) -> pd.DataFrame:
             "Estabelecimento": f.get("estab"),
             "Tipo": f.get("tipo"),
             "CT-e": f.get("cte_numero"),
+            "DT Emissão": f.get("dt_emissao"),
             "Chave de Acesso": f.get("chave_acesso"),
             "Emissor (Transportadora)": f.get("emissor"),
             "Remetente": f.get("remetente"),

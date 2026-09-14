@@ -25,7 +25,8 @@ def consultar_cs15(session, semi_acabado):
             log_sys.write(f"⚠️ Material {semi_acabado} sem roteiro/onde-usado na CS15")
             return None
             
-        acabado = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").getCellValue(0, "MATNR")
+        #acabado = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").getCellValue(0, "MATNR")
+        acabado = session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell/shellcont[1]/shell/shellcont[1]/shell").getCellValue(0, "MATNR")
         return acabado.strip()
     except Exception as e:
         log_sys.write(f"❌ Erro na consulta CS15 para {semi_acabado}: {e}")
