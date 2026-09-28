@@ -21,6 +21,8 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(base_dir / 'templates'), 'templates'),
+        (str(base_dir / 'build_assets' / 'tcl_tk' / '_tcl_data'), '_tcl_data'),
+        (str(base_dir / 'build_assets' / 'tcl_tk' / '_tk_data'), '_tk_data'),
     ],
     hiddenimports=[
         'win32com',

@@ -5,7 +5,7 @@ from src.expedicao import EntrepostoProcessador
 
 # Configurações de teste
 ENTREPOSTO_TESTE = "ITAJAI"  # ou "ITAJAI"
-CARGAS_TESTE = ["IT30/06-26"]  # Insira a(s) carga(s) de teste aqui
+CARGAS_TESTE = ["IT39/09-26"]  # Insira a(s) carga(s) de teste aqui
 
 if __name__ == "__main__":
     print(f"🤖 Iniciando teste do processador de Entreposto para {ENTREPOSTO_TESTE}...")
@@ -41,15 +41,15 @@ if __name__ == "__main__":
             }
 
     # Etapa 1: Atualização Básica
-    print("\n🚀 Rodando Etapa 1: Atualização Básica...")
+    #print("\n🚀 Rodando Etapa 1: Atualização Básica...")
     #EntrepostoProcessador.rodar_atualizar_basico(session, dados, status_etapas)
     
     # Etapa 2: Picking
-    # print("\n🚀 Rodando Etapa 2: Picking...")
+    print("\n🚀 Rodando Etapa 2: Picking...")
     EntrepostoProcessador.rodar_picking(session, dados, {}, status_etapas)
     
     # Etapa 3: SM / Transportadora
-    # print("\n🚀 Rodando Etapa 3: SM / Transportadora...")
-    # EntrepostoProcessador.rodar_sm(session, dados, status_etapas)
+    print("\n🚀 Rodando Etapa 3: SM / Transportadora...")
+    #EntrepostoProcessador.rodar_sm(session, dados, status_etapas)
     
     print("\n🏁 Fim da execução de depuração.")

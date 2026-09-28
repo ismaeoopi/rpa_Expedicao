@@ -67,6 +67,8 @@ python -m PyInstaller ^
     --add-data "kill_switch.py;." ^
     --add-data "version.txt;." ^
     --add-data "Entreposto.py;." ^
+    --add-data "build_assets\tcl_tk\_tcl_data;_tcl_data" ^
+    --add-data "build_assets\tcl_tk\_tk_data;_tk_data" ^
     --hidden-import=pandas ^
     --hidden-import=openpyxl ^
     --hidden-import=win32com ^

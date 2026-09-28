@@ -7,6 +7,19 @@ from src.expedicao.sap_packlist import _garantir_playwright_instalado
 
 SAP_FO_URL = "https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=EN#FreightOrder-createRoad?sap-ui-tech-hint=WDA"
 
+def aguardar_fim_carregamento_sap(app_iframe, timeout: int = 30000) -> None:
+    """Aguarda o overlay de carregamento do SAP desaparecer dentro do iframe."""
+    time.sleep(1)
+    loading_selectors = ["#ur-loading-box", "#ur-loading-itm2"]
+    for selector in loading_selectors:
+        try:
+            loader = app_iframe.locator(selector)
+            if loader.count() > 0:
+                if loader.first.is_visible():
+                    loader.first.wait_for(state="hidden", timeout=timeout)
+        except Exception:
+            pass
+
 def rodar_criacao_of_playwright(remessas: list, usuario: str, senha: str) -> str:
     """
     Executa a criação de Ordem de Frete (OF) no SAP Fiori via Playwright.
@@ -117,38 +130,264 @@ def rodar_criacao_of_playwright(remessas: list, usuario: str, senha: str) -> str
         txt_planning.click()
         txt_planning.fill(remessas_text)
         
-        # Clica em OK
+        # Clicar em OK
         try:
-            app_iframe.get_by_role("cell", name=re.compile(r"^OK\s+Emphasized$")).first.click(timeout=10000)
+            app_iframe.get_by_role("button", name=re.compile(r"OK.*Emphasized")).click(timeout=10000)
         except Exception:
             try:
-                app_iframe.get_by_role("cell", name="OK\xa0 Emphasized", exact=True).first.click(timeout=5000)
+                app_iframe.get_by_role("cell", name=re.compile(r"^OK\s+Emphasized$")).first.click(timeout=5000)
             except Exception:
-                app_iframe.get_by_role("cell", name=re.compile(r"OK.*Emphasized")).last.click()
-        
-        log_sys.write("⏳ Vinculando Unidades de Frete à Ordem de Frete...")
-        time.sleep(4)  # Espera para carregar
-        
-        # Collapse All, Level, Checkbox
-        log_sys.write("⚙️ Selecionando todas as linhas atribuídas...")
+                app_iframe.get_by_role("button", name="OK").click()
+                
+        log_sys.write("⏳ Aguardando o fim do carregamento da ação de inserir remessas...")
+        aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+        log_sys.write("✅ Carregamento concluído após clique em OK.")
+
+        # ── Detectar se a tela de inserir remessa continua aberta (erro) ────────
+        tela_insert_aberta_com_erro = False
+        erros_sap = []
+        time.sleep(2)
+
+        # Verificação principal: o diálogo de inserção ainda está visível?
         try:
-            app_iframe.get_by_role("button", name="Collapse All").click(timeout=5000)
-            time.sleep(1)
-            app_iframe.get_by_role("button", name="Level").click(timeout=5000)
-            time.sleep(1)
+            dialogo_visivel = txt_planning.is_visible()
         except Exception:
-            pass
+            dialogo_visivel = False
+
+        if dialogo_visivel:
+            # O diálogo ainda está aberto — coletar mensagens de erro
+            try:
+                error_msgs = app_iframe.locator('[role="listitem"][aria-label^="Error"]')
+                error_count = error_msgs.count()
+                if error_count > 0:
+                    for i in range(error_count):
+                        try:
+                            aria = error_msgs.nth(i).get_attribute("aria-label") or ""
+                            erros_sap.append(aria)
+                            log_sys.write(f"  ⚠️ Erro SAP detectado: {aria}")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Fallback: verificar pelo texto genérico de erro dentro de divs de mensagem SAP
+            if not erros_sap:
+                try:
+                    msg_error_divs = app_iframe.locator('div.lsMSGPad div.lsMSGText')
+                    for i in range(msg_error_divs.count()):
+                        try:
+                            txt = msg_error_divs.nth(i).inner_text()
+                            erros_sap.append(txt)
+                            log_sys.write(f"  ⚠️ Erro SAP detectado (fallback): {txt}")
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+            tela_insert_aberta_com_erro = True
+            if not erros_sap:
+                erros_sap.append("Diálogo de inserção permaneceu aberto (erro desconhecido)")
+                log_sys.write("  ⚠️ Diálogo de inserção ainda aberto, mas nenhuma mensagem de erro encontrada.")
+
+        # ── Se houver erro: clicar em Cancel e ir ao Document Flow ──────────────
+        remessas_ausentes_early = []
+        remessas_confirmadas_early = []
+
+        if tela_insert_aberta_com_erro:
+            log_sys.write(f"❌ Tela de inserir remessas ainda aberta com {len(erros_sap)} erro(s). Fechando tela...")
             
-        app_iframe.get_by_role("checkbox", name="Column for row selection").click()
-        
-        # Conta a quantidade de linhas selecionadas para atender ao feedback
-        try:
-            num_checkboxes = app_iframe.get_by_role("checkbox").count()
-            # O cabeçalho e a linha de seleção geral somam, então fazemos num_checkboxes - 2 se for maior que 2
-            linhas_selecionadas = max(0, num_checkboxes - 2)
-            log_sys.write(f"📊 Foram selecionadas {linhas_selecionadas} linha(s) na tabela do SAP.")
-        except Exception as e:
-            log_sys.write(f"⚠️ Não foi possível contar as linhas: {e}")
+            fechou = False
+            estrategias_fechar = [
+                (
+                    "Botão Close ('X') do container",
+                    lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Cancel transparente (específico do diálogo)",
+                    lambda: app_iframe.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Close ('X') via app_iframe",
+                    lambda: app_iframe.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Cancel via container iframe",
+                    lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Span Cancel dentro do diálogo",
+                    lambda: app_iframe.locator('div[ct="PW"], div[role="dialog"], table.urPWOuterTable').locator("span.lsButton__text", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Tecla Escape",
+                    lambda: page.keyboard.press("Escape")
+                ),
+                (
+                    "JS Click no botão Cancel transparente",
+                    lambda: app_iframe.locator("div.lsButton--design-transparent", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.evaluate("el => el.click()")
+                ),
+            ]
+
+            for nome, acao in estrategias_fechar:
+                try:
+                    time.sleep(1)
+                    acao()
+                    # Aguarda até 3s para o campo de texto do diálogo sumir
+                    txt_planning.wait_for(state="hidden", timeout=3000)
+                    log_sys.write(f"✅ Diálogo de inserção fechado com sucesso (via {nome}).")
+                    fechou = True
+                    break
+                except Exception:
+                    try:
+                        if not txt_planning.is_visible():
+                            log_sys.write(f"✅ Diálogo de inserção fechado (confirmado após {nome}).")
+                            fechou = True
+                            break
+                    except Exception:
+                        pass
+
+            if not fechou:
+                log_sys.write("⚠️ Tentando tecla Escape final para fechar diálogo...")
+                try:
+                    page.keyboard.press("Escape")
+                    time.sleep(1)
+                except Exception:
+                    pass
+
+            aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+            time.sleep(2)
+
+            # Navegar até Document Flow para verificar quais remessas foram aceitas
+            log_sys.write("🔎 Verificando remessas aceitas na aba Document Flow / Items...")
+            try:
+                page.locator("iframe[name=\"__container1-iframe\"]").content_frame.get_by_role("tab", name="Document Flow").click(timeout=10000)
+                time.sleep(2)
+            except Exception:
+                try:
+                    app_iframe.get_by_role("tab", name="Document Flow").click(timeout=5000)
+                    time.sleep(2)
+                except Exception:
+                    pass
+        else:
+            # Tela passou direto — todas as remessas foram aceitas
+            log_sys.write("✅ Tela de inserir remessas fechou sem erros — todas as remessas foram aceitas.")
+            remessas_confirmadas_early = [str(r).strip() for r in remessas]
+            log_sys.write(f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s): {', '.join(remessas_confirmadas_early)}")
+
+        # ── Verificação no Document Flow: só executa se houve erro na inserção ──
+        if tela_insert_aberta_com_erro:
+            try:
+                for rem in remessas:
+                    rem_str = str(rem).strip()
+                    encontrada = False
+
+                    # 1. Verifica se o texto da remessa já está visível na página/iframe
+                    try:
+                        body_text = app_iframe.locator("body").inner_text()
+                        if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                            encontrada = True
+                    except Exception:
+                        pass
+
+                    # 2. Se não estiver visível diretamente, realiza a busca (Ctrl+F) no SAP
+                    if not encontrada:
+                        try:
+                            time.sleep(1.5)
+                            search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
+                            if search_btn.count() == 0:
+                                search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
+                            
+                            search_btn.first.click(timeout=5000)
+                            time.sleep(0.5)
+
+                            search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                            if search_box.count() == 0:
+                                search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
+
+                            search_box.fill(rem_str)
+                            search_box.press("Enter")
+                            time.sleep(1)
+
+                            # Confirma se após o Enter o número da remessa é localizado na tela
+                            body_text = app_iframe.locator("body").inner_text()
+                            if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                encontrada = True
+
+                            # Fecha a caixa de busca
+                            try:
+                                cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                if cancel_btn.count() > 0:
+                                    cancel_btn.first.click(timeout=3000)
+                                else:
+                                    page.keyboard.press("Escape")
+                            except Exception:
+                                pass
+                        except Exception as search_err:
+                            log_sys.write(f"⚠️ Segunda tentativa")
+                            try:
+                                search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
+                                if search_btn.count() == 0:
+                                    search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
+                                    
+                                search_btn.first.click(timeout=5000)
+                                time.sleep(0.5)
+
+                                search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                                if search_box.count() == 0:
+                                    search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
+
+                                search_box.fill(rem_str)
+                                search_box.press("Enter")
+                                time.sleep(1)
+
+                                # Confirma se após o Enter o número da remessa é localizado na tela
+                                body_text = app_iframe.locator("body").inner_text()
+                                if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                    encontrada = True
+
+                                # Fecha a caixa de busca
+                                try:
+                                    cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                    if cancel_btn.count() > 0:
+                                        cancel_btn.first.click(timeout=3000)
+                                    else:
+                                        page.keyboard.press("Escape")
+                                except Exception:
+                                    pass
+                            except Exception as search_err:
+                                    log_sys.write(f"⚠️ Erro ao executar busca no SAP para remessa {rem_str}: {search_err}")
+
+                    if encontrada:
+                        remessas_confirmadas_early.append(rem_str)
+                        log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
+                    else:
+                        remessas_ausentes_early.append(rem_str)
+                        log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
+
+                    aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+
+            except Exception as e:
+                log_sys.write(f"⚠️ Erro ao verificar remessas após inserção: {e}")
+
+            if remessas_ausentes_early:
+                log_sys.write(f"⚠️ Remessas NÃO encontradas no SAP: {', '.join(remessas_ausentes_early)}")
+
+            if not remessas_confirmadas_early:
+                raise ValueError(
+                    f"NENHUMA remessa foi aceita pelo SAP. Todas ausentes: "
+                    f"{', '.join(remessas_ausentes_early)}. "
+                    f"Verifique se os números estão corretos ou se já estão em outra OF."
+                )
+
+            log_sys.write(
+                f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s). "
+                f"Prosseguindo com a criação da OF..."
+            )
+            if remessas_ausentes_early:
+                log_sys.write(
+                    f"⚠️ {len(remessas_ausentes_early)} remessa(s) ausente(s) serão ignoradas na OF: "
+                    f"{', '.join(remessas_ausentes_early)}"
+                )
             
         # Salvar (Ctrl+S)
         log_sys.write("💾 Salvando Ordem de Frete (Ctrl+S)...")
@@ -358,38 +597,264 @@ def rodar_criacao_of_playwright_multipla(grupos: list, usuario: str, senha: str)
                 txt_planning.click()
                 txt_planning.fill(remessas_text)
                 
-                # Clica em OK
+                # Clicar em OK
                 try:
-                    app_iframe.get_by_role("cell", name=re.compile(r"^OK\s+Emphasized$")).first.click(timeout=10000)
+                    app_iframe.get_by_role("button", name=re.compile(r"OK.*Emphasized")).click(timeout=10000)
                 except Exception:
                     try:
-                        app_iframe.get_by_role("cell", name="OK\xa0 Emphasized", exact=True).first.click(timeout=5000)
+                        app_iframe.get_by_role("cell", name=re.compile(r"^OK\s+Emphasized$")).first.click(timeout=5000)
                     except Exception:
-                        app_iframe.get_by_role("cell", name=re.compile(r"OK.*Emphasized")).last.click()
-                
-                log_sys.write("⏳ Vinculando Unidades de Frete à Ordem de Frete...")
-                time.sleep(4)  # Espera para carregar
-                
-                # Collapse All, Level, Checkbox
-                log_sys.write("⚙️ Selecionando todas as linhas atribuídas...")
+                        app_iframe.get_by_role("button", name="OK").click()
+                        
+                log_sys.write("⏳ Aguardando o fim do carregamento da ação de inserir remessas...")
+                aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+                log_sys.write("✅ Carregamento concluído após clique em OK.")
+
+                # ── Detectar se a tela de inserir remessa continua aberta (erro) ────────
+                tela_insert_aberta_com_erro = False
+                erros_sap = []
+                time.sleep(2)
+
+                # Verificação principal: o diálogo de inserção ainda está visível?
                 try:
-                    app_iframe.get_by_role("button", name="Collapse All").click(timeout=5000)
-                    time.sleep(1)
-                    app_iframe.get_by_role("button", name="Level").click(timeout=5000)
-                    time.sleep(1)
+                    dialogo_visivel = txt_planning.is_visible()
                 except Exception:
-                    pass
+                    dialogo_visivel = False
+
+                if dialogo_visivel:
+                    # O diálogo ainda está aberto — coletar mensagens de erro
+                    try:
+                        error_msgs = app_iframe.locator('[role="listitem"][aria-label^="Error"]')
+                        error_count = error_msgs.count()
+                        if error_count > 0:
+                            for i in range(error_count):
+                                try:
+                                    aria = error_msgs.nth(i).get_attribute("aria-label") or ""
+                                    erros_sap.append(aria)
+                                    log_sys.write(f"  ⚠️ Erro SAP detectado: {aria}")
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+
+                    # Fallback: verificar pelo texto genérico de erro dentro de divs de mensagem SAP
+                    if not erros_sap:
+                        try:
+                            msg_error_divs = app_iframe.locator('div.lsMSGPad div.lsMSGText')
+                            for i in range(msg_error_divs.count()):
+                                try:
+                                    txt = msg_error_divs.nth(i).inner_text()
+                                    erros_sap.append(txt)
+                                    log_sys.write(f"  ⚠️ Erro SAP detectado (fallback): {txt}")
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+
+                    tela_insert_aberta_com_erro = True
+                    if not erros_sap:
+                        erros_sap.append("Diálogo de inserção permaneceu aberto (erro desconhecido)")
+                        log_sys.write("  ⚠️ Diálogo de inserção ainda aberto, mas nenhuma mensagem de erro encontrada.")
+
+                # ── Se houver erro: clicar em Cancel e ir ao Document Flow ──────────────
+                remessas_ausentes_early = []
+                remessas_confirmadas_early = []
+
+                if tela_insert_aberta_com_erro:
+                    log_sys.write(f"❌ Tela de inserir remessas ainda aberta com {len(erros_sap)} erro(s). Fechando tela...")
                     
-                app_iframe.get_by_role("checkbox", name="Column for row selection").click()
-                
-                # Conta a quantidade de linhas selecionadas para atender ao feedback
-                try:
-                    num_checkboxes = app_iframe.get_by_role("checkbox").count()
-                    # O cabeçalho e a linha de seleção geral somam, então fazemos num_checkboxes - 2 se for maior que 2
-                    linhas_selecionadas = max(0, num_checkboxes - 2)
-                    log_sys.write(f"📊 Foram selecionadas {linhas_selecionadas} linha(s) na tabela do SAP.")
-                except Exception as e:
-                    log_sys.write(f"⚠️ Não foi possível contar as linhas: {e}")
+                    fechou = False
+                    estrategias_fechar = [
+                        (
+                            "Botão Close ('X') do container",
+                            lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                        ),
+                        (
+                            "Botão Cancel transparente (específico do diálogo)",
+                            lambda: app_iframe.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                        ),
+                        (
+                            "Botão Close ('X') via app_iframe",
+                            lambda: app_iframe.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                        ),
+                        (
+                            "Botão Cancel via container iframe",
+                            lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                        ),
+                        (
+                            "Span Cancel dentro do diálogo",
+                            lambda: app_iframe.locator('div[ct="PW"], div[role="dialog"], table.urPWOuterTable').locator("span.lsButton__text", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                        ),
+                        (
+                            "Tecla Escape",
+                            lambda: page.keyboard.press("Escape")
+                        ),
+                        (
+                            "JS Click no botão Cancel transparente",
+                            lambda: app_iframe.locator("div.lsButton--design-transparent", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.evaluate("el => el.click()")
+                        ),
+                    ]
+
+                    for nome, acao in estrategias_fechar:
+                        try:
+                            time.sleep(1)
+                            acao()
+                            # Aguarda até 3s para o campo de texto do diálogo sumir
+                            txt_planning.wait_for(state="hidden", timeout=3000)
+                            log_sys.write(f"✅ Diálogo de inserção fechado com sucesso (via {nome}).")
+                            fechou = True
+                            break
+                        except Exception:
+                            try:
+                                if not txt_planning.is_visible():
+                                    log_sys.write(f"✅ Diálogo de inserção fechado (confirmado após {nome}).")
+                                    fechou = True
+                                    break
+                            except Exception:
+                                pass
+
+                    if not fechou:
+                        log_sys.write("⚠️ Tentando tecla Escape final para fechar diálogo...")
+                        try:
+                            page.keyboard.press("Escape")
+                            time.sleep(1)
+                        except Exception:
+                            pass
+
+                    aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+                    time.sleep(2)
+
+                    # Navegar até Document Flow para verificar quais remessas foram aceitas
+                    log_sys.write("🔎 Verificando remessas aceitas na aba Document Flow / Items...")
+                    try:
+                        page.locator("iframe[name=\"__container1-iframe\"]").content_frame.get_by_role("tab", name="Document Flow").click(timeout=10000)
+                        time.sleep(2)
+                    except Exception:
+                        try:
+                            app_iframe.get_by_role("tab", name="Document Flow").click(timeout=5000)
+                            time.sleep(2)
+                        except Exception:
+                            pass
+                else:
+                    # Tela passou direto — todas as remessas foram aceitas
+                    log_sys.write("✅ Tela de inserir remessas fechou sem erros — todas as remessas foram aceitas.")
+                    remessas_confirmadas_early = [str(r).strip() for r in remessas]
+                    log_sys.write(f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s): {', '.join(remessas_confirmadas_early)}")
+
+                # ── Verificação no Document Flow: só executa se houve erro na inserção ──
+                if tela_insert_aberta_com_erro:
+                    try:
+                        for rem in remessas:
+                            rem_str = str(rem).strip()
+                            encontrada = False
+
+                            # 1. Verifica se o texto da remessa já está visível na página/iframe
+                            try:
+                                body_text = app_iframe.locator("body").inner_text()
+                                if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                    encontrada = True
+                            except Exception:
+                                pass
+
+                            # 2. Se não estiver visível diretamente, realiza a busca (Ctrl+F) no SAP
+                            if not encontrada:
+                                try:
+                                    time.sleep(1.5)
+                                    search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
+                                    if search_btn.count() == 0:
+                                        search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
+                                    
+                                    search_btn.first.click(timeout=5000)
+                                    time.sleep(0.5)
+
+                                    search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                                    if search_box.count() == 0:
+                                        search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
+
+                                    search_box.fill(rem_str)
+                                    search_box.press("Enter")
+                                    time.sleep(1)
+
+                                    # Confirma se após o Enter o número da remessa é localizado na tela
+                                    body_text = app_iframe.locator("body").inner_text()
+                                    if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                        encontrada = True
+
+                                    # Fecha a caixa de busca
+                                    try:
+                                        cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                        if cancel_btn.count() > 0:
+                                            cancel_btn.first.click(timeout=3000)
+                                        else:
+                                            page.keyboard.press("Escape")
+                                    except Exception:
+                                        pass
+                                except Exception as search_err:
+                                    log_sys.write(f"⚠️ Segunda tentativa")
+                                    try:
+                                        search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
+                                        if search_btn.count() == 0:
+                                            search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
+                                            
+                                        search_btn.first.click(timeout=5000)
+                                        time.sleep(0.5)
+
+                                        search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                                        if search_box.count() == 0:
+                                            search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
+
+                                        search_box.fill(rem_str)
+                                        search_box.press("Enter")
+                                        time.sleep(1)
+
+                                        # Confirma se após o Enter o número da remessa é localizado na tela
+                                        body_text = app_iframe.locator("body").inner_text()
+                                        if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                            encontrada = True
+
+                                        # Fecha a caixa de busca
+                                        try:
+                                            cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                            if cancel_btn.count() > 0:
+                                                cancel_btn.first.click(timeout=3000)
+                                            else:
+                                                page.keyboard.press("Escape")
+                                        except Exception:
+                                            pass
+                                    except Exception as search_err:
+                                            log_sys.write(f"⚠️ Erro ao executar busca no SAP para remessa {rem_str}: {search_err}")
+
+                            if encontrada:
+                                remessas_confirmadas_early.append(rem_str)
+                                log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
+                            else:
+                                remessas_ausentes_early.append(rem_str)
+                                log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
+
+                            aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+
+                    except Exception as e:
+                        log_sys.write(f"⚠️ Erro ao verificar remessas após inserção: {e}")
+
+                    if remessas_ausentes_early:
+                        log_sys.write(f"⚠️ Remessas NÃO encontradas no SAP: {', '.join(remessas_ausentes_early)}")
+
+                    if not remessas_confirmadas_early:
+                        raise ValueError(
+                            f"NENHUMA remessa foi aceita pelo SAP. Todas ausentes: "
+                            f"{', '.join(remessas_ausentes_early)}. "
+                            f"Verifique se os números estão corretos ou se já estão em outra OF."
+                        )
+
+                    log_sys.write(
+                        f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s). "
+                        f"Prosseguindo com a criação da OF..."
+                    )
+                    if remessas_ausentes_early:
+                        log_sys.write(
+                            f"⚠️ {len(remessas_ausentes_early)} remessa(s) ausente(s) serão ignoradas na OF: "
+                            f"{', '.join(remessas_ausentes_early)}"
+                        )
                     
                 # Salvar (Ctrl+S)
                 log_sys.write("💾 Salvando Ordem de Frete (Ctrl+S)...")

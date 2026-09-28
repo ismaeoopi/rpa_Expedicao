@@ -465,12 +465,15 @@ def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas, remess
                             "ssubSUBSCREEN_BODY:SAPMV50A:3112/"
                             "tblSAPMV50ATC_LIPS_CHND/txtLIPS-LFIMG[4,0]"
                         ).text = p_liq_formatado
-                        
+
+                    """if unidade != "KG":
+                        session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\03/ssubSUBSCREEN_BODY:SAPMV50A:3112/tblSAPMV50ATC_LIPS_CHND/ctxtLIPS-VRKME[5,0]").text = "PEÇ"
+                        """
                     session.findById("wnd[0]").sendVKey(0)
                     time.sleep(0.3)
                     
                     scroll += 1
-                    session.findById(
+                    session.findById( 
                         "wnd[0]/usr/tabsTAXI_TABSTRIP_ITEM/tabpT\\03/"
                         "ssubSUBSCREEN_BODY:SAPMV50A:3112/"
                         "tblSAPMV50ATC_LIPS_CHND"
@@ -509,7 +512,7 @@ def rodar_picking(session, dados_cargas, multiplos_custom, status_etapas, remess
                     session.findById(pick_id).Text = qtd
                     
                     if p_bruto_formatado:
-                        br_id = pick_table_id + "/txtLIPS-BRGEW[19,0]"
+                        br_id = pick_table_id + "/txtLIPS-BRGEW[20,0]"
                         session.findById(br_id).Text = p_bruto_formatado
                         
                     scroll += 1

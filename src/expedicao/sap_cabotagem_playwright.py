@@ -40,12 +40,17 @@ def preencher_campo_por_titulo(app_iframe, titulos: list, valor: str, press_ente
 
 def aguardar_fim_carregamento_sap(app_iframe, timeout: int = 30000) -> None:
     """Aguarda o overlay de carregamento do SAP desaparecer dentro do iframe."""
+    # Um pequeno delay para permitir que o SAP inicie a requisição (click) e exiba o loading.
+    # Sem isso, o Playwright vê que já está oculto e pula a espera instantaneamente.
+    time.sleep(1)
+    
     loading_selectors = ["#ur-loading-box", "#ur-loading-itm2"]
     for selector in loading_selectors:
         try:
             loader = app_iframe.locator(selector)
             if loader.count() > 0:
-                loader.first.wait_for(state="hidden", timeout=timeout)
+                if loader.first.is_visible():
+                    loader.first.wait_for(state="hidden", timeout=timeout)
         except Exception:
             pass
 
@@ -56,7 +61,7 @@ def rodar_criacao_of_cabotagem_playwright(
     valor_frete: float, 
     usuario: str, 
     senha: str,
-    headless: bool = True
+    headless: bool = False
 ) -> str:
     """
     Executa a criação de Ordem de Frete (OF) para Cabotagem no SAP Fiori via Playwright.
@@ -113,7 +118,7 @@ def rodar_criacao_of_cabotagem_playwright(
         log_sys.write("⏳ Aguardando carregamento da aplicação SAP Dynpro...")
         app_iframe = page.frame_locator('iframe[title="Application"]')
         
-        type_input = app_iframe.get_by_role("textbox", name="Freight Order Type Value help")
+        type_input = app_iframe.get_by_role("textbox", name="Freight Order Type")
         try:
             type_input.wait_for(state="visible", timeout=45000)
         except Exception:
@@ -132,24 +137,29 @@ def rodar_criacao_of_cabotagem_playwright(
 
         log_sys.write("⏳ Clicando na aba de Itens...")
         try:
-            app_iframe.get_by_role("tab", name=re.compile(r"(Items|Itens).*Assignment Block", re.IGNORECASE)).click(timeout=10000)
+            app_iframe.locator("span[role='tab']", has_text=re.compile(r"^(Items|Itens)$", re.IGNORECASE)).click(timeout=10000)
             time.sleep(2)
         except Exception:
             pass
         
         # Inserir FUs baseadas no ID do Documento
         log_sys.write("⏳ Inserindo FUs baseadas nas remessas...")
-        btn_insert = app_iframe.get_by_role("button", name="Insert Insert FUs Based on")
+
+        # Localiza pelo título para não depender de ID dinâmico (ex: #WDF6)
+        btn_insert = app_iframe.locator('[title="Insert FUs Based on Freight Unit ID"]')
         btn_insert.wait_for(state="visible", timeout=20000)
-        btn_insert.click()
-        
+        # force=True ignora checagens de "clickable" que o Web Dynpro costuma travar
+        btn_insert.click(force=True)
         try:
-            app_iframe.locator("span").filter(has_text=re.compile(r"^Insert FUs Based on Base Document ID$")).click(timeout=5000)
+            page.locator('iframe[name="__container1-iframe"]').content_frame.get_by_text("Insert FUs Based on Base").click(timeout=8000)
         except Exception:
             try:
-                app_iframe.get_by_role("cell", name="Insert FUs Based on Base").click(timeout=5000)
+                app_iframe.get_by_text("Insert FUs Based on Base").click(timeout=5000)
             except Exception:
-                app_iframe.get_by_text("Base Document ID").click()
+                try:
+                    app_iframe.get_by_role("cell", name="Insert FUs Based on Base").click(timeout=5000)
+                except Exception:
+                    app_iframe.get_by_text("Base Document ID").click()
         
         # Inserir as remessas do container
         txt_planning = app_iframe.get_by_role("textbox", name="String for Text Planning")
@@ -173,289 +183,388 @@ def rodar_criacao_of_cabotagem_playwright(
         aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
         log_sys.write("✅ Carregamento concluído após clique em OK.")
 
-        # ── Verificação antecipada: confirmar que as remessas foram aceitas ──────
-        log_sys.write("🔎 Verificando se as remessas foram aceitas na aba Document Flow / Items...")
-        remessas_ausentes_early = []
-        remessas_confirmadas_early = []
+        # ── Detectar se a tela de inserir remessa continua aberta (erro) ────────
+        tela_insert_aberta_com_erro = False
+        erros_sap = []
+        time.sleep(2)
 
+        # Verificação principal: o diálogo de inserção ainda está visível?
+        # (txt_planning é o campo de texto exclusivo do diálogo de inserir remessas)
         try:
-            time.sleep(2)
-            app_iframe.get_by_role("tab", name=re.compile(r"(Document\s+Flow|Fluxo\s+de\s+Documentos).*Assignment Block", re.IGNORECASE)).click(timeout=10000)
-            time.sleep(2)
+            dialogo_visivel = txt_planning.is_visible()
         except Exception:
-            pass
+            dialogo_visivel = False
 
-        try:
-            for rem in remessas:
-                rem_str = str(rem).strip()
-                encontrada = False
+        if dialogo_visivel:
+            # O diálogo ainda está aberto — coletar mensagens de erro
+            try:
+                error_msgs = app_iframe.locator('[role="listitem"][aria-label^="Error"]')
+                error_count = error_msgs.count()
+                if error_count > 0:
+                    for i in range(error_count):
+                        try:
+                            aria = error_msgs.nth(i).get_attribute("aria-label") or ""
+                            erros_sap.append(aria)
+                            log_sys.write(f"  ⚠️ Erro SAP detectado: {aria}")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
 
-                # 1. Verifica se o texto da remessa já está visível na página/iframe
+            # Fallback: verificar pelo texto genérico de erro dentro de divs de mensagem SAP
+            if not erros_sap:
                 try:
-                    body_text = app_iframe.locator("body").inner_text()
-                    if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
-                        encontrada = True
+                    msg_error_divs = app_iframe.locator('div.lsMSGPad div.lsMSGText')
+                    for i in range(msg_error_divs.count()):
+                        try:
+                            txt = msg_error_divs.nth(i).inner_text()
+                            erros_sap.append(txt)
+                            log_sys.write(f"  ⚠️ Erro SAP detectado (fallback): {txt}")
+                        except Exception:
+                            pass
                 except Exception:
                     pass
 
-                # 2. Se não estiver visível diretamente, realiza a busca (Ctrl+F) no SAP
-                if not encontrada:
+            tela_insert_aberta_com_erro = True
+            if not erros_sap:
+                erros_sap.append("Diálogo de inserção permaneceu aberto (erro desconhecido)")
+                log_sys.write("  ⚠️ Diálogo de inserção ainda aberto, mas nenhuma mensagem de erro encontrada.")
+
+        # ── Se houver erro: clicar em Cancel e ir ao Document Flow ──────────────
+        remessas_ausentes_early = []
+        remessas_confirmadas_early = []
+
+        if tela_insert_aberta_com_erro:
+            log_sys.write(f"❌ Tela de inserir remessas ainda aberta com {len(erros_sap)} erro(s). Fechando tela...")
+            
+            fechou = False
+            estrategias_fechar = [
+                (
+                    "Botão Close ('X') do container",
+                    lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Cancel transparente (específico do diálogo)",
+                    lambda: app_iframe.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Close ('X') via app_iframe",
+                    lambda: app_iframe.get_by_role("button", name="Close").first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Botão Cancel via container iframe",
+                    lambda: page.locator('iframe[name="__container1-iframe"]').content_frame.locator("div.lsButton--design-transparent:not([aria-disabled='true'])", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Span Cancel dentro do diálogo",
+                    lambda: app_iframe.locator('div[ct="PW"], div[role="dialog"], table.urPWOuterTable').locator("span.lsButton__text", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.click(timeout=3000, force=True)
+                ),
+                (
+                    "Tecla Escape",
+                    lambda: page.keyboard.press("Escape")
+                ),
+                (
+                    "JS Click no botão Cancel transparente",
+                    lambda: app_iframe.locator("div.lsButton--design-transparent", has_text=re.compile(r"^Cancel$", re.IGNORECASE)).first.evaluate("el => el.click()")
+                ),
+            ]
+
+            for nome, acao in estrategias_fechar:
+                try:
+                    time.sleep(1)
+                    acao()
+                    # Aguarda até 3s para o campo de texto do diálogo sumir
+                    txt_planning.wait_for(state="hidden", timeout=3000)
+                    log_sys.write(f"✅ Diálogo de inserção fechado com sucesso (via {nome}).")
+                    fechou = True
+                    break
+                except Exception:
                     try:
-                        time.sleep(1.5)
-                        search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
-                        if search_btn.count() == 0:
+                        if not txt_planning.is_visible():
+                            log_sys.write(f"✅ Diálogo de inserção fechado (confirmado após {nome}).")
+                            fechou = True
+                            break
+                    except Exception:
+                        pass
 
-                            search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
+            if not fechou:
+                log_sys.write("⚠️ Tentando tecla Escape final para fechar diálogo...")
+                try:
+                    page.keyboard.press("Escape")
+                    time.sleep(1)
+                except Exception:
+                    pass
 
-                        
-                        search_btn.first.click(timeout=5000)
-                        time.sleep(0.5)
+            aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+            time.sleep(2)
 
-                        search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
-                        if search_box.count() == 0:
-                          
-                            search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
-                            
+            # Navegar até Document Flow para verificar quais remessas foram aceitas
+            log_sys.write("🔎 Verificando remessas aceitas na aba Document Flow / Items...")
+            try:
+                page.locator("iframe[name=\"__container1-iframe\"]").content_frame.get_by_role("tab", name="Document Flow").click(timeout=10000)
+                time.sleep(2)
+            except Exception:
+                try:
+                    app_iframe.get_by_role("tab", name="Document Flow").click(timeout=5000)
+                    time.sleep(2)
+                except Exception:
+                    pass
+        else:
+            # Tela passou direto — todas as remessas foram aceitas
+            log_sys.write("✅ Tela de inserir remessas fechou sem erros — todas as remessas foram aceitas.")
+            remessas_confirmadas_early = [str(r).strip() for r in remessas]
+            log_sys.write(f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s): {', '.join(remessas_confirmadas_early)}")
 
-                        search_box.fill(rem_str)
-                        search_box.press("Enter")
-                        time.sleep(1)
+        # ── Verificação no Document Flow: só executa se houve erro na inserção ──
+        if tela_insert_aberta_com_erro:
+            try:
+                for rem in remessas:
+                    rem_str = str(rem).strip()
+                    encontrada = False
 
-                        # Confirma se após o Enter o número da remessa é localizado na tela
+                    # 1. Verifica se o texto da remessa já está visível na página/iframe
+                    try:
                         body_text = app_iframe.locator("body").inner_text()
                         if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
                             encontrada = True
+                    except Exception:
+                        pass
 
-                        # Fecha a caixa de busca
+                    # 2. Se não estiver visível diretamente, realiza a busca (Ctrl+F) no SAP
+                    if not encontrada:
                         try:
-                            cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
-                            if cancel_btn.count() > 0:
-                                cancel_btn.first.click(timeout=3000)
-                            else:
-                                page.keyboard.press("Escape")
-                        except Exception:
-                            pass
-                    except Exception as search_err:
-
-
-                        log_sys.write(f"⚠️ Segunda tentativa")
-                        try:
+                            time.sleep(1.5)
                             search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
                             if search_btn.count() == 0:
 
                                 search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
 
+                            
+                            search_btn.first.click(timeout=5000)
+                            time.sleep(0.5)
+
+                            search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                            if search_box.count() == 0:
+                              
+                                search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
                                 
-                                search_btn.first.click(timeout=5000)
-                                time.sleep(0.5)
 
-                                search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
-                                if search_box.count() == 0:
-                                
-                                    search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
-                                    
+                            search_box.fill(rem_str)
+                            search_box.press("Enter")
+                            time.sleep(1)
 
-                                search_box.fill(rem_str)
-                                search_box.press("Enter")
-                                time.sleep(1)
+                            # Confirma se após o Enter o número da remessa é localizado na tela
+                            body_text = app_iframe.locator("body").inner_text()
+                            if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                encontrada = True
 
-                                # Confirma se após o Enter o número da remessa é localizado na tela
-                                body_text = app_iframe.locator("body").inner_text()
-                                if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
-                                    encontrada = True
-
-                                # Fecha a caixa de busca
-                                try:
-                                    cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
-                                    if cancel_btn.count() > 0:
-                                        cancel_btn.first.click(timeout=3000)
-                                    else:
-                                        page.keyboard.press("Escape")
-                                except Exception:
-                                    pass
+                            # Fecha a caixa de busca
+                            try:
+                                cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                if cancel_btn.count() > 0:
+                                    cancel_btn.first.click(timeout=3000)
+                                else:
+                                    page.keyboard.press("Escape")
+                            except Exception:
+                                pass
                         except Exception as search_err:
-                                log_sys.write(f"⚠️ Erro ao executar busca no SAP para remessa {rem_str}: {search_err}")
 
-                if encontrada:
-                    remessas_confirmadas_early.append(rem_str)
-                    log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
-                else:
-                    remessas_ausentes_early.append(rem_str)
-                    log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
 
-                aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+                            log_sys.write(f"⚠️ Segunda tentativa")
+                            try:
+                                search_btn = app_iframe.get_by_role("button", name=re.compile(r"Search \(Ctrl\+F\)", re.IGNORECASE))
+                                if search_btn.count() == 0:
 
-        except Exception as e:
-            log_sys.write(f"⚠️ Erro ao verificar remessas após inserção: {e}")
+                                    search_btn = page.locator('iframe[title="Application"]').content_frame.get_by_role("button", name="Search (Ctrl+F)")
 
-        if remessas_ausentes_early:
-            log_sys.write(f"⚠️ Remessas NÃO encontradas no SAP: {', '.join(remessas_ausentes_early)}")
+                                    
+                                    search_btn.first.click(timeout=5000)
+                                    time.sleep(0.5)
 
-        if not remessas_confirmadas_early:
-            raise ValueError(
-                f"NENHUMA remessa foi aceita pelo SAP. Todas ausentes: "
-                f"{', '.join(remessas_ausentes_early)}. "
-                f"Verifique se os números estão corretos ou se já estão em outra OF."
-            )
+                                    search_box = app_iframe.get_by_role("textbox", name=re.compile(r"Search for", re.IGNORECASE))
+                                    if search_box.count() == 0:
+                                    
+                                        search_box = page.locator('iframe[title="Application"]').content_frame.get_by_role("textbox", name="Search for")
+                                        
 
-        log_sys.write(
-            f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s). "
-            f"Prosseguindo com a criação da OF..."
-        )
-        if remessas_ausentes_early:
+                                    search_box.fill(rem_str)
+                                    search_box.press("Enter")
+                                    time.sleep(1)
+
+                                    # Confirma se após o Enter o número da remessa é localizado na tela
+                                    body_text = app_iframe.locator("body").inner_text()
+                                    if rem_str in body_text or app_iframe.get_by_text(rem_str).count() > 0:
+                                        encontrada = True
+
+                                    # Fecha a caixa de busca
+                                    try:
+                                        cancel_btn = app_iframe.get_by_role("button", name=re.compile(r"Cancel Search", re.IGNORECASE))
+                                        if cancel_btn.count() > 0:
+                                            cancel_btn.first.click(timeout=3000)
+                                        else:
+                                            page.keyboard.press("Escape")
+                                    except Exception:
+                                        pass
+                            except Exception as search_err:
+                                    log_sys.write(f"⚠️ Erro ao executar busca no SAP para remessa {rem_str}: {search_err}")
+
+                    if encontrada:
+                        remessas_confirmadas_early.append(rem_str)
+                        log_sys.write(f"  ✅ Remessa {rem_str} confirmada na OF")
+                    else:
+                        remessas_ausentes_early.append(rem_str)
+                        log_sys.write(f"  ❌ Remessa {rem_str} NÃO encontrada na OF")
+
+                    aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
+
+            except Exception as e:
+                log_sys.write(f"⚠️ Erro ao verificar remessas após inserção: {e}")
+
+            if remessas_ausentes_early:
+                log_sys.write(f"⚠️ Remessas NÃO encontradas no SAP: {', '.join(remessas_ausentes_early)}")
+
+            if not remessas_confirmadas_early:
+                raise ValueError(
+                    f"NENHUMA remessa foi aceita pelo SAP. Todas ausentes: "
+                    f"{', '.join(remessas_ausentes_early)}. "
+                    f"Verifique se os números estão corretos ou se já estão em outra OF."
+                )
+
             log_sys.write(
-                f"⚠️ {len(remessas_ausentes_early)} remessa(s) ausente(s) serão ignoradas na OF: "
-                f"{', '.join(remessas_ausentes_early)}"
+                f"✅ {len(remessas_confirmadas_early)} remessa(s) confirmada(s). "
+                f"Prosseguindo com a criação da OF..."
             )
+            if remessas_ausentes_early:
+                log_sys.write(
+                    f"⚠️ {len(remessas_ausentes_early)} remessa(s) ausente(s) serão ignoradas na OF: "
+                    f"{', '.join(remessas_ausentes_early)}"
+                )
+
 
         # Acessar a aba "General Data Assignment Block"
         log_sys.write("⏳ Acessando aba General Data...")
         try:
             time.sleep(1.5)
             aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
-            app_iframe.get_by_role("tab", name=re.compile(r"(General Data|Dados gerais).*Assignment Block", re.IGNORECASE)).click(timeout=10000)
+            app_iframe.get_by_role("tab", name=re.compile(r"^(General Data|Dados gerais)", re.IGNORECASE)).click(timeout=10000)
         except Exception:
             pass
             
         # Meio de Transporte: 0007
-        log_sys.write("🚚 Preenchendo Meio de Transporte: 0007")
-        time.sleep(1)
-
-        target_input = None
-        for selector in ["input[name=\"WD05F5\"]", "#WD0346"]:
-            try:
-                el = app_iframe.locator(selector)
-                el.wait_for(state="visible", timeout=1000)
-                target_input = el
-                break
-            except Exception:
-                pass
-
-        if not target_input:
-            log_sys.write("⚠️ Não encontrou seletores padrões para Meio de Transporte. Listando inputs visíveis no iframe:")
-            try:
-                inputs = app_iframe.locator("input").all()
-                visible_count = 0
-                for i, ipt in enumerate(inputs):
-                    if ipt.is_visible():
-                        visible_count += 1
-                        name = ipt.get_attribute("name") or ""
-                        id_attr = ipt.get_attribute("id") or ""
-                        val = ipt.input_value() or ""
-                        role = ipt.get_attribute("role") or ""
-                        title = ipt.get_attribute("title") or ""
-                        log_sys.write(f"  - Input [{i}]: id='{id_attr}', name='{name}', title='{title}', value='{val}', role='{role}'")
-                if visible_count == 0:
-                    log_sys.write("  Nenhum input visível no iframe no momento.")
-            except Exception as ex:
-                log_sys.write(f"  Erro ao listar inputs: {ex}")
-
-        # Tenta preencher por título primeiro (mais robusto contra IDs dinâmicos)
-        preenchido_meio = preencher_campo_por_titulo(app_iframe, ["Means of Transport", "Meio de transporte", "Meio de Transporte"], "0007",press_enter=True)
-        if not preenchido_meio:
-            if target_input:
-                target_input.click()
-                target_input.fill("0007")
-                target_input.press("Enter")
-            else:
-                # Fallback antigo
-                app_iframe.get_by_role("textbox", name="Means of Transport Value help").fill("0007")
-                app_iframe.get_by_role("textbox", name="Means of Transport Value help").press("Enter")
-        time.sleep(1)
-        
-        # Veículo: CARRETA_CAR_SIDER_LS
+        # 1. Veículo: preenche e dá Enter para disparar o auto-preenchimento do Meio de Transporte
         log_sys.write("🚚 Preenchendo Veículo: CARRETA_CAR_SIDER_LS")
-        preenchido_veiculo = preencher_campo_por_titulo(app_iframe, ["Vehicle", "Veículo"], "CARRETA_CAR_SIDER_LS", press_enter=True)
-        if not preenchido_veiculo:
-            app_iframe.get_by_role("textbox", name="Vehicle").click()
-            app_iframe.get_by_role("textbox", name="Vehicle Value help available").fill("CARRETA_CAR_SIDER_LS")
-            app_iframe.get_by_role("textbox", name="Vehicle Value help available").press("Enter")
+        campo_veiculo = app_iframe.get_by_role("textbox", name=re.compile(r"^(Vehicle|Veículo)", re.IGNORECASE))
+        campo_veiculo.click()
+        campo_veiculo.fill("CARRETA_CAR_SIDER_LS")
+        campo_veiculo.press("Enter")
+
+        # Aguarda o SAP processar a requisição e carregar o Meio de Transporte (0007)
+        aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
         time.sleep(1)
-        
-        # Empresa: vma1
+
+        # 2. Empresa: vma1
         log_sys.write("🚚 Preenchendo Empresa: vma1")
-        preenchido_empresa = preencher_campo_por_titulo(app_iframe, ["Procuring Company Code", "Empresa de compras", "Empresa"], "vma1", press_enter=False)
-        if not preenchido_empresa:
-            app_iframe.get_by_role("textbox", name="Procuring Company Code").click()
-            app_iframe.get_by_role("textbox", name="Procuring Company Code Value").fill("vma1")
-        
-        # Transportadora (Carrier)
+        campo_empresa = app_iframe.get_by_role("textbox", name=re.compile(r"^(Procuring Company Code|Empresa de compras|Empresa)", re.IGNORECASE))
+        campo_empresa.click()
+        campo_empresa.fill("vma1")
+
+        # 3. Transportadora (Carrier)
         transportadora_fixa = os.getenv("CABOTAGEM_TRANSPORTADORA_PADRAO", "9190617").strip() or transportadora
         log_sys.write(f"🚚 Preenchendo Transportador: {transportadora_fixa}")
-        preenchido_carrier = preencher_campo_por_titulo(app_iframe, ["Carrier", "Transportador"], transportadora_fixa)
-        if not preenchido_carrier:
-            app_iframe.get_by_role("textbox", name="Carrier", exact=True).click()
-            app_iframe.get_by_role("textbox", name="Carrier Value help available").fill(transportadora_fixa)
-            app_iframe.get_by_role("textbox", name="Carrier Value help available").press("Enter")
-        time.sleep(2)
+        campo_carrier = app_iframe.get_by_role("textbox", name=re.compile(r"^(Carrier|Transportador)", re.IGNORECASE))
+        campo_carrier.click()
+        campo_carrier.fill(transportadora_fixa)
+        campo_carrier.press("Enter")
+
+        aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
         
         # Acessar a aba "Charges Assignment Block"
 
+# Acessar a aba "Charges" / "Despesas"
         log_sys.write("⏳ Acessando aba de Despesas (Charges)...")
-        app_iframe.get_by_role("tab", name=re.compile(r"(Charges|Despesas).*Assignment Block", re.IGNORECASE)).click()
+
+        # 1. Scroll e clique na aba Charges
+        try:
+            app_iframe.evaluate("() => { window.scrollTo(0, 0); document.querySelectorAll('*').forEach(e => { if (e.scrollTop > 0) e.scrollTop = 0; }); }")
+            time.sleep(0.5)
+        except Exception:
+            pass
+
+        tab_charges = app_iframe.get_by_role("tab", name=re.compile(r"^(Charges|Despesas)", re.IGNORECASE))
+        tab_charges.scroll_into_view_if_needed()
+        tab_charges.click(timeout=10000)
         aguardar_fim_carregamento_sap(app_iframe, timeout=30000)
-        time.sleep(2)
 
-        # Expandir todas as linhas — após Expand All o FB02 já aparece na tabela de Charges
-        log_sys.write("⏳ Expandindo linhas de Charges (Expand All)...")
+        # 2. Expand All
+        log_sys.write("⏳ Expandindo linhas de Charges...")
         try:
-            expand_btns = app_iframe.get_by_role("button", name="Expand All")
-            # If multiple buttons match, click the first one to avoid strict mode violation
-            try:
-                if expand_btns.count() > 1:
-                    expand_btns.first.click()
-                else:
-                    expand_btns.click()
-            except Exception:
-                # As a safer fallback, target by the title attribute which SAP renders on the div
-                app_iframe.locator("div[title='Expand All']").first.click()
+            expand_btn = app_iframe.get_by_role("button", name=re.compile(r"^(Expand All|Expandir tudo)", re.IGNORECASE)).first
+            if expand_btn.is_visible():
+                expand_btn.click()
+                aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
         except Exception as e:
-            log_sys.write(f"⚠️ Erro ao tentar clicar 'Expand All': {e}")
-        time.sleep(2)
+            log_sys.write(f"⚠️ Aviso ao tentar Expand All: {e}")
 
-        # Clicar no texto FB02 para ativar/selecionar a linha de charge correspondente
-        log_sys.write("🏷️ Selecionando linha do Charge Type FB02...")
-        try:
-            app_iframe.get_by_text("FB02").first.click(timeout=10000)
-            log_sys.write("✅ Linha FB02 selecionada")
-        except Exception as e:
-            log_sys.write(f"⚠️ Não encontrou texto FB02: {e}")
-        time.sleep(1)
+        # Formatação do valor do frete
+        valor_formatado = f"{valor_frete:.2f}".replace(".", ",") if isinstance(valor_frete, (int, float)) else str(valor_frete)
 
-        # Preencher o campo Rate Amount (ID dinâmico — usar múltiplos fallbacks)
-        valor_str = str(int(valor_frete)) if valor_frete == int(valor_frete) else f"{valor_frete:.2f}".replace(".", ",")
-        valor_formatado = f"{valor_frete:.2f}".replace(".", ",")
-        log_sys.write(f"💰 Inserindo valor do frete: {valor_str}")
-        preenchido_frete = False
+        # 3. Localização da Linha: Cenário A (FB02 já existe) vs Cenário B (Criar em linha vazia)
+        # Como o SAP pode colocar o FB02 num campo editável (<input>), o has_text não o encontra.
+        # Por isso usamos uma combinação de seletores para buscar tanto texto visível quanto o value do input.
+        linha_fb02 = app_iframe.locator("tr, [role='row']").filter(
+            has=app_iframe.locator("text=/\\bFB02\\b/").or_(app_iframe.locator("input[value='FB02']"))
+        )
 
-        # Tentativa 1: via role combobox name="Rate Amount"
-        if not preenchido_frete:
-            try:
-                rate_amount = app_iframe.get_by_role("combobox", name="Rate Amount").first
-                rate_amount.wait_for(state="visible", timeout=5000)
-                rate_amount.click()
-                rate_amount.fill(valor_str)
-                rate_amount.press("Enter")
-                preenchido_frete = True
-                log_sys.write(f"✅ Rate Amount preenchido via combobox com '{valor_str}'")
-            except Exception:
-                pass
+        if linha_fb02.count() > 0:
+            log_sys.write("🏷️ Linha FB02 encontrada na tabela. Atualizando valor...")
+            # Procura o campo de montante/taxa dentro da linha específica do FB02
+            campo_rate = linha_fb02.first.get_by_role("textbox", name=re.compile(r"(Rate Amount|Montante da taxa|Montante)", re.IGNORECASE))
+            
+            if campo_rate.count() == 0:
+                # Fallback caso o SAP trate como combobox na célula
+                campo_rate = linha_fb02.first.get_by_role("combobox", name=re.compile(r"(Rate Amount|Montante da taxa|Montante)", re.IGNORECASE))
+            
+            campo_rate.first.click()
+            time.sleep(0.5)
+            page.keyboard.press("Control+A")
+            page.keyboard.press("Backspace")
+            page.keyboard.insert_text(valor_formatado)
+            page.keyboard.press("Enter")
+            aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
+            log_sys.write(f"✅ Valor do frete {valor_formatado} preenchido na linha existente do FB02")
 
-        # Tentativa 2: via preencher_campo_por_titulo
-        if not preenchido_frete:
-            preenchido_frete = preencher_campo_por_titulo(
-                app_iframe,
-                ["Rate Amount", "Montante da taxa", "Montante taxa", "Montante da Taxa"],
-                valor_formatado,
-                press_enter=True
-            )
-            if preenchido_frete:
-                log_sys.write(f"✅ Rate Amount preenchido via título com '{valor_formatado}'")
-
-        if not preenchido_frete:
-            raise RuntimeError("Não foi possível localizar o campo Rate Amount para inserir o valor do frete.")
-
-        time.sleep(1)
+        else:
+            log_sys.write("⚠️ FB02 não encontrado nas linhas automáticas. Inserindo nova linha de despesa...")
+            
+            # Localiza campos de Charge Type (o último visível costuma ser a linha em branco)
+            campos_tipo = app_iframe.get_by_role("textbox", name=re.compile(r"^(Charge Type|Tipo de despesa|Tipo de encargo)", re.IGNORECASE))
+            
+            if campos_tipo.count() == 0:
+                # Fallback se o label acessível não estiver nomeado como textbox
+                campos_tipo = app_iframe.locator("input[title*='Charge Type'], input[title*='Tipo de encargo']")
+            
+            # Preenche FB02 na última linha disponível
+            input_tipo_novo = campos_tipo.last
+            input_tipo_novo.click()
+            input_tipo_novo.fill("FB02")
+            input_tipo_novo.press("Enter")
+            aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
+            
+            # Agora que o SAP confirmou a inserção do FB02, busca a linha recém-criada
+            linha_recem_criada = app_iframe.locator("tr, [role='row']").filter(has=app_iframe.locator("text=/\\bFB02\\b/").or_(app_iframe.locator("input[value='FB02']"))).first
+            campo_rate_novo = linha_recem_criada.get_by_role("textbox", name=re.compile(r"(Rate Amount|Montante da taxa|Montante)", re.IGNORECASE))
+            
+            if campo_rate_novo.count() == 0:
+                campo_rate_novo = linha_recem_criada.get_by_role("combobox", name=re.compile(r"(Rate Amount|Montante da taxa|Montante)", re.IGNORECASE))
+                
+            campo_rate_novo.first.click()
+            time.sleep(0.5)
+            page.keyboard.press("Control+A")
+            page.keyboard.press("Backspace")
+            page.keyboard.insert_text(valor_formatado)
+            page.keyboard.press("Enter")
+            aguardar_fim_carregamento_sap(app_iframe, timeout=15000)
+            log_sys.write(f"✅ FB02 criado e valor {valor_formatado} inserido com sucesso")
 
         # Clicar em "BID Freight Table" para confirmar/sair do campo editado
         try:

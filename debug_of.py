@@ -17,7 +17,7 @@ def main():
     senha = os.getenv("SAP_WEB_PASSWORD")
     
     # Insira aqui os números das remessas reais para testar a criação da OF
-    remessas = ["80748899", "80748890"]
+    remessas = ["80783935"]
     transportadora = "9190617"
     valor_frete = 4816.53
     
@@ -39,7 +39,7 @@ def main():
             valor_frete=valor_frete,
             usuario=usuario,
             senha=senha,
-            headless=True
+            headless=False
         )
         of_criada = resultado["of_numero"]
         confirmadas = resultado["remessas_confirmadas"]
