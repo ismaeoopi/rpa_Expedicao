@@ -83,12 +83,43 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None, status_etapas=None):
  
             log_sys.write(f"P.Min: {pesoRemessaMin} | P.Max: {pesoRemessaMax} | Peso Alvo: {pesoRemessa}")
             
-            session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/cntlCONTAINER_TB_ODP1_1/shellcont/shell").pressButton("OK_ODP1_TOGGLE")
+            # Garante que a linha 0 está selecionada antes de alternar detalhes
+            try:
+                alv_itens = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell")
+                alv_itens.selectedRows = "0"
+                alv_itens.currentCellRow = 0
+            except Exception:
+                pass
+
             dep = session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/subSUB_OIP_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:2211/cntlCONTAINER_ALV_OIP_1/shellcont/shell").getCellValue(0,"LGNUM")
-            
-            procty_path = "wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:3212/ctxt/SCWM/S_SP_A_ITEM_PRDO-/SCWM/PROCTY"
-            session.findById(procty_path).text = "Y214" if dep == "ITP1" else "O001"
+
+            procty_path_prd = "wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:3212/ctxt/SCWM/S_SP_A_ITEM_PRDO-/SCWM/PROCTY"
+            procty_path_core = "wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3212/ctxt/SCWM/S_SP_A_ITEM_PRDO-/SCWM/PROCTY"
+
+            def get_procty():
+                for p in [procty_path_prd, procty_path_core]:
+                    try:
+                        return session.findById(p)
+                    except Exception:
+                        pass
+                return None
+
+            ctrl_procty = get_procty()
+            if not ctrl_procty:
+                session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/cntlCONTAINER_TB_ODP1_1/shellcont/shell").pressButton("OK_ODP1_TOGGLE")
+                time.sleep(0.8)
+                for _ in range(5):
+                    ctrl_procty = get_procty()
+                    if ctrl_procty:
+                        break
+                    time.sleep(0.5)
+
+            if not ctrl_procty:
+                raise Exception("Campo PROCTY não encontrado na sub-tela de detalhes após alternar visualização.")
+
+            ctrl_procty.text = "Y214" if dep == "ITP1" else "O001"
             session.findById("wnd[0]").sendVKey(0)
+            time.sleep(0.5)
             
             session.findById("wnd[0]/tbar[0]/btn[11]").press()
             session.findById("wnd[0]").sendVKey(25)
@@ -134,7 +165,38 @@ def processarRemessaComUc(caminhoExcel, dados_colados=None, status_etapas=None):
                 session.findById("wnd[0]/usr/subSUB_COMPLETE_OIP:/SCWM/SAPLUI_DLV_PRD:2000/subSUB_OIP_DATA_AREA:/SCWM/SAPLUI_DLV_PRD:2210/cntlCONTAINER_TB_OIP_1/shellcont/shell").pressButton("OIP_CHANGE")
                 time.sleep(1)
                 pesoUcs_str = valorFloatexcel(pesoUcs)
-                session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:3212/txt/SCWM/S_SP_A_ITEM_PRDO-QTY_UI").text = pesoUcs_str
+
+                qty_path_prd = "wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_PRD:3212/txt/SCWM/S_SP_A_ITEM_PRDO-QTY_UI"
+                qty_path_core = "wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3212/txt/SCWM/S_SP_A_ITEM_PRDO-QTY_UI"
+
+                def get_qty():
+                    for p in [qty_path_prd, qty_path_core]:
+                        try:
+                            return session.findById(p)
+                        except Exception:
+                            pass
+                    return None
+
+                ctrl_qty = get_qty()
+                if not ctrl_qty:
+                    try:
+                        alv_item = session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/ssubSUB_ODP1_1_CONTENT:/SCWM/SAPLUI_DLV_CORE:3211/cntlCONTAINER_ALV_ODP1_1/shellcont/shell")
+                        alv_item.selectedRows = "0"
+                        alv_item.currentCellRow = 0
+                    except Exception:
+                        pass
+                    session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP1:/SCWM/SAPLUI_DLV_PRD:3000/tabsTABSTRIP_ODP1/tabpOK_ODP1_TAB1/ssubSUB_ODP1_TAB1:/SCWM/SAPLUI_DLV_CORE:3210/cntlCONTAINER_TB_ODP1_1/shellcont/shell").pressButton("OK_ODP1_TOGGLE")
+                    time.sleep(0.8)
+                    for _ in range(5):
+                        ctrl_qty = get_qty()
+                        if ctrl_qty:
+                            break
+                        time.sleep(0.5)
+
+                if not ctrl_qty:
+                    raise Exception("Campo QTY_UI não encontrado para ajuste de peso.")
+
+                ctrl_qty.text = pesoUcs_str
                 session.findById("wnd[0]/tbar[0]/btn[11]").press()
                 session.findById("wnd[0]").sendVKey(25)
                 session.findById("wnd[0]/usr/subSUB_COMPLETE_ODP:/SCWM/SAPLUI_TODLV:4000/tabsGV_TAB_ODP/tabpOK_TAB_ODP_DEFDLV").select()

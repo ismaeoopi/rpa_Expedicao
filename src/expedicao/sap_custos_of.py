@@ -32,7 +32,7 @@ def consultar_e_editar_custos_of(
     texto_linha: str = "",
     linha_editar: int = 1,
     salvar: bool = False,
-    headless: bool = False,
+    headless: bool = True,
     tempo_espera_visual: int = 30,
     edicoes: list = None,
 ) -> dict:

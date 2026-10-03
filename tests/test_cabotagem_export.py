@@ -24,10 +24,37 @@ def test_montar_relatorio_cabotagem_gera_linhas_por_remessa():
     df = montar_relatorio_cabotagem(estado)
 
     assert isinstance(df, pd.DataFrame)
-    assert list(df.columns) == ["Carga", "Container", "Remessa", "OF", "Status"]
+    assert list(df.columns) == ["Carga", "Container", "Remessa", "Data Ag. Recebimento Cliente", "OF", "Status"]
     assert len(df) == 3
     assert df.loc[df["Remessa"] == "R1", "OF"].iloc[0] == "OF123"
     assert df.loc[df["Remessa"] == "R3", "Status"].iloc[0] == "Pendente"
+
+
+def test_montar_relatorio_cabotagem_inclui_data_agendamento_cliente():
+    estado = {
+        "containers": [
+            {
+                "carga": "C-100",
+                "container": "CTR-1",
+                "remessas": ["R1"],
+                "of_numero": "610001",
+                "data_agendamento": "28/09/2026",
+            },
+            {
+                "carga": "C-200",
+                "container": "CTR-2",
+                "remessas": ["R2"],
+                "of_numero": "610002",
+                "data_agendamento": "29/09/2026",
+            }
+        ]
+    }
+
+    df = montar_relatorio_cabotagem(estado)
+    assert "Data Ag. Recebimento Cliente" in df.columns
+    assert df.loc[df["Container"] == "CTR-1", "Data Ag. Recebimento Cliente"].iloc[0] == "28/09/2026"
+    assert df.loc[df["Container"] == "CTR-2", "Data Ag. Recebimento Cliente"].iloc[0] == "29/09/2026"
+
 
 
 def test_montar_relatorio_cabotagem_filtra_selecionados():
@@ -117,5 +144,42 @@ def test_montar_relatorio_cabotagem_diferencia_remessas_ausentes():
     r333 = df[df["Remessa"] == "333"].iloc[0]
     assert r333["OF"] == ""
     assert r333["Status"] == "Não Encontrada"
+
+
+def test_formatar_data_abreviada_varios_formatos():
+    from src.expedicao.cabotagem_processador import formatar_data_abreviada
+
+    # Formato ISO com e sem hora
+    fmt, iso = formatar_data_abreviada("2026-09-30 00:00:00")
+    assert fmt == "30/09/2026"
+    assert iso == "2026-09-30"
+
+    fmt, iso = formatar_data_abreviada("2026-09-28")
+    assert fmt == "28/09/2026"
+    assert iso == "2026-09-28"
+
+    # Formato Brasileiro DD/MM/AAAA
+    fmt, iso = formatar_data_abreviada("15/10/2026")
+    assert fmt == "15/10/2026"
+    assert iso == "2026-10-15"
+
+    # Serial do Excel (45565 -> 30/09/2024)
+    fmt, iso = formatar_data_abreviada("45565")
+    assert fmt == "30/09/2024"
+    assert iso == "2024-09-30"
+
+    # Valores nulos / vazios
+    fmt, iso = formatar_data_abreviada(None)
+    assert fmt == ""
+    assert iso == ""
+
+    fmt, iso = formatar_data_abreviada("nan")
+    assert fmt == ""
+    assert iso == ""
+
+    fmt, iso = formatar_data_abreviada("-")
+    assert fmt == ""
+    assert iso == ""
+
 
 

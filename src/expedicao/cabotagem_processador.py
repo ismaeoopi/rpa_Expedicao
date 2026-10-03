@@ -24,6 +24,54 @@ def converter_para_float_cabotagem(valor):
     except ValueError:
         return 0.0
 
+def formatar_data_abreviada(val):
+    """
+    Converte diferentes representações de data para Data Abreviada (DD/MM/AAAA)
+    e retorna uma tupla: (data_formatada_dd_mm_aaaa, data_iso_yyyy_mm_dd).
+    """
+    if pd.isna(val):
+        return "", ""
+    s = str(val).strip()
+    if not s or s.lower() in ["nan", "none", "-", "nat", "null"]:
+        return "", ""
+
+    # 1. Serial do Excel (dias desde 30/12/1899)
+    try:
+        if s.replace(".", "", 1).isdigit():
+            num = float(s)
+            if 30000 <= num <= 70000:
+                dt = pd.to_datetime(num, unit='D', origin='1899-12-30')
+                return dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+
+    # 2. Formatos ISO (YYYY-MM-DD...)
+    if re.match(r'^\d{4}[-/]\d{2}[-/]\d{2}', s):
+        try:
+            dt = pd.to_datetime(s, dayfirst=False, errors='coerce')
+            if pd.notna(dt):
+                return dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    # 3. Formato Brasileiro (DD/MM/YYYY...)
+    try:
+        dt = pd.to_datetime(s, dayfirst=True, errors='coerce')
+        if pd.notna(dt):
+            return dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+
+    # 4. Fallback com dateutil
+    try:
+        from dateutil import parser
+        dt = parser.parse(s, dayfirst=True)
+        return dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+
+    return s, s
+
 # Estado global da Cabotagem
 cabotagem_estado = {
     "planilha_caminho": "",
@@ -55,7 +103,7 @@ def _extrair_numero_of(val) -> str:
 
 
 def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
-    """Cria um DataFrame com carga, container, remessa, OF e status para exportação Excel."""
+    """Cria um DataFrame com carga, container, remessa, Data Ag. Recebimento Cliente, OF e status para exportação Excel."""
     estado = estado or cabotagem_estado
     linhas = []
 
@@ -73,6 +121,7 @@ def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
         carga = container.get("carga", "")
         container_id = container.get("container", "")
         remessas = container.get("remessas", []) or []
+        data_agendamento = container.get("data_agendamento", "")
         if not remessas:
             continue
 
@@ -106,6 +155,7 @@ def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
                 "Carga": carga,
                 "Container": container_id,
                 "Remessa": remessa,
+                "Data Ag. Recebimento Cliente": data_agendamento,
                 "OF": of_para_remessa,
                 "Status": status_remessa,
             })
@@ -115,11 +165,12 @@ def montar_relatorio_cabotagem(estado=None) -> pd.DataFrame:
             "Carga": "",
             "Container": "",
             "Remessa": "",
+            "Data Ag. Recebimento Cliente": "",
             "OF": "",
             "Status": "Pendente",
         })
 
-    return pd.DataFrame(linhas, columns=["Carga", "Container", "Remessa", "OF", "Status"])
+    return pd.DataFrame(linhas, columns=["Carga", "Container", "Remessa", "Data Ag. Recebimento Cliente", "OF", "Status"])
 
 
 
@@ -189,6 +240,26 @@ def obter_dados_cabotagem() -> list:
     col_valor_frete = encontrar_coluna(df, ["VALOR DO FRETE", "VALOR DE FRETE", "VALOR FRETE", "FRETE", "VALOR"], "Planilha Cabotagem")
     col_of = encontrar_coluna(df, ["ORDEM DE FRETE", "OF", "NUMERO OF", "Nº OF", "N° OF"], "Planilha Cabotagem")
     col_cliente = encontrar_coluna(df, ["CLIENTE", "NOME CLIENTE", "CLIENTE ABREV"], "Planilha Cabotagem")
+    col_data_agendamento = encontrar_coluna(
+        df,
+        [
+            "DATA AG. RECEBIMENTO CLIENTE",
+            "DATA AG RECEBIMENTO CLIENTE",
+            "DATA AGENDAMENTO RECEBIMENTO CLIENTE",
+            "DATA AG. RECEBIMENTO",
+            "DATA AG RECEBIMENTO",
+            "DATA AGENDAMENTO",
+            "DATA AG.",
+            "AG. RECEBIMENTO CLIENTE",
+            "AGENDAMENTO CLIENTE",
+            "DATA RECEBIMENTO CLIENTE",
+            "DATA RECEBIMENTO",
+            "DATA AGENDADA",
+            "AGENDAMENTO",
+            "DATA AG"
+        ],
+        "Planilha Cabotagem"
+    )
     
     # Validação amigável
     colunas_faltantes = []
@@ -219,6 +290,11 @@ def obter_dados_cabotagem() -> list:
         
     if col_cliente:
         log_sys.write(f"✔️ Coluna de Cliente identificada: '{col_cliente}'")
+
+    if col_data_agendamento:
+        log_sys.write(f"✔️ Coluna de Data Ag. Recebimento Cliente identificada: '{col_data_agendamento}'")
+    else:
+        log_sys.write("⚠️ Coluna 'Data Ag. Recebimento Cliente' não encontrada na planilha.")
         
     # Limpeza e normalização
     df[col_carga] = df[col_carga].fillna("").astype(str).str.strip()
@@ -237,6 +313,9 @@ def obter_dados_cabotagem() -> list:
         
     if col_cliente:
         df[col_cliente] = df[col_cliente].fillna("").astype(str).str.strip()
+
+    if col_data_agendamento:
+        df[col_data_agendamento] = df[col_data_agendamento].fillna("").astype(str).str.strip()
         
     # 3. Mapear containers da carga
     cargas_list = []
@@ -294,6 +373,26 @@ def obter_dados_cabotagem() -> list:
                     
             if not of_existente:
                 todos_com_of = False
+
+            # Pega a data de agendamento do container formatada em DD/MM/AAAA
+            data_agendamento_container = ""
+            data_agendamento_iso = ""
+            if col_data_agendamento:
+                for val_d in df_container[col_data_agendamento]:
+                    if val_d and str(val_d).strip().lower() not in ["nan", "none", "", "-"]:
+                        d_fmt, d_iso = formatar_data_abreviada(val_d)
+                        if d_fmt:
+                            data_agendamento_container = d_fmt
+                            data_agendamento_iso = d_iso
+                            break
+                if not data_agendamento_container:
+                    for val_d in df_carga[col_data_agendamento]:
+                        if val_d and str(val_d).strip().lower() not in ["nan", "none", "", "-"]:
+                            d_fmt, d_iso = formatar_data_abreviada(val_d)
+                            if d_fmt:
+                                data_agendamento_container = d_fmt
+                                data_agendamento_iso = d_iso
+                                break
                 
             # Transportadora fixa configurada no .env
             transportadora_padrao = os.getenv("CABOTAGEM_TRANSPORTADORA_PADRAO", "9190617").strip()
@@ -317,7 +416,9 @@ def obter_dados_cabotagem() -> list:
                 "valor_container": round(valor_container, 2),
                 "dividido": dividido,
                 "of_numero": of_existente,
-                "pendente": not bool(of_existente)
+                "pendente": not bool(of_existente),
+                "data_agendamento": data_agendamento_container,
+                "data_agendamento_iso": data_agendamento_iso
             })
             
         # Se TODOS os containers desta carga já possuem OF, não traz ela (pula)
@@ -325,15 +426,30 @@ def obter_dados_cabotagem() -> list:
             continue
             
         if containers_c:
+            # Pega a data mais recente dos containers da carga para exibição e ordenação da carga
+            datas_c = [c["data_agendamento_iso"] for c in containers_c if c.get("data_agendamento_iso")]
+            data_carga_iso = max(datas_c) if datas_c else ""
+            data_carga_fmt = ""
+            if data_carga_iso:
+                for c in containers_c:
+                    if c.get("data_agendamento_iso") == data_carga_iso:
+                        data_carga_fmt = c.get("data_agendamento", "")
+                        break
+
             cargas_list.append({
                 "carga": carga_id,
                 "cliente": cliente_nome,
                 "valor_total_carga": valor_total_frete,
                 "total_containers_carga": total_containers,
                 "frete_preenchido": frete_preenchido,
+                "data_agendamento": data_carga_fmt,
+                "data_agendamento_iso": data_carga_iso,
                 "containers": containers_c
             })
             
+    # Ordena com as datas mais recentes primeiro (data_agendamento_iso desc)
+    cargas_list.sort(key=lambda x: x.get("data_agendamento_iso", "") or "", reverse=True)
+
     # Atualiza o estado global com os containers nivelados para o executor de background
     containers_flat = []
     for c_item in cargas_list:
@@ -349,7 +465,9 @@ def obter_dados_cabotagem() -> list:
                 "total_containers_carga": c_item["total_containers_carga"],
                 "of_numero": c["of_numero"],
                 "pendente": c["pendente"],
-                "frete_preenchido": c_item["frete_preenchido"]
+                "frete_preenchido": c_item["frete_preenchido"],
+                "data_agendamento": c.get("data_agendamento", ""),
+                "data_agendamento_iso": c.get("data_agendamento_iso", "")
             })
             
     cabotagem_estado["containers"] = containers_flat

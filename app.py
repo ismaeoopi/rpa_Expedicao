@@ -746,12 +746,43 @@ def api_cabotagem_executar():
 def api_cabotagem_exportar_excel():
     from src.expedicao.cabotagem_processador import montar_relatorio_cabotagem
     import pandas as pd
+    from datetime import datetime
 
     df = montar_relatorio_cabotagem(cabotagem_estado)
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Cabotagem')
+        ws = writer.sheets['Cabotagem']
+        
+        # Habilita filtro automático (opção de filtrar data na aba Cabotagem)
+        ws.auto_filter.ref = ws.dimensions
+
+        # Formata coluna "Data Ag. Recebimento Cliente" como Data Abreviada (DD/MM/AAAA)
+        col_data_idx = None
+        for idx, col_name in enumerate(df.columns, 1):
+            if col_name == "Data Ag. Recebimento Cliente":
+                col_data_idx = idx
+                break
+
+        if col_data_idx:
+            for row_idx in range(2, len(df) + 2):
+                cell = ws.cell(row=row_idx, column=col_data_idx)
+                if cell.value:
+                    try:
+                        # Converte string DD/MM/AAAA para data real reconhecida pelo Excel
+                        dt = datetime.strptime(str(cell.value).strip(), "%d/%m/%Y").date()
+                        cell.value = dt
+                    except Exception:
+                        pass
+                cell.number_format = 'DD/MM/YYYY'
+
+        # Ajusta largura das colunas para visualização ideal
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = col[0].column_letter
+            ws.column_dimensions[col_letter].width = max(max_len + 4, 14)
+
     output.seek(0)
 
     return send_file(

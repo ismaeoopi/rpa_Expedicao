@@ -265,6 +265,166 @@
             gap: 10px;
         }
 
+        /* TOOLBAR & FILTROS DE DATA NA CABOTAGEM */
+        .toolbar-cabotagem {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .search-box-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box-wrap input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box-wrap input:focus {
+            border-color: #007ab1;
+            box-shadow: 0 0 0 2px rgba(0, 122, 177, 0.15);
+        }
+
+        .search-box-wrap svg {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .date-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .date-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .date-input-wrap label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin: 0;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .date-input-wrap input[type="date"] {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #1e293b;
+            background: #ffffff;
+            outline: none;
+        }
+
+        .filter-pill {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+
+        .filter-pill:hover {
+            border-color: #007ab1;
+            color: #007ab1;
+            background: #f0f9ff;
+        }
+
+        .filter-pill.active {
+            background: #007ab1;
+            border-color: #007ab1;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 122, 177, 0.25);
+        }
+
+        .badge-date-carga {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px;
+            background: #e0f2fe;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-date-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge-no-date {
+            color: #94a3b8;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .th-sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .th-sortable:hover {
+            background: #e2e8f0 !important;
+            color: #007ab1 !important;
+        }
+
         /* MODAL CONFIGURAÇÃO */
         .modal-overlay {
             display: none;
@@ -343,25 +503,76 @@
                         <span>⚠️ Alguns containers estão sem valor de frete preenchido na planilha! Verifique na lista abaixo.</span>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <!-- TOOLBAR DE FILTROS & ORDENAÇÃO DE DATA -->
+                    <div class="toolbar-cabotagem">
+                        <div class="toolbar-row">
+                            <div class="search-box-wrap">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" id="filtro-busca" placeholder="🔍 Buscar por carga, container, cliente, remessa..." oninput="aplicarFiltrosEOrdenacao()">
+                            </div>
+
+                            <div class="date-filter-group">
+                                <div class="date-input-wrap">
+                                    <label for="filtro-data">📅 Filtrar Data:</label>
+                                    <input type="date" id="filtro-data" onchange="aplicarFiltrosEOrdenacao()" title="Filtrar por data específica de agendamento">
+                                    <button class="btn-secondary" onclick="limparDataEspecifica()" style="padding: 2px 7px; font-size: 11px; margin-left: 2px;" title="Limpar data">✖</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-row" style="border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <span style="font-size: 12px; font-weight: 600; color: #64748b;">Ordem por Data:</span>
+                                <button type="button" class="filter-pill active" id="pill-ordem-recente" onclick="definirOrdenacaoData('desc')">
+                                    🔥 Mais Recentes Primeiro
+                                </button>
+                                <button type="button" class="filter-pill" id="pill-ordem-antiga" onclick="definirOrdenacaoData('asc')">
+                                    ⏮️ Mais Antigas
+                                </button>
+                                <button type="button" class="filter-pill" id="pill-com-data" onclick="alternarFiltroComData()">
+                                    📅 Apenas com Data
+                                </button>
+                                <button type="button" class="filter-pill" onclick="limparTodosFiltros()" style="color: #dc2626; border-color: #fca5a5;">
+                                    🔄 Resetar Filtros
+                                </button>
+                            </div>
+
+                            <div style="font-size: 12px; color: #64748b;" id="info-contador-visiveis">
+                                Carregando dados...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <h4 style="color: #007ab1; font-size: 15px; font-weight: 600; margin: 0;">
                             📋 Containers Disponíveis (OFs Pendentes)
                         </h4>
                         <div style="display: flex; gap: 8px;">
-                            <button class="btn-secondary" onclick="marcarTodos(true)" style="padding: 6px 12px; font-size: 12px;">☑️ Marcar Todos</button>
+                            <button class="btn-secondary" onclick="marcarTodos(true)" style="padding: 6px 12px; font-size: 12px;">☑️ Marcar Visíveis</button>
                             <button class="btn-secondary" onclick="marcarTodos(false)" style="padding: 6px 12px; font-size: 12px;">⬜ Desmarcar</button>
                         </div>
                     </div>
 
-                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; margin-bottom: 20px;">
+                    <div style="max-height: 480px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; margin-bottom: 20px;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: #475569;">
-                                    <th style="padding: 10px 15px; width: 80px; text-align: center;">Seleção</th>
-                                    <th style="padding: 10px 15px; width: 350px;">Carga / Container</th>
+                                    <th style="padding: 10px 15px; width: 60px; text-align: center;">Seleção</th>
+                                    <th style="padding: 10px 15px; width: 300px;">Carga / Container</th>
+                                    <th style="padding: 10px 15px; width: 230px;" class="th-sortable" onclick="alternarOrdenacaoData()" title="Clique para alternar ordenação por data">
+                                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                                            <span>📅 Data Ag. Recebimento Cliente</span>
+                                            <span id="icone-ordenacao-data" style="display: inline-flex; align-items: center; color: #007ab1;" title="Mais recentes primeiro">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M7 9l5-5 5 5" opacity="0.3"/>
+                                                    <path d="M7 15l5 5 5-5" stroke-width="2.5"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </th>
                                     <th style="padding: 10px 15px;">Remessas</th>
-                                    <th style="padding: 10px 15px; width: 180px;">Valor Frete (OF)</th>
-                                    <th style="padding: 10px 15px; width: 150px;">Status</th>
+                                    <th style="padding: 10px 15px; width: 170px;">Valor Frete (OF)</th>
+                                    <th style="padding: 10px 15px; width: 130px;">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="tabela-containers-corpo">
@@ -429,8 +640,11 @@
 
     <script>
         let cargasList = [];
+        let cargasExibidas = [];
         let selecionados = new Set();
         let pollingInterval = null;
+        let ordemData = 'desc'; // Mais recentes primeiro por padrão
+        let apenasComData = false;
 
         window.addEventListener('load', () => {
             fetch('/api/inicializar')
@@ -505,13 +719,14 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    cargasList = data.containers;
+                    cargasList = data.containers || [];
                     logNoConsole(`✅ Planilha processada com sucesso! ${cargasList.length} carga(s) mapeada(s).`);
                     
                     document.getElementById('processos-placeholder').style.display = 'none';
                     document.getElementById('processos-conteudo').style.display = 'block';
                     
-                    renderizarTabela();
+                    selecionados.clear();
+                    aplicarFiltrosEOrdenacao();
                 } else {
                     logNoConsole(`❌ Falha ao carregar dados: ${data.message}`);
                 }
@@ -521,15 +736,163 @@
             });
         }
 
+        function aplicarFiltrosEOrdenacao() {
+            const buscaInput = document.getElementById('filtro-busca');
+            const dataInput = document.getElementById('filtro-data');
+            const filtroTexto = buscaInput ? buscaInput.value.toLowerCase().trim() : '';
+            const filtroData = dataInput ? dataInput.value.trim() : ''; // YYYY-MM-DD
+
+            cargasExibidas = cargasList.filter(c => {
+                // 1. Filtro por data específica selecionada no calendário
+                if (filtroData) {
+                    const dataCargaIso = c.data_agendamento_iso || '';
+                    const matchCarga = dataCargaIso === filtroData;
+                    const matchContainer = c.containers.some(ctr => (ctr.data_agendamento_iso || '') === filtroData);
+                    if (!matchCarga && !matchContainer) return false;
+                }
+
+                // 2. Filtro apenas com data preenchida
+                if (apenasComData) {
+                    const temData = (c.data_agendamento && c.data_agendamento.trim() !== '') ||
+                                    c.containers.some(ctr => ctr.data_agendamento && ctr.data_agendamento.trim() !== '');
+                    if (!temData) return false;
+                }
+
+                // 3. Filtro por texto livre (carga, cliente, container, remessa, data DD/MM/AAAA)
+                if (filtroTexto) {
+                    const textoCarga = `${c.carga} ${c.cliente || ''} ${c.data_agendamento || ''}`.toLowerCase();
+                    const matchCarga = textoCarga.includes(filtroTexto);
+                    const matchContainers = c.containers.some(ctr => {
+                        const textoCtr = `${ctr.container} ${ctr.remessas.join(' ')} ${ctr.data_agendamento || ''}`.toLowerCase();
+                        return textoCtr.includes(filtroTexto);
+                    });
+                    if (!matchCarga && !matchContainers) return false;
+                }
+
+                return true;
+            });
+
+            // Ordenação por data de agendamento (mais recentes primeiro por padrão)
+            cargasExibidas.sort((a, b) => {
+                const dataA = a.data_agendamento_iso || '';
+                const dataB = b.data_agendamento_iso || '';
+
+                if (!dataA && !dataB) return 0;
+                if (!dataA) return 1; // Itens sem data vão para o fim
+                if (!dataB) return -1;
+
+                if (ordemData === 'desc') {
+                    return dataB.localeCompare(dataA); // Mais recente primeiro
+                } else {
+                    return dataA.localeCompare(dataB); // Mais antiga primeiro
+                }
+            });
+
+            // Ordena os containers internos de cada carga também conforme a ordenação
+            cargasExibidas.forEach(c => {
+                c.containers.sort((a, b) => {
+                    const dA = a.data_agendamento_iso || '';
+                    const dB = b.data_agendamento_iso || '';
+                    if (!dA && !dB) return 0;
+                    if (!dA) return 1;
+                    if (!dB) return -1;
+                    return ordemData === 'desc' ? dB.localeCompare(dA) : dA.localeCompare(dB);
+                });
+            });
+
+            // Atualiza botões e indicadores visuais
+            const iconeOrdem = document.getElementById('icone-ordenacao-data');
+            if (iconeOrdem) {
+                if (ordemData === 'desc') {
+                    iconeOrdem.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 9l5-5 5 5" opacity="0.3"/>
+                            <path d="M7 15l5 5 5-5" stroke-width="2.5"/>
+                        </svg>
+                    `;
+                    iconeOrdem.title = "Mais recentes primeiro";
+                } else {
+                    iconeOrdem.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 9l5-5 5 5" stroke-width="2.5"/>
+                            <path d="M7 15l5 5 5-5" opacity="0.3"/>
+                        </svg>
+                    `;
+                    iconeOrdem.title = "Mais antigas primeiro";
+                }
+            }
+
+            const pillRecente = document.getElementById('pill-ordem-recente');
+            const pillAntiga = document.getElementById('pill-ordem-antiga');
+            const pillComData = document.getElementById('pill-com-data');
+
+            if (pillRecente) pillRecente.classList.toggle('active', ordemData === 'desc');
+            if (pillAntiga) pillAntiga.classList.toggle('active', ordemData === 'asc');
+            if (pillComData) pillComData.classList.toggle('active', apenasComData);
+
+            // Atualiza contadores
+            const infoContador = document.getElementById('info-contador-visiveis');
+            if (infoContador) {
+                let totalContainersVisiveis = 0;
+                cargasExibidas.forEach(c => totalContainersVisiveis += c.containers.length);
+                infoContador.innerHTML = `Exibindo <strong>${cargasExibidas.length}</strong> de ${cargasList.length} carga(s) (<strong>${totalContainersVisiveis}</strong> containers)`;
+            }
+
+            renderizarTabela();
+        }
+
+        function alternarOrdenacaoData() {
+            ordemData = ordemData === 'desc' ? 'asc' : 'desc';
+            aplicarFiltrosEOrdenacao();
+        }
+
+        function definirOrdenacaoData(ordem) {
+            ordemData = ordem;
+            aplicarFiltrosEOrdenacao();
+        }
+
+        function alternarFiltroComData() {
+            apenasComData = !apenasComData;
+            aplicarFiltrosEOrdenacao();
+        }
+
+        function limparDataEspecifica() {
+            const dataInput = document.getElementById('filtro-data');
+            if (dataInput) dataInput.value = '';
+            aplicarFiltrosEOrdenacao();
+        }
+
+        function limparTodosFiltros() {
+            const buscaInput = document.getElementById('filtro-busca');
+            const dataInput = document.getElementById('filtro-data');
+            if (buscaInput) buscaInput.value = '';
+            if (dataInput) dataInput.value = '';
+            apenasComData = false;
+            ordemData = 'desc';
+            aplicarFiltrosEOrdenacao();
+        }
+
         function renderizarTabela() {
             const tbody = document.getElementById('tabela-containers-corpo');
             tbody.innerHTML = "";
             
             let temSemFrete = false;
-            selecionados.clear();
             let idxGroup = 0;
 
-            cargasList.forEach(c => {
+            if (cargasExibidas.length === 0) {
+                const trVazia = document.createElement('tr');
+                trVazia.innerHTML = `
+                    <td colspan="6" style="padding: 40px; text-align: center; color: #94a3b8; font-size: 14px;">
+                        🔍 Nenhuma carga encontrada para os filtros selecionados.<br>
+                        <button class="btn-secondary" onclick="limparTodosFiltros()" style="margin-top: 10px; padding: 6px 14px; font-size: 12px;">Limpar Filtros</button>
+                    </td>
+                `;
+                tbody.appendChild(trVazia);
+                atualizarInfoSelecionados();
+                return;
+            }
+
+            cargasExibidas.forEach(c => {
                 if (!c.frete_preenchido) temSemFrete = true;
                 
                 const cargaKey = `carga-${idxGroup}`;
@@ -540,6 +903,12 @@
                     valorTotalTexto = `<span style="color:#dc2626; font-weight:bold;">Sem Frete ⚠️</span>`;
                 }
 
+                // Formata Data Ag. Recebimento Cliente no formato Abreviado DD/MM/AAAA
+                let dataAgendamentoHtml = `<span class="badge-no-date">Sem agendamento</span>`;
+                if (c.data_agendamento) {
+                    dataAgendamentoHtml = `<span class="badge-date-carga" title="Data Agendamento Cliente (DD/MM/AAAA)">📅 ${c.data_agendamento}</span>`;
+                }
+
                 // Cria linha pai (Carga)
                 const trCarga = document.createElement('tr');
                 trCarga.style.background = '#f8fafc';
@@ -547,10 +916,13 @@
                 trCarga.style.fontWeight = 'bold';
                 trCarga.innerHTML = `
                     <td style="padding: 12px 15px; text-align: center;">
-                        <input type="checkbox" id="chk-${c.carga}" onchange="toggleSelecaoCarga('${c.carga}')" style="width:16px; height:16px; cursor:pointer;">
+                        <input type="checkbox" id="chk-${c.carga}" onchange="toggleSelecaoCarga('${c.carga}')" style="width:16px; height:16px; cursor:pointer;" ${selecionados.has(c.carga) ? 'checked' : ''}>
                     </td>
                     <td style="padding: 12px 15px; color: #1e293b; cursor: pointer;" onclick="toggleDropdown('${cargaKey}')">
                         <span id="icon-${cargaKey}" style="color: #007ab1; margin-right: 5px;">▶</span> 📦 Carga: ${c.carga} <span style="font-weight:normal; font-size:12px; color:#64748b; margin-left: 10px;">| Cliente: ${c.cliente || 'Não Informado'}</span>
+                    </td>
+                    <td style="padding: 12px 15px;">
+                        ${dataAgendamentoHtml}
                     </td>
                     <td style="padding: 12px 15px; font-size:12px; color:#64748b; cursor: pointer;" onclick="toggleDropdown('${cargaKey}')">
                         ${c.containers.length} container(s)
@@ -566,14 +938,17 @@
 
                 // Cria linhas filhos (Containers) - FECHADO POR PADRÃO (display: none)
                 c.containers.forEach(container => {
-                    const key = `${c.carga}_${container.container}`;
-                    
                     let valorFreteTexto = `R$ ${container.valor_container.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
                     if (container.dividido) {
                         valorFreteTexto += ` <span style="color:#d97706; font-size:11px; font-weight:bold;">(1/${c.total_containers_carga})</span>`;
                     }
                     if (!c.frete_preenchido) {
                         valorFreteTexto = `<span style="color:#dc2626;">Sem Frete ⚠️</span>`;
+                    }
+
+                    let dataContainerHtml = `<span class="badge-no-date">-</span>`;
+                    if (container.data_agendamento) {
+                        dataContainerHtml = `<span class="badge-date-container" title="Data Agendamento Container (DD/MM/AAAA)">📅 ${container.data_agendamento}</span>`;
                     }
 
                     const trContainer = document.createElement('tr');
@@ -586,6 +961,9 @@
                         </td>
                         <td style="padding: 10px 15px; padding-left: 20px;">
                             <span style="font-size:13px; color:#475569;">🚢 Container: <strong>${container.container}</strong></span>
+                        </td>
+                        <td style="padding: 10px 15px;">
+                            ${dataContainerHtml}
                         </td>
                         <td style="padding: 10px 15px; font-size: 11px; color:#64748b;">
                             Remessas: ${container.remessas.join(', ')}
@@ -628,12 +1006,15 @@
         }
 
         function marcarTodos(marcar) {
-            cargasList.forEach(c => {
+            cargasExibidas.forEach(c => {
                 const chk = document.getElementById(`chk-${c.carga}`);
                 if (chk) {
                     chk.checked = marcar;
-                    if (marcar) selecionados.add(c.carga);
-                    else selecionados.delete(c.carga);
+                }
+                if (marcar) {
+                    selecionados.add(c.carga);
+                } else {
+                    selecionados.delete(c.carga);
                 }
             });
             atualizarInfoSelecionados();

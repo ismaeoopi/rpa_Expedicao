@@ -17,9 +17,9 @@ def main():
     senha = os.getenv("SAP_WEB_PASSWORD")
     
     # Insira aqui os números das remessas reais para testar a criação da OF
-    remessas = ["80783935"]
+    remessas = ["80782192"]
     transportadora = "9190617"
-    valor_frete = 4816.53
+    valor_frete = 5117.84
     
     print("=" * 60)
     print("🚀 Script de Depuração da Criação de Ordem de Frete (OF) CABOTAGEM SAP 🚀")
@@ -39,7 +39,7 @@ def main():
             valor_frete=valor_frete,
             usuario=usuario,
             senha=senha,
-            headless=False
+            headless=True
         )
         of_criada = resultado["of_numero"]
         confirmadas = resultado["remessas_confirmadas"]

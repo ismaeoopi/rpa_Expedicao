@@ -690,7 +690,7 @@ def rodar_verificar_tolerancia(session, dados_cargas, status_etapas, remessas_a_
 
 
 def rodar_criar_ordem_frete(usuario, senha, dados_cargas, status_etapas, remessas_a_processar=None):
-    from src.expedicao.sap_ordem_frete import rodar_criacao_of_playwright_multipla
+    from src.expedicao.sap_cabotagem_playwright import rodar_criacao_of_playwright_multipla
     
     log_sys.write("=== [Etapa 4] Iniciando Criação de Ordem de Frete (SAP Web) ===")
     
