@@ -19,10 +19,16 @@ from src.estoque.processo_sap import processo_estoque_sem_planilha
 import src.utils.db as db
 from dotenv import load_dotenv
 from src.utils.sharepoint import SharePointClient, salvar_configuracoes_env, ENV_PATH
-from Entreposto import executar_automacao_entreposto
+from Entreposto import executar_automacao_entreposto, limpar_cache_planilhas
 from src.expedicao import EntrepostoProcessador
 from src.utils.sap_utils import conectar_sap
 from src.expedicao.cabotagem_processador import obter_dados_cabotagem, rodar_criar_of_cabotagem, cabotagem_estado
+from src.expedicao.estorno_of_processador import (
+    estorno_of_estado,
+    obter_dados_estorno,
+    rodar_estorno_of_background,
+    montar_relatorio_estorno,
+)
 
 
 
@@ -83,6 +89,10 @@ def sto():
 @app.route('/lancamento_frete')
 def lancamento_frete():
     return render_template('lancamento_frete.html')
+
+@app.route('/estorno_of')
+def estorno_of():
+    return render_template('estorno_of.html')
 
 
 
@@ -348,6 +358,7 @@ def sharepoint_config():
             "PLANILHA_ITAJAI_1": dados.get("planilha_itajai_1"),
             "PLANILHA_ITAJAI_2": dados.get("planilha_itajai_2"),
         })
+        limpar_cache_planilhas()
         return jsonify({"status": "success", "message": "Configurações salvas no arquivo .env!"})
     
     # GET
@@ -948,6 +959,83 @@ def api_lancamento_frete_status_rcs():
         "rodando":    log_sys.is_running,
         "logs":       novos_logs,
     })
+
+
+# --- ROTAS DA API DE ESTORNO DE OF ---
+
+@app.route('/api/estorno_of/carregar', methods=['POST'])
+def api_estorno_of_carregar():
+    dados = request.json or {}
+    caminho = dados.get('caminho', '').strip()
+    if not caminho or not os.path.exists(caminho):
+        return jsonify({"status": "error", "message": "Arquivo inválido ou não selecionado."}), 400
+    try:
+        itens = obter_dados_estorno(caminho)
+        return jsonify({
+            "status": "success",
+            "total": len(itens),
+            "itens": itens,
+            "resumo": estorno_of_estado["resumo"]
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/estorno_of/dados_processamento', methods=['GET'])
+def api_estorno_of_dados_processamento():
+    return jsonify({
+        "planilha": estorno_of_estado.get("planilha_caminho", ""),
+        "itens": estorno_of_estado.get("itens", []),
+        "status_etapas": estorno_of_estado.get("status_etapas", {}),
+        "selecionados": estorno_of_estado.get("selecionados", []),
+        "em_execucao": estorno_of_estado.get("em_execucao", False),
+        "resumo": estorno_of_estado.get("resumo", {}),
+        "data_inicio": estorno_of_estado.get("data_inicio", ""),
+        "data_fim": estorno_of_estado.get("data_fim", ""),
+    })
+
+
+@app.route('/api/estorno_of/executar', methods=['POST'])
+def api_estorno_of_executar():
+    dados = request.json or {}
+    selecionados = dados.get('selecionados', [])
+    headless = dados.get('headless', True)
+
+    if estorno_of_estado.get("em_execucao"):
+        return jsonify({"status": "error", "message": "O estorno já está em execução no momento."}), 400
+
+    sucesso = rodar_estorno_of_background(selecionados=selecionados, headless=headless)
+    if sucesso:
+        return jsonify({"status": "success", "message": "Processamento de estorno iniciado com sucesso!"})
+    else:
+        return jsonify({"status": "error", "message": "Não foi possível iniciar o processamento."}), 400
+
+
+@app.route('/api/estorno_of/status', methods=['GET'])
+def api_estorno_of_status():
+    novos_logs = log_sys.fetch_new()
+    return jsonify({
+        "em_execucao": estorno_of_estado.get("em_execucao", False),
+        "status_etapas": estorno_of_estado.get("status_etapas", {}),
+        "resumo": estorno_of_estado.get("resumo", {}),
+        "logs": novos_logs,
+    })
+
+
+@app.route('/api/estorno_of/exportar_excel', methods=['GET'])
+def api_estorno_of_exportar_excel():
+    import pandas as pd
+    df = montar_relatorio_estorno()
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Resultado_Estornos')
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='resultado_estornos_of.xlsx'
+    )
 
 
 if __name__ == '__main__':

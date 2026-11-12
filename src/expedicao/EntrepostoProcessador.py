@@ -42,7 +42,7 @@ def obter_dados_etapas(entreposto_nome, cargas_selecionadas):
     necessárias para processar as cargas/remessas selecionadas.
     """
     log_sys.write(f"📊 Carregando dados para processar as cargas selecionadas: {', '.join(cargas_selecionadas)}")
-    dados = carregar_planilhas_em_memoria(entreposto_nome)
+    dados = carregar_planilhas_em_memoria(entreposto_nome, usar_cache=True)
     df_cargas = dados.get("Planilha de Cargas")
     df_estoque = dados.get("Planilha de Estoque")
     

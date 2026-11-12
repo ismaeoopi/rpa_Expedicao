@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPA Logística - Estorno de Ordens de Frete (OF)</title>
+    <script>(function(){var t=localStorage.getItem('rpa-theme')||'light';document.documentElement.setAttribute('data-theme',t);})()</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-body, #f5f7fa) 0%, var(--bg-body-end, #e4e8ec) 100%);
+            color: var(--text-primary, #2c3e50);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* HEADER PREMIUM */
+        .header {
+            background: linear-gradient(135deg, #101b24 0%, #1d284a 100%);
+            padding: 30px 35px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border-left: 6px solid #d9534f;
+            box-shadow: 0 8px 32px rgba(217, 83, 79, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .header h1 .accent {
+            color: #ff6b6b;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+
+        .btn-header {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+        }
+
+        /* CARDS DE MÉTRICAS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.05));
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .metric-icon.blue { background: rgba(0, 122, 177, 0.12); color: #007ab1; }
+        .metric-icon.orange { background: rgba(255, 182, 0, 0.15); color: #e69500; }
+        .metric-icon.green { background: rgba(26, 119, 51, 0.12); color: #1a7733; }
+        .metric-icon.red { background: rgba(217, 83, 79, 0.15); color: #d9534f; }
+
+        .metric-info h3 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .metric-info p {
+            font-size: 12px;
+            color: var(--text-secondary, #64748b);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* CARD DE AÇÕES E CONTROLES */
+        .card {
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.05));
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-select-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-caminho {
+            flex: 1;
+            min-width: 320px;
+            padding: 11px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #cbd5e1);
+            background: var(--bg-input, #ffffff);
+            color: var(--text-primary, #1e293b);
+            font-size: 13px;
+        }
+
+        .btn {
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #1a7733;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #145e28;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #d9534f;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c9302c;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary, #e2e8f0);
+            color: var(--text-primary, #334155);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #cbd5e1;
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .options-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color, #f1f5f9);
+            flex-wrap: wrap;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* TABELA DE ITENS */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-th, #f8fafc);
+            padding: 12px 14px;
+            font-weight: 600;
+            color: var(--text-secondary, #475569);
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color, #f1f5f9);
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background: var(--bg-hover, rgba(0,0,0,0.02));
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-pending { background: #e2e8f0; color: #475569; }
+        .badge-running { background: #cce5ff; color: #004085; animation: pulse 1.5s infinite; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-error { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* CONSOLE LOG */
+        .console-box {
+            background: #111827;
+            color: #e5e7eb;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 16px;
+            border-radius: 8px;
+            height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header class="header">
+            <div>
+                <h1>Estorno de <span class="accent">Ordens de Frete (OF)</span></h1>
+                <p>Cancelamento automatizado de documentos de frete (FSD 81...) via SAP Fiori Web Dynpro</p>
+            </div>
+            <div style="display:flex; gap: 10px;">
+                <a href="/" class="btn-header">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Voltar ao Início
+                </a>
+            </div>
+        </header>
+
+        <!-- MÉTRICAS -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon blue">📦</div>
+                <div class="metric-info">
+                    <h3 id="metric-total">0</h3>
+                    <p>Total de OFs</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon orange">⏳</div>
+                <div class="metric-info">
+                    <h3 id="metric-pendentes">0</h3>
+                    <p>Pendentes</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon green">✅</div>
+                <div class="metric-info">
+                    <h3 id="metric-sucessos">0</h3>
+                    <p>Estornadas com Sucesso</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon red">❌</div>
+                <div class="metric-info">
+                    <h3 id="metric-erros">0</h3>
+                    <p>Erros / Alertas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARREGAMENTO DE PLANILHA -->
+        <div class="card">
+            <div class="card-title">
+                <span>📁 Seleção da Planilha de Estornos</span>
+                <span id="execucao-status-tag" class="badge badge-pending">Aguardando Início</span>
+            </div>
+            <div class="file-select-row">
+                <input type="text" id="input-planilha" class="input-caminho" placeholder="Selecione ou cole o caminho do arquivo Excel (.xlsx)...">
+                <button type="button" class="btn btn-secondary" onclick="selecionarArquivoExcel()">
+                    📂 Procurar Arquivo
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-carregar" onclick="carregarPlanilha()">
+                    📥 Carregar Dados
+                </button>
+            </div>
+            <div class="options-row">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-headless" checked>
+                    <span>Modo Headless (Executar em segundo plano sem abrir a janela do navegador)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- LISTA DE ITENS PARA ESTORNO -->
+        <div class="card">
+            <div class="card-title">
+                <span>📋 Ordens de Frete Carregadas</span>
+                <div style="display:flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" style="padding: 7px 12px;" onclick="selecionarTodos(true)">Marcar Todos</button>
+                    <button type="button" class="btn btn-secondary" style="padding: 7px 12px;" onclick="selecionarTodos(false)">Desmarcar</button>
+                    <button type="button" class="btn btn-danger" id="btn-executar" onclick="iniciarEstorno()" disabled>
+                        🚀 Iniciar Estorno das Selecionadas (<span id="count-selecionadas">0</span>)
+                    </button>
+                    <button type="button" class="btn btn-secondary" style="padding: 7px 12px;" onclick="exportarExcel()">
+                        💾 Exportar Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="chk-all" onchange="selecionarTodos(this.checked)">
+                            </th>
+                            <th>Ordem de Frete (OF)</th>
+                            <th>Doc. de Compras (PO)</th>
+                            <th>Documento 81 (FSD)</th>
+                            <th>Status Estorno</th>
+                            <th>Life Cycle Status</th>
+                            <th>Severidade</th>
+                            <th>Logs / Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-itens">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">
+                                Nenhuma planilha carregada. Selecione um arquivo Excel acima para visualizar as OFs.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CONSOLE LOG -->
+        <div class="card">
+            <div class="card-title">
+                <span>💻 Console de Execução em Tempo Real</span>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('console-log').textContent=''">Limpar</button>
+            </div>
+            <div class="console-box" id="console-log">[Console pronto aguardando instruções...]</div>
+        </div>
+    </div>
+
+    <script>
+        let itensCarregados = [];
+        let pollingTimer = null;
+
+        // Selecionar arquivo nativo do Windows
+        async function selecionarArquivoExcel() {
+            try {
+                const res = await fetch('/api/selecionar_arquivo');
+                const data = await res.json();
+                if (data.caminho) {
+                    document.getElementById('input-planilha').value = data.caminho;
+                }
+            } catch (err) {
+                console.error("Erro ao selecionar arquivo:", err);
+            }
+        }
+
+        // Carregar planilha
+        async function carregarPlanilha() {
+            const caminho = document.getElementById('input-planilha').value.trim();
+            if (!caminho) {
+                alert("Por favor, selecione ou informe o caminho do arquivo Excel.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-carregar');
+            btn.disabled = true;
+            btn.textContent = "Carregando...";
+
+            try {
+                const res = await fetch('/api/estorno_of/carregar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ caminho })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    itensCarregados = data.itens || [];
+                    renderizarTabela();
+                    atualizarMetricas(data.resumo);
+                    logMensagem(`✅ Planilha carregada: ${itensCarregados.length} OFs encontradas.`);
+                } else {
+                    alert("Erro ao carregar planilha: " + data.message);
+                }
+            } catch (err) {
+                alert("Erro de conexão ao carregar: " + err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "📥 Carregar Dados";
+            }
+        }
+
+        // Renderizar tabela de itens
+        function renderizarTabela() {
+            const tbody = document.getElementById('tbody-itens');
+            if (!itensCarregados.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Nenhuma OF encontrada na planilha.</td></tr>`;
+                document.getElementById('btn-executar').disabled = true;
+                return;
+            }
+
+            tbody.innerHTML = itensCarregados.map(it => {
+                const ofNum = it.of_numero;
+                return `
+                    <tr id="row-${ofNum}">
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="chk-item" value="${ofNum}" checked onchange="atualizarContagemSelecionadas()">
+                        </td>
+                        <td><strong>${ofNum}</strong></td>
+                        <td>${it.doc_compras || '<span style="color:#94a3b8">Não identificado</span>'}</td>
+                        <td id="cell-doc81-${ofNum}">-</td>
+                        <td id="cell-status-${ofNum}"><span class="badge badge-pending">Pendente</span></td>
+                        <td id="cell-lifecycle-${ofNum}">-</td>
+                        <td id="cell-sev-${ofNum}">-</td>
+                        <td id="cell-logs-${ofNum}" style="font-size: 11px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('chk-all').checked = true;
+            atualizarContagemSelecionadas();
+        }
+
+        function atualizarContagemSelecionadas() {
+            const chks = document.querySelectorAll('.chk-item:checked');
+            document.getElementById('count-selecionadas').textContent = chks.length;
+            document.getElementById('btn-executar').disabled = (chks.length === 0);
+        }
+
+        function selecionarTodos(val) {
+            document.querySelectorAll('.chk-item').forEach(c => c.checked = val);
+            document.getElementById('chk-all').checked = val;
+            atualizarContagemSelecionadas();
+        }
+
+        // Iniciar Estorno
+        async function iniciarEstorno() {
+            const selecionados = Array.from(document.querySelectorAll('.chk-item:checked')).map(c => c.value);
+            if (!selecionados.length) {
+                alert("Selecione pelo menos uma OF para estornar.");
+                return;
+            }
+
+            const headless = document.getElementById('chk-headless').checked;
+
+            if (!confirm(`Confirma o estorno de ${selecionados.length} Ordem(ns) de Frete no SAP?`)) {
+                return;
+            }
+
+            document.getElementById('btn-executar').disabled = true;
+            document.getElementById('execucao-status-tag').className = 'badge badge-running';
+            document.getElementById('execucao-status-tag').textContent = 'Processando no SAP...';
+
+            try {
+                const res = await fetch('/api/estorno_of/executar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selecionados, headless })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    iniciarPollingStatus();
+                } else {
+                    alert("Erro ao iniciar: " + data.message);
+                    document.getElementById('btn-executar').disabled = false;
+                }
+            } catch (err) {
+                alert("Erro ao conectar com servidor: " + err);
+                document.getElementById('btn-executar').disabled = false;
+            }
+        }
+
+        // Polling de status e logs
+        function iniciarPollingStatus() {
+            if (pollingTimer) clearInterval(pollingTimer);
+
+            pollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/estorno_of/status');
+                    const data = await res.json();
+
+                    // Atualizar métricas
+                    if (data.resumo) atualizarMetricas(data.resumo);
+
+                    // Atualizar linhas da tabela
+                    if (data.status_etapas) {
+                        for (const [ofNum, st] of Object.entries(data.status_etapas)) {
+                            atualizarLinhaTabela(ofNum, st);
+                        }
+                    }
+
+                    // Append logs
+                    if (data.logs && data.logs.length) {
+                        data.logs.forEach(msg => logMensagem(msg));
+                    }
+
+                    // Se não estiver mais rodando, parar polling
+                    if (!data.em_execucao) {
+                        clearInterval(pollingTimer);
+                        pollingTimer = null;
+                        document.getElementById('execucao-status-tag').className = 'badge badge-success';
+                        document.getElementById('execucao-status-tag').textContent = 'Concluído';
+                        document.getElementById('btn-executar').disabled = false;
+                        logMensagem("🏁 Execução em lote finalizada!");
+                    }
+                } catch (err) {
+                    console.error("Erro no polling de status:", err);
+                }
+            }, 1500);
+        }
+
+        function atualizarLinhaTabela(ofNum, st) {
+            const cellStatus = document.getElementById(`cell-status-${ofNum}`);
+            const cellDoc81 = document.getElementById(`cell-doc81-${ofNum}`);
+            const cellLife = document.getElementById(`cell-lifecycle-${ofNum}`);
+            const cellSev = document.getElementById(`cell-sev-${ofNum}`);
+            const cellLogs = document.getElementById(`cell-logs-${ofNum}`);
+
+            if (!cellStatus) return;
+
+            if (st.status === 'running') {
+                cellStatus.innerHTML = '<span class="badge badge-running">Processando...</span>';
+            } else if (st.status === 'success') {
+                cellStatus.innerHTML = '<span class="badge badge-success">Sucesso</span>';
+            } else if (st.status === 'error') {
+                cellStatus.innerHTML = '<span class="badge badge-error">Erro</span>';
+            }
+
+            if (st.doc_81) cellDoc81.textContent = st.doc_81;
+            if (st.life_cycle) cellLife.textContent = st.life_cycle;
+            if (st.severidade) cellSev.textContent = st.severidade;
+            if (st.logs || st.mensagem) {
+                cellLogs.textContent = st.logs || st.mensagem;
+                cellLogs.title = st.logs || st.mensagem;
+            }
+        }
+
+        function atualizarMetricas(resumo) {
+            if (!resumo) return;
+            document.getElementById('metric-total').textContent = resumo.total || 0;
+            document.getElementById('metric-pendentes').textContent = resumo.pendentes || 0;
+            document.getElementById('metric-sucessos').textContent = resumo.sucessos || 0;
+            document.getElementById('metric-erros').textContent = resumo.erros || 0;
+        }
+
+        function logMensagem(msg) {
+            const box = document.getElementById('console-log');
+            box.textContent += '\n' + msg;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function exportarExcel() {
+            window.location.href = '/api/estorno_of/exportar_excel';
+        }
+    </script>
+</body>
+</html>
+

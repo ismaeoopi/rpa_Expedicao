@@ -1,6 +1,6 @@
 """
 Módulo para download de Packlist do SAP Web via Playwright.
-Acessa https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=PT#zui5packinglist-display
+Acessa https://appprod.sap.valgroupco.com/sap/bc/ui2/flp?sap-client=200&sap-language=PT#ZUI5_PL_DELIVER-display
 e baixa PDFs para cada remessa informada.
 """
 
@@ -103,6 +103,38 @@ def _garantir_playwright_instalado():
     return True
 
 
+def _selecionar_todas_linhas_packlist(page, timeout=30000):
+    """Marca o controle "Selecionar tudo" da tabela de Packlist."""
+    selecionar_tudo = page.locator(
+        "div[id$='smartTable-ui5table-selall'][role='checkbox']"
+    ).first
+    selecionar_tudo.wait_for(state="visible", timeout=timeout)
+
+    # Evita que uma nova tentativa desmarque linhas já selecionadas.
+    if selecionar_tudo.get_attribute("aria-checked") != "true":
+        selecionar_tudo.click(timeout=timeout)
+
+
+def _aguardar_fim_carregamento_packlist(page, timeout=120000):
+    """Aguarda o indicador do SAP UI5 e informa se ele desapareceu."""
+    indicador_visivel = page.locator(
+        "div.sapUiLocalBusyIndicatorAnimation:visible"
+    ).first
+
+    try:
+        # O indicador pode surgir alguns instantes depois da ação.
+        indicador_visivel.wait_for(state="visible", timeout=3000)
+    except Exception:
+        return True
+
+    try:
+        indicador_visivel.wait_for(state="hidden", timeout=timeout)
+    except Exception:
+        return False
+
+    return True
+
+
 def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha: str, tipo: str = 'normal'):
     """
     Baixa os PDFs de Packlist do SAP Web para cada remessa informada.
@@ -153,7 +185,7 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
     try:
         playwright_instance = sync_playwright().start()
         # Inicializa o chromium forçando a leitura da pasta correta
-        browser = playwright_instance.chromium.launch(headless=True)
+        browser = playwright_instance.chromium.launch(headless=False)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
 
@@ -235,17 +267,30 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
 
                 if tipo == 'jbs':
                     campo_remessa.press("Enter")
-                    # Aguarda e clica no checkbox "Linha de cabeçalho para"
+                    # Aguarda e marca o controle "Selecionar tudo" da tabela.
                     try:
                         time.sleep(2)
-                        page.get_by_role("checkbox", name="Linha de cabeçalho para").wait_for(state="visible", timeout=30000)
-                        page.get_by_role("checkbox", name="Linha de cabeçalho para").click()
+                        _selecionar_todas_linhas_packlist(page)
+                        _aguardar_fim_carregamento_packlist(page)
                     except Exception as e:
-                        log_sys.write(f"⚠️ Remessa {remessa}: checkbox 'Linha de cabeçalho para' não apareceu. {e}")
+                        log_sys.write(
+                            f"⚠️ Remessa {remessa}: não foi possível selecionar "
+                            f"todas as linhas ou concluir o carregamento. {e}"
+                        )
                         continue
                 else:
-                    # Fluxo normal: Clica em Início
-                    page.get_by_role("button", name="Início").click()
+                    # Fluxo normal: inicia a pesquisa pelo botão da SmartFilterBar.
+                    # Clica no elemento button, não nos spans internos.
+                    try:
+                        page.locator(
+                            "button[id='__bar0-btnGo']"
+                        ).click(timeout=10000)
+                    except Exception:
+                        page.get_by_role(
+                            "button", name="Iniciar", exact=True
+                        ).click(timeout=10000)
+
+                    _aguardar_fim_carregamento_packlist(page)
 
                 # Aguarda o botão "Gerar PDF" ficar disponível
                 try:
@@ -259,20 +304,25 @@ def baixar_packlist_sap(remessas: list, pasta_destino: str, usuario: str, senha:
 
                 # Clica em Gerar PDF e captura o download (com tentativa de retry)
                 try:
-                    with page.expect_download(timeout=15000) as download_info:
+                    with page.expect_download(timeout=120000) as download_info:
                         page.get_by_role("button", name="Gerar PDF").click()
+                        _aguardar_fim_carregamento_packlist(page)
                     download = download_info.value
                 except Exception as e:
-                    log_sys.write(f"⚠️ Falha no download da remessa {remessa}. Tentando clicar na checkbox e baixar novamente... (Erro: {e})")
+                    log_sys.write(
+                        f"⚠️ Falha no download da remessa {remessa}. "
+                        f"Aguardando o SAP e tentando novamente... (Erro: {e})"
+                    )
                     if tipo == 'jbs':
                         try:
-                            # Clica de novo no checkbox
-                            page.get_by_role("checkbox", name="Linha de cabeçalho para").click()
+                            _selecionar_todas_linhas_packlist(page)
+                            _aguardar_fim_carregamento_packlist(page)
                             time.sleep(1.5)
                         except Exception:
                             pass
-                    with page.expect_download(timeout=30000) as download_info:
+                    with page.expect_download(timeout=120000) as download_info:
                         page.get_by_role("button", name="Gerar PDF").click()
+                        _aguardar_fim_carregamento_packlist(page)
                     download = download_info.value
 
                 # Salva o PDF com o nome da remessa

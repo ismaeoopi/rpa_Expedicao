@@ -1,7 +1,11 @@
 import os
 import io
+import threading
+import time
 import pandas as pd
 from dotenv import load_dotenv
+from openpyxl import load_workbook
+from pandas.io.parsers import TextParser
 from src.utils.common import log_sys
 from src.utils.sharepoint import SharePointClient, ENV_PATH
 
@@ -12,6 +16,99 @@ ultimo_resultado = {
     "status": "idle", # "idle", "running", "success", "error"
     "erro": None
 }
+
+# Mantém um snapshot curto das planilhas para que a seleção de cargas use os
+# mesmos dados que acabaram de ser exibidos. O cache é apenas uma otimização:
+# se estiver ausente ou vencido, o carregamento normal do SharePoint é usado.
+_CACHE_TTL_SEGUNDOS = 10 * 60
+_MAX_COLUNAS_EXCEL = 64
+_cache_planilhas = {}
+_cache_planilhas_lock = threading.Lock()
+
+
+def limpar_cache_planilhas(entreposto_nome=None):
+    """Invalida snapshots carregados do SharePoint."""
+    with _cache_planilhas_lock:
+        if entreposto_nome is None:
+            _cache_planilhas.clear()
+        else:
+            _cache_planilhas.pop(str(entreposto_nome).upper(), None)
+
+
+def normalizar_cargas(serie):
+    """
+    Normaliza IDs de carga de forma vetorizada.
+
+    Preserva IDs alfanuméricos como ``IT21/10-26`` e, por compatibilidade com
+    a regra anterior, reduz ``380787/10`` para ``380787``.
+    """
+    cargas = serie.fillna("").astype(str).str.strip()
+    prefixos_numericos = cargas.str.extract(r"^(\d+)\s*/", expand=False)
+    return cargas.where(prefixos_numericos.isna(), prefixos_numericos)
+
+
+def _copiar_planilhas(planilhas):
+    return {descricao: df.copy(deep=True) for descricao, df in planilhas.items()}
+
+
+def _ler_planilha_excel_limitada(
+    conteudo_binario,
+    descricao,
+    entreposto_nome,
+    aba_configurada=None,
+):
+    """
+    Lê somente a faixa de colunas usada pelo processo.
+
+    Algumas planilhas possuem formatação até XFD (16.384 colunas). O leitor
+    padrão do Pandas materializa todas essas células vazias. As colunas de
+    negócio atuais ocupam menos de 30 posições; o limite de 64 mantém folga
+    para novas colunas sem percorrer a dimensão artificial da planilha.
+    """
+    workbook = load_workbook(
+        io.BytesIO(conteudo_binario),
+        read_only=True,
+        data_only=True,
+        keep_links=False,
+    )
+    try:
+        if aba_configurada and aba_configurada in workbook.sheetnames:
+            aba_selecionada = aba_configurada
+        elif "Cargas" in descricao:
+            aba_selecionada = selecionar_aba_cargas(workbook.sheetnames)
+        else:
+            aba_selecionada = selecionar_aba_estoque(
+                workbook.sheetnames, entreposto_nome
+            )
+
+        dados = []
+        ultima_linha_com_dados = -1
+        for numero_linha, linha in enumerate(
+            workbook[aba_selecionada].iter_rows(
+                max_col=_MAX_COLUNAS_EXCEL, values_only=True
+            )
+        ):
+            valores = ["" if valor is None else valor for valor in linha]
+            while valores and valores[-1] == "":
+                valores.pop()
+            if valores:
+                ultima_linha_com_dados = numero_linha
+            dados.append(valores)
+
+        dados = dados[: ultima_linha_com_dados + 1]
+        if not dados:
+            return pd.DataFrame(), aba_selecionada
+
+        largura = max(len(linha) for linha in dados)
+        dados = [linha + [""] * (largura - len(linha)) for linha in dados]
+        dataframe = TextParser(
+            dados,
+            dtype=str,
+            skip_blank_lines=False,
+        ).read()
+        return dataframe, aba_selecionada
+    finally:
+        workbook.close()
 
 def normalizar_termo(texto):
     import re
@@ -113,27 +210,43 @@ def selecionar_aba_estoque(sheet_names, entreposto_nome=None):
             return name
     return sheet_names[0] if sheet_names else 0
 
-def carregar_planilhas_em_memoria(entreposto_nome):
+def carregar_planilhas_em_memoria(entreposto_nome, usar_cache=False):
     """
     Busca do .env as planilhas mapeadas para o entreposto informado,
     conecta no SharePoint e baixa os dados em memória.
     Retorna um dicionário contendo os DataFrames.
     """
     load_dotenv(ENV_PATH)
+    entreposto_chave = str(entreposto_nome).upper()
     
     # Define as chaves do .env com base no entreposto selecionado
-    if entreposto_nome.upper() == "IPOJUCA":
+    if entreposto_chave == "IPOJUCA":
         chaves_caminhos = {
             "Planilha de Cargas": os.getenv("PLANILHA_IPOJUCA_1"),
             "Planilha de Estoque": os.getenv("PLANILHA_IPOJUCA_2")
         }
-    elif entreposto_nome.upper() == "ITAJAI":
+    elif entreposto_chave == "ITAJAI":
         chaves_caminhos = {
             "Planilha de Cargas": os.getenv("PLANILHA_ITAJAI_1"),
             "Planilha de Estoque": os.getenv("PLANILHA_ITAJAI_2")
         }
     else:
         raise ValueError(f"Entreposto '{entreposto_nome}' desconhecido.")
+
+    caminhos_cache = tuple(chaves_caminhos.items())
+    if usar_cache:
+        agora = time.monotonic()
+        with _cache_planilhas_lock:
+            snapshot = _cache_planilhas.get(entreposto_chave)
+            if (
+                snapshot
+                and snapshot["caminhos"] == caminhos_cache
+                and agora - snapshot["criado_em"] <= _CACHE_TTL_SEGUNDOS
+            ):
+                log_sys.write(
+                    f"⚡ Reutilizando planilhas já carregadas para {entreposto_chave}."
+                )
+                return _copiar_planilhas(snapshot["dados"])
 
     log_sys.write(f"🔄 Conectando ao SharePoint para acessar {entreposto_nome}...")
 
@@ -150,31 +263,53 @@ def carregar_planilhas_em_memoria(entreposto_nome):
         try:
             conteudo_binario = client.baixar_arquivo(caminho_sp)
             log_sys.write(f"📊 Carregando dados no Pandas diretamente da memória...")
-            
-            # Carrega a planilha e seleciona a aba correta de forma dinâmica
-            xl = pd.ExcelFile(io.BytesIO(conteudo_binario))
-            aba_selecionada = 0
-            
-            if "Cargas" in desc:
-                aba_env = os.getenv(f"PLANILHA_{entreposto_nome.upper()}_1_ABA")
+
+            numero_planilha = "1" if "Cargas" in desc else "2"
+            aba_env = os.getenv(
+                f"PLANILHA_{entreposto_chave}_{numero_planilha}_ABA"
+            )
+
+            try:
+                df, aba_selecionada = _ler_planilha_excel_limitada(
+                    conteudo_binario,
+                    desc,
+                    entreposto_nome,
+                    aba_configurada=aba_env,
+                )
+                log_sys.write(
+                    f"📖 Lendo aba '{aba_selecionada}' com faixa otimizada "
+                    f"({len(df.columns)} colunas úteis)..."
+                )
+            except Exception as erro_otimizacao:
+                log_sys.write(
+                    "⚠️ Leitura otimizada indisponível; usando método "
+                    f"compatível. Detalhe: {erro_otimizacao}"
+                )
+                xl = pd.ExcelFile(io.BytesIO(conteudo_binario))
                 if aba_env and aba_env in xl.sheet_names:
                     aba_selecionada = aba_env
-                else:
+                elif "Cargas" in desc:
                     aba_selecionada = selecionar_aba_cargas(xl.sheet_names)
-            elif "Estoque" in desc:
-                aba_env = os.getenv(f"PLANILHA_{entreposto_nome.upper()}_2_ABA")
-                if aba_env and aba_env in xl.sheet_names:
-                    aba_selecionada = aba_env
                 else:
-                    aba_selecionada = selecionar_aba_estoque(xl.sheet_names, entreposto_nome)
-            
-            log_sys.write(f"📖 Lendo aba '{aba_selecionada}'...")
-            df = xl.parse(aba_selecionada, dtype=str)
+                    aba_selecionada = selecionar_aba_estoque(
+                        xl.sheet_names, entreposto_nome
+                    )
+                log_sys.write(f"📖 Lendo aba '{aba_selecionada}'...")
+                df = xl.parse(aba_selecionada, dtype=str)
+
             log_sys.write(f"✅ {desc} processada! Linhas encontradas: {len(df)}")
             planilhas_carregadas[desc] = df
         except Exception as e:
             log_sys.write(f"❌ Falha ao processar '{nome_arquivo}': {str(e)}")
             raise e
+
+    if len(planilhas_carregadas) == len(chaves_caminhos):
+        with _cache_planilhas_lock:
+            _cache_planilhas[entreposto_chave] = {
+                "criado_em": time.monotonic(),
+                "caminhos": caminhos_cache,
+                "dados": _copiar_planilhas(planilhas_carregadas),
+            }
 
     return planilhas_carregadas
 
@@ -190,7 +325,7 @@ def executar_automacao_entreposto(entreposto_nome):
     ultimo_resultado["erro"] = None
     
     try:
-        dados = carregar_planilhas_em_memoria(entreposto_nome)
+        dados = carregar_planilhas_em_memoria(entreposto_nome, usar_cache=True)
         
         df_cargas = dados.get("Planilha de Cargas")
         df_estoque = dados.get("Planilha de Estoque")
@@ -243,23 +378,21 @@ def executar_automacao_entreposto(entreposto_nome):
         # Considera vazio se for NaN ou string em branco
         filtro_vazias = df_cargas[col_cargas_remessa].isna() | (df_cargas[col_cargas_remessa].astype(str).str.strip() == "")
         df_cargas_filtrado = df_cargas[filtro_vazias]
+
+        # A normalização era refeita linha a linha para cada carga ausente.
+        # Calculá-la uma única vez remove as varreduras repetidas do DataFrame.
+        cargas_normalizadas = normalizar_cargas(df_cargas[col_cargas_n_carga])
         
         # Obter IDs únicos das cargas
-        cargas_alvo = []
-        for c in df_cargas_filtrado[col_cargas_n_carga].dropna().unique():
-            c_str = str(c).strip()
-            if c_str == "" or c_str.lower() == "nan":
-                continue
-            # Se for do formato "380787/10" (apenas números), extrai apenas "380787"
-            if "/" in c_str:
-                partes = c_str.split("/")
-                if partes[0].strip().isdigit():
-                    c_str = partes[0].strip()
-            # Ignora textos observativos (cargas válidas devem ser curtas, ex: menos de 20 caracteres)
-            if not c_str or len(c_str) > 20:
-                continue
-            if c_str not in cargas_alvo:
-                cargas_alvo.append(c_str)
+        cargas_alvo_serie = cargas_normalizadas.loc[df_cargas_filtrado.index]
+        filtro_cargas_validas = (
+            cargas_alvo_serie.ne("")
+            & cargas_alvo_serie.str.lower().ne("nan")
+            & cargas_alvo_serie.str.len().le(20)
+        )
+        cargas_alvo = (
+            cargas_alvo_serie[filtro_cargas_validas].drop_duplicates().tolist()
+        )
 
         log_sys.write(f"📋 Encontradas {len(cargas_alvo)} cargas pendentes (sem Remessa/Picking): {cargas_alvo}")
 
@@ -399,18 +532,7 @@ def executar_automacao_entreposto(entreposto_nome):
                 log_sys.write(f"✔️ Carga {carga_id} localizada no estoque. Status: OK (Peso Liq: {peso_liquido}, Peso Bruto: {peso_bruto}, Paletes: {qtd_paletes})")
             else:
                 # Filtrar registros correspondentes nas Cargas
-                df_cargas_copy = df_cargas.copy()
-                df_cargas_copy[col_cargas_n_carga] = df_cargas_copy[col_cargas_n_carga].dropna().astype(str).str.strip()
-                
-                def matches_carga(val):
-                    val_s = str(val).strip()
-                    if "/" in val_s:
-                        partes = val_s.split("/")
-                        if partes[0].strip().isdigit():
-                            val_s = partes[0].strip()
-                    return val_s == carga_id
-                
-                linhas_carga = df_cargas_copy[df_cargas_copy[col_cargas_n_carga].apply(matches_carga)]
+                linhas_carga = df_cargas[cargas_normalizadas == carga_id]
                 
                 # Peso Líquido das Cargas
                 if col_cargas_peso_liq:

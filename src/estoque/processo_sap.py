@@ -35,7 +35,7 @@ def consultar_cs15(session, semi_acabado):
 def executar_processo_sap_direto(inbound):
     inicio = datetime.now()
     log_sys.write(f"🚀 Iniciando processo integrado direto do SAP para Inbound {inbound}...")
-    
+    caminho_temp_excel = None
     try:
         session = conectar_sap()
         if not session:
@@ -138,18 +138,18 @@ def executar_processo_sap_direto(inbound):
         except Exception as e:
             raise Exception(f"Erro na etapa PRDI: {e}")
             
-        # Limpar arquivo temporário
-        try:
-            os.remove(caminho_temp_excel)
-        except:
-            pass
-            
         log_sys.write(f"🎉 Processo concluído com sucesso em {datetime.now() - inicio}!")
         return True
         
     except Exception as e:
         log_sys.write(f"❌ Ocorreu uma falha no processo: {e}")
         return False
+    finally:
+        if caminho_temp_excel and os.path.exists(caminho_temp_excel):
+            try:
+                os.remove(caminho_temp_excel)
+            except:
+                pass
 
 def processo_estoque_sem_planilha(vl32_list, ponto_partida, op_global, migo_global, lote_id=None):
     import src.utils.db as db
@@ -194,13 +194,12 @@ def processo_estoque_sem_planilha(vl32_list, ponto_partida, op_global, migo_glob
             continue
             
         inicio_item = datetime.now()
+        df1, df2 = None, None
+        caminho_temp_excel = None
         try:
             session = conectar_sap()
             if not session: raise Exception("Sem conexão SAP")
             log_sys.write(f"\n🔄 Processando VL32: {vl32_inbound} | Etapa Atual: {status}")
-
-            df1, df2 = None, None
-            caminho_temp_excel = None
             
             log_sys.write("▶️ Extraindo dados da VL32N...")
             df1, df2 = gerar_relatorios(vl32_inbound)
